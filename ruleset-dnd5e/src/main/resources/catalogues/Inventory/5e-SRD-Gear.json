@@ -1,0 +1,1075 @@
+[
+  {
+    "id": "shield",
+    "name": "Shield",
+    "kind": "shield",
+    "weight": 6,
+    "cost": "10 gp",
+    "description": "A shield is made from wood or metal and is carried in one hand. Wielding a shield increases your Armor Class by 2. You can benefit from only one shield at a time.",
+    "acBonus": 2
+  },
+  {
+    "id": "arrows-20",
+    "name": "Arrows (20)",
+    "kind": "ammunition",
+    "weight": 1,
+    "cost": "1 gp",
+    "description": "Ammunition for a bow. Comes in a quiver of 20."
+  },
+  {
+    "id": "crossbow-bolts-20",
+    "name": "Crossbow Bolts (20)",
+    "kind": "ammunition",
+    "weight": 1.5,
+    "cost": "1 gp",
+    "description": "Ammunition for a crossbow. Comes in a case of 20."
+  },
+  {
+    "id": "sling-bullets-20",
+    "name": "Sling Bullets (20)",
+    "kind": "ammunition",
+    "weight": 1.5,
+    "cost": "4 cp",
+    "description": "Ammunition for a sling. Comes in a pouch of 20."
+  },
+  {
+    "id": "blowgun-needles-50",
+    "name": "Blowgun Needles (50)",
+    "kind": "ammunition",
+    "weight": 1,
+    "cost": "1 gp",
+    "description": "Ammunition for a blowgun. Comes in a case of 50."
+  },
+  {
+    "id": "potion-of-healing",
+    "name": "Potion of Healing",
+    "kind": "potion",
+    "weight": 0.5,
+    "cost": "50 gp",
+    "description": "You regain 2d4 + 2 hit points when you drink this potion. The potion's red liquid glimmers when agitated."
+  },
+  {
+    "id": "potion-of-greater-healing",
+    "name": "Potion of Greater Healing",
+    "kind": "potion",
+    "weight": 0.5,
+    "cost": "100 gp",
+    "description": "You regain 4d4 + 4 hit points when you drink this potion. The potion's red liquid glimmers when agitated."
+  },
+  {
+    "id": "potion-of-superior-healing",
+    "name": "Potion of Superior Healing",
+    "kind": "potion",
+    "weight": 0.5,
+    "cost": "500 gp",
+    "description": "You regain 8d4 + 8 hit points when you drink this potion. The potion's red liquid glimmers when agitated."
+  },
+  {
+    "id": "potion-of-supreme-healing",
+    "name": "Potion of Supreme Healing",
+    "kind": "potion",
+    "weight": 0.5,
+    "cost": "5,000 gp",
+    "description": "You regain 10d4 + 20 hit points when you drink this potion. The potion's red liquid glimmers when agitated."
+  },
+  {
+    "id": "spell-scroll",
+    "name": "Spell Scroll",
+    "kind": "scroll",
+    "weight": 0,
+    "cost": null,
+    "description": "A spell scroll bears the words of a single spell, written in a mystical cipher. Casting the spell by reading the scroll requires the spell to be on your class's spell list. Level depends on spell."
+  },
+  {
+    "id": "thieves-tools",
+    "name": "Thieves' Tools",
+    "kind": "tool",
+    "weight": 1,
+    "cost": "25 gp",
+    "description": "Includes a small file, a set of lock picks, a small mirror mounted on a metal handle, a set of narrow-bladed scissors, and a pair of pliers. Proficiency lets you add your proficiency bonus to any check you make to disarm traps or open locks."
+  },
+  {
+    "id": "disguise-kit",
+    "name": "Disguise Kit",
+    "kind": "tool",
+    "weight": 3,
+    "cost": "25 gp",
+    "description": "Cosmetics, hair dye, and small props. Proficiency lets you add your proficiency bonus to any check you make to create a visual disguise."
+  },
+  {
+    "id": "herbalism-kit",
+    "name": "Herbalism Kit",
+    "kind": "tool",
+    "weight": 3,
+    "cost": "5 gp",
+    "description": "Pouches to store herbs, clippers and leather gloves for collecting plants, a mortar and pestle, and several glass jars. Proficiency lets you add your proficiency bonus to any check you make to identify or apply herbs, and to craft antitoxins and potions of healing."
+  },
+  {
+    "id": "forgery-kit",
+    "name": "Forgery Kit",
+    "kind": "tool",
+    "weight": 5,
+    "cost": "15 gp",
+    "description": "A small box that contains a variety of papers and parchments, pens and inks, seals and sealing wax, and other supplies for forging documents."
+  },
+  {
+    "id": "healers-kit",
+    "name": "Healer's Kit",
+    "kind": "tool",
+    "weight": 3,
+    "cost": "5 gp",
+    "description": "A leather pouch containing bandages, salves, and splints. The kit has ten uses. As an action, expend one use to stabilize a creature that has 0 hit points without making a Wisdom (Medicine) check."
+  },
+  {
+    "id": "climbers-kit",
+    "name": "Climber's Kit",
+    "kind": "tool",
+    "weight": 12,
+    "cost": "25 gp",
+    "description": "A climber's kit includes special pitons, boot tips, gloves, and a harness. You can use the climber's kit as an action to anchor yourself."
+  },
+  {
+    "id": "poisoners-kit",
+    "name": "Poisoner's Kit",
+    "kind": "tool",
+    "weight": 2,
+    "cost": "50 gp",
+    "description": "Includes the vials, chemicals, and other equipment necessary for the creation of poisons. Proficiency lets you add your proficiency bonus to any check you make to craft or use poisons."
+  },
+  {
+    "id": "navigators-tools",
+    "name": "Navigator's Tools",
+    "kind": "tool",
+    "weight": 2,
+    "cost": "25 gp",
+    "description": "Includes a sextant, a compass, calipers, a ruler, parchment, ink, and a quill. Proficiency lets you chart a ship's course and follow navigation charts."
+  },
+  {
+    "id": "alchemists-supplies",
+    "name": "Alchemist's Supplies",
+    "kind": "tool",
+    "weight": 8,
+    "cost": "50 gp",
+    "description": "Two glass beakers, a metal frame to support a beaker, a small mortar and pestle, a pouch of common alchemical ingredients, a glass stirring rod, a small pair of tongs, and a brewer's apron."
+  },
+  {
+    "id": "brewers-supplies",
+    "name": "Brewer's Supplies",
+    "kind": "tool",
+    "weight": 9,
+    "cost": "20 gp",
+    "description": "Large glass jugs, a quantity of hops, a siphon, and several feet of tubing. Used to brew beer and other alcoholic beverages."
+  },
+  {
+    "id": "calligraphers-supplies",
+    "name": "Calligrapher's Supplies",
+    "kind": "tool",
+    "weight": 5,
+    "cost": "10 gp",
+    "description": "Includes ink, a dozen sheets of parchment, and three quills."
+  },
+  {
+    "id": "carpenters-tools",
+    "name": "Carpenter's Tools",
+    "kind": "tool",
+    "weight": 6,
+    "cost": "8 gp",
+    "description": "A wide variety of woodworking implements, including a saw, a hatchet, a hammer, nails, a knife, a pull drill, and planes."
+  },
+  {
+    "id": "cartographers-tools",
+    "name": "Cartographer's Tools",
+    "kind": "tool",
+    "weight": 6,
+    "cost": "15 gp",
+    "description": "Includes a quill, ink, parchment, a pair of compasses, calipers, and a ruler. Used for drawing maps."
+  },
+  {
+    "id": "cobblers-tools",
+    "name": "Cobbler's Tools",
+    "kind": "tool",
+    "weight": 5,
+    "cost": "5 gp",
+    "description": "A hammer, awl, knife, shoe stand, cutters, leather, thread, and nails. Used to repair and craft footwear."
+  },
+  {
+    "id": "cooks-utensils",
+    "name": "Cook's Utensils",
+    "kind": "tool",
+    "weight": 8,
+    "cost": "1 gp",
+    "description": "A metal pot, knives, forks, a stirring spoon, and a ladle. Used to prepare meals."
+  },
+  {
+    "id": "glassblowers-tools",
+    "name": "Glassblower's Tools",
+    "kind": "tool",
+    "weight": 5,
+    "cost": "30 gp",
+    "description": "Includes a blowpipe, a small marver, blocks, and tweezers. Used to shape molten glass."
+  },
+  {
+    "id": "jewelers-tools",
+    "name": "Jeweler's Tools",
+    "kind": "tool",
+    "weight": 2,
+    "cost": "25 gp",
+    "description": "Includes a small saw and hammer, files, pliers, and tweezers. Used to craft jewelry and identify gemstones."
+  },
+  {
+    "id": "leatherworkers-tools",
+    "name": "Leatherworker's Tools",
+    "kind": "tool",
+    "weight": 5,
+    "cost": "5 gp",
+    "description": "Includes a knife, a small mallet, an edger, a hole punch, thread, and leather scraps. Used to craft leather goods."
+  },
+  {
+    "id": "masons-tools",
+    "name": "Mason's Tools",
+    "kind": "tool",
+    "weight": 8,
+    "cost": "10 gp",
+    "description": "Includes a trowel, a hammer, a chisel, brushes, and a square. Used to shape stone."
+  },
+  {
+    "id": "painters-supplies",
+    "name": "Painter's Supplies",
+    "kind": "tool",
+    "weight": 5,
+    "cost": "10 gp",
+    "description": "Includes an easel, canvas, paints, brushes, charcoal sticks, and a palette."
+  },
+  {
+    "id": "potters-tools",
+    "name": "Potter's Tools",
+    "kind": "tool",
+    "weight": 3,
+    "cost": "10 gp",
+    "description": "Includes potter's needles, ribs, scrapers, a knife, and calipers. Used to craft ceramics."
+  },
+  {
+    "id": "smiths-tools",
+    "name": "Smith's Tools",
+    "kind": "tool",
+    "weight": 8,
+    "cost": "20 gp",
+    "description": "Includes hammers, tongs, charcoal, rags, and a whetstone. Used to work iron and forge weapons and armor."
+  },
+  {
+    "id": "tinkers-tools",
+    "name": "Tinker's Tools",
+    "kind": "tool",
+    "weight": 10,
+    "cost": "50 gp",
+    "description": "Includes a variety of hand tools, thread, needles, a whetstone, scraps of cloth and leather, and a small pot of glue. Used to repair small mechanical devices."
+  },
+  {
+    "id": "weavers-tools",
+    "name": "Weaver's Tools",
+    "kind": "tool",
+    "weight": 5,
+    "cost": "1 gp",
+    "description": "Includes thread, needles, and scraps of cloth. Used to mend and create fabric."
+  },
+  {
+    "id": "woodcarvers-tools",
+    "name": "Woodcarver's Tools",
+    "kind": "tool",
+    "weight": 5,
+    "cost": "1 gp",
+    "description": "Includes a knife, a gouge, and a small saw. Used to carve wood."
+  },
+  {
+    "id": "dice-set",
+    "name": "Dice Set",
+    "kind": "tool",
+    "weight": 0,
+    "cost": "1 sp",
+    "description": "A gaming set of dice. Proficiency with a gaming set applies to one type of game."
+  },
+  {
+    "id": "dragonchess-set",
+    "name": "Dragonchess Set",
+    "kind": "tool",
+    "weight": 0.5,
+    "cost": "1 gp",
+    "description": "A gaming set for dragonchess. Proficiency with a gaming set applies to one type of game."
+  },
+  {
+    "id": "playing-card-set",
+    "name": "Playing Card Set",
+    "kind": "tool",
+    "weight": 0,
+    "cost": "5 sp",
+    "description": "A deck of playing cards. Proficiency with a gaming set applies to one type of game."
+  },
+  {
+    "id": "three-dragon-ante-set",
+    "name": "Three-Dragon Ante Set",
+    "kind": "tool",
+    "weight": 0,
+    "cost": "1 gp",
+    "description": "A gaming set for Three-Dragon Ante. Proficiency with a gaming set applies to one type of game."
+  },
+  {
+    "id": "bagpipes",
+    "name": "Bagpipes",
+    "kind": "tool",
+    "weight": 6,
+    "cost": "30 gp",
+    "description": "A musical instrument. Proficiency lets you add your proficiency bonus to any ability checks you make to play music with the instrument."
+  },
+  {
+    "id": "drum",
+    "name": "Drum",
+    "kind": "tool",
+    "weight": 3,
+    "cost": "6 gp",
+    "description": "A musical instrument. Proficiency lets you add your proficiency bonus to any ability checks you make to play music with the instrument."
+  },
+  {
+    "id": "dulcimer",
+    "name": "Dulcimer",
+    "kind": "tool",
+    "weight": 10,
+    "cost": "25 gp",
+    "description": "A musical instrument. Proficiency lets you add your proficiency bonus to any ability checks you make to play music with the instrument."
+  },
+  {
+    "id": "flute",
+    "name": "Flute",
+    "kind": "tool",
+    "weight": 1,
+    "cost": "2 gp",
+    "description": "A musical instrument. Proficiency lets you add your proficiency bonus to any ability checks you make to play music with the instrument."
+  },
+  {
+    "id": "lute",
+    "name": "Lute",
+    "kind": "tool",
+    "weight": 2,
+    "cost": "35 gp",
+    "description": "A musical instrument. Proficiency lets you add your proficiency bonus to any ability checks you make to play music with the instrument."
+  },
+  {
+    "id": "lyre",
+    "name": "Lyre",
+    "kind": "tool",
+    "weight": 2,
+    "cost": "30 gp",
+    "description": "A musical instrument. Proficiency lets you add your proficiency bonus to any ability checks you make to play music with the instrument."
+  },
+  {
+    "id": "horn",
+    "name": "Horn",
+    "kind": "tool",
+    "weight": 2,
+    "cost": "3 gp",
+    "description": "A musical instrument. Proficiency lets you add your proficiency bonus to any ability checks you make to play music with the instrument."
+  },
+  {
+    "id": "pan-flute",
+    "name": "Pan Flute",
+    "kind": "tool",
+    "weight": 2,
+    "cost": "12 gp",
+    "description": "A musical instrument. Proficiency lets you add your proficiency bonus to any ability checks you make to play music with the instrument."
+  },
+  {
+    "id": "shawm",
+    "name": "Shawm",
+    "kind": "tool",
+    "weight": 1,
+    "cost": "2 gp",
+    "description": "A musical instrument. Proficiency lets you add your proficiency bonus to any ability checks you make to play music with the instrument."
+  },
+  {
+    "id": "viol",
+    "name": "Viol",
+    "kind": "tool",
+    "weight": 1,
+    "cost": "30 gp",
+    "description": "A musical instrument. Proficiency lets you add your proficiency bonus to any ability checks you make to play music with the instrument."
+  },
+  {
+    "id": "backpack",
+    "name": "Backpack",
+    "kind": "gear",
+    "weight": 5,
+    "cost": "2 gp",
+    "description": "A backpack can hold 1 cubic foot or 30 pounds of gear. You can also strap items, such as a bedroll or a coil of rope, to the outside."
+  },
+  {
+    "id": "sack",
+    "name": "Sack",
+    "kind": "gear",
+    "weight": 0.5,
+    "cost": "1 cp",
+    "description": "A simple cloth sack used to carry items."
+  },
+  {
+    "id": "pouch",
+    "name": "Pouch",
+    "kind": "gear",
+    "weight": 1,
+    "cost": "5 sp",
+    "description": "A cloth or leather pouch can hold up to 20 sling bullets or 50 blowgun needles. It can hold up to 1/5 cubic foot or 6 pounds of gear."
+  },
+  {
+    "id": "barrel",
+    "name": "Barrel",
+    "kind": "gear",
+    "weight": 70,
+    "cost": "2 gp",
+    "description": "A wooden barrel can hold 40 gallons of liquid or 4 cubic feet of solid material."
+  },
+  {
+    "id": "basket",
+    "name": "Basket",
+    "kind": "gear",
+    "weight": 2,
+    "cost": "4 sp",
+    "description": "A woven basket can hold 2 cubic feet or 40 pounds of gear."
+  },
+  {
+    "id": "bucket",
+    "name": "Bucket",
+    "kind": "gear",
+    "weight": 2,
+    "cost": "5 cp",
+    "description": "A wooden bucket can hold 3 gallons of liquid or 1/2 cubic foot of solid material."
+  },
+  {
+    "id": "chest",
+    "name": "Chest",
+    "kind": "gear",
+    "weight": 25,
+    "cost": "5 gp",
+    "description": "A wooden chest can hold 12 cubic feet or 300 pounds of gear."
+  },
+  {
+    "id": "flask",
+    "name": "Flask or Tankard",
+    "kind": "gear",
+    "weight": 1,
+    "cost": "2 cp",
+    "description": "A flask or tankard can hold 1 pint of liquid."
+  },
+  {
+    "id": "jug",
+    "name": "Jug or Pitcher",
+    "kind": "gear",
+    "weight": 4,
+    "cost": "2 cp",
+    "description": "A jug or pitcher can hold 1 gallon of liquid."
+  },
+  {
+    "id": "vial",
+    "name": "Vial",
+    "kind": "gear",
+    "weight": 0,
+    "cost": "1 gp",
+    "description": "A vial can hold up to 4 ounces of liquid."
+  },
+  {
+    "id": "waterskin",
+    "name": "Waterskin",
+    "kind": "gear",
+    "weight": 5,
+    "cost": "2 sp",
+    "description": "A leather waterskin can hold 4 pints of liquid. Weight given is for a full waterskin."
+  },
+  {
+    "id": "bedroll",
+    "name": "Bedroll",
+    "kind": "gear",
+    "weight": 7,
+    "cost": "1 gp",
+    "description": "A bedroll consists of bedding and a blanket thin enough to be rolled up and tied."
+  },
+  {
+    "id": "blanket",
+    "name": "Blanket",
+    "kind": "gear",
+    "weight": 3,
+    "cost": "5 sp",
+    "description": "A warm woolen blanket."
+  },
+  {
+    "id": "candle",
+    "name": "Candle",
+    "kind": "gear",
+    "weight": 0,
+    "cost": "1 cp",
+    "description": "For 1 hour, a candle sheds bright light in a 5-foot radius and dim light for an additional 5 feet."
+  },
+  {
+    "id": "torch",
+    "name": "Torch",
+    "kind": "gear",
+    "weight": 1,
+    "cost": "1 cp",
+    "description": "A torch burns for 1 hour, providing bright light in a 20-foot radius and dim light for an additional 20 feet. If you make a melee attack with a burning torch and hit, it deals 1 fire damage."
+  },
+  {
+    "id": "lantern-hooded",
+    "name": "Lantern, hooded",
+    "kind": "gear",
+    "weight": 2,
+    "cost": "5 gp",
+    "description": "A hooded lantern burns oil to cast bright light in a 30-foot radius and dim light for an additional 30 feet. A flask of oil burns in a lantern for 6 hours. As an action you can lower the hood, reducing the light to dim light in a 5-foot radius."
+  },
+  {
+    "id": "lantern-bullseye",
+    "name": "Lantern, bullseye",
+    "kind": "gear",
+    "weight": 2,
+    "cost": "10 gp",
+    "description": "A bullseye lantern casts bright light in a 60-foot cone and dim light for an additional 60 feet. A flask of oil burns in a lantern for 6 hours."
+  },
+  {
+    "id": "lamp",
+    "name": "Lamp",
+    "kind": "gear",
+    "weight": 1,
+    "cost": "5 sp",
+    "description": "A lamp casts bright light in a 15-foot radius and dim light for an additional 30 feet. Once lit, it burns for 6 hours on a flask (1 pint) of oil."
+  },
+  {
+    "id": "oil-flask",
+    "name": "Oil (flask)",
+    "kind": "gear",
+    "weight": 1,
+    "cost": "1 sp",
+    "description": "Oil usually comes in a clay flask that holds 1 pint. As an action, you can splash the oil in this flask onto a creature within 5 feet of you or throw it up to 20 feet, shattering on impact."
+  },
+  {
+    "id": "tinderbox",
+    "name": "Tinderbox",
+    "kind": "gear",
+    "weight": 1,
+    "cost": "5 sp",
+    "description": "This small container holds flint, fire steel, and tinder used to kindle a fire. Using it to light a torch or anything else with abundant, exposed fuel takes an action."
+  },
+  {
+    "id": "rations-1-day",
+    "name": "Rations (1 day)",
+    "kind": "gear",
+    "weight": 2,
+    "cost": "5 sp",
+    "description": "Rations consist of dry foods suitable for extended travel, including jerky, dried fruit, hardtack, and nuts."
+  },
+  {
+    "id": "rope-hempen-50ft",
+    "name": "Rope, hempen (50 feet)",
+    "kind": "gear",
+    "weight": 10,
+    "cost": "1 gp",
+    "description": "Has 2 hit points and can be burst with a DC 17 Strength check."
+  },
+  {
+    "id": "rope-silk-50ft",
+    "name": "Rope, silk (50 feet)",
+    "kind": "gear",
+    "weight": 5,
+    "cost": "10 gp",
+    "description": "Has 2 hit points and can be burst with a DC 17 Strength check."
+  },
+  {
+    "id": "chain-10ft",
+    "name": "Chain (10 feet)",
+    "kind": "gear",
+    "weight": 10,
+    "cost": "5 gp",
+    "description": "A chain has 10 hit points. It can be burst with a successful DC 20 Strength check."
+  },
+  {
+    "id": "grappling-hook",
+    "name": "Grappling Hook",
+    "kind": "gear",
+    "weight": 4,
+    "cost": "2 gp",
+    "description": "An iron grappling hook used with a rope to climb walls or secure a line."
+  },
+  {
+    "id": "piton",
+    "name": "Piton",
+    "kind": "gear",
+    "weight": 0.25,
+    "cost": "5 cp",
+    "description": "A short metal spike used in climbing, with an eye through which a rope can be looped."
+  },
+  {
+    "id": "crowbar",
+    "name": "Crowbar",
+    "kind": "gear",
+    "weight": 5,
+    "cost": "2 gp",
+    "description": "Using a crowbar grants advantage to Strength checks where the crowbar's leverage can be applied."
+  },
+  {
+    "id": "hammer",
+    "name": "Hammer",
+    "kind": "gear",
+    "weight": 3,
+    "cost": "1 gp",
+    "description": "A simple hammer used for driving nails or breaking objects."
+  },
+  {
+    "id": "hammer-sledge",
+    "name": "Hammer, sledge",
+    "kind": "gear",
+    "weight": 10,
+    "cost": "2 gp",
+    "description": "A heavy two-handed hammer."
+  },
+  {
+    "id": "ladder-10ft",
+    "name": "Ladder (10-foot)",
+    "kind": "gear",
+    "weight": 25,
+    "cost": "1 sp",
+    "description": "A simple wooden ladder."
+  },
+  {
+    "id": "spyglass",
+    "name": "Spyglass",
+    "kind": "gear",
+    "weight": 1,
+    "cost": "1000 gp",
+    "description": "Objects viewed through a spyglass are magnified to twice their size."
+  },
+  {
+    "id": "mirror-steel",
+    "name": "Mirror, steel",
+    "kind": "gear",
+    "weight": 0.5,
+    "cost": "5 gp",
+    "description": "A small polished steel mirror useful for signaling or looking around corners."
+  },
+  {
+    "id": "magnifying-glass",
+    "name": "Magnifying Glass",
+    "kind": "gear",
+    "weight": 0,
+    "cost": "100 gp",
+    "description": "This lens allows a closer look at small objects. It is also useful as a substitute for flint and steel when starting fires. Lighting a fire with a magnifying glass requires light as bright as sunlight to focus, tinder to ignite, and about 5 minutes for the fire to ignite."
+  },
+  {
+    "id": "holy-symbol-amulet",
+    "name": "Holy Symbol (amulet)",
+    "kind": "gear",
+    "weight": 1,
+    "cost": "5 gp",
+    "description": "A holy symbol is a representation of a god or pantheon. A cleric or paladin can use a holy symbol as a spellcasting focus."
+  },
+  {
+    "id": "holy-symbol-emblem",
+    "name": "Holy Symbol (emblem)",
+    "kind": "gear",
+    "weight": 0,
+    "cost": "5 gp",
+    "description": "An emblem worn or held that represents a god or pantheon. A cleric or paladin can use a holy symbol as a spellcasting focus."
+  },
+  {
+    "id": "holy-symbol-reliquary",
+    "name": "Holy Symbol (reliquary)",
+    "kind": "gear",
+    "weight": 2,
+    "cost": "5 gp",
+    "description": "A small box holding a sacred relic. A cleric or paladin can use a holy symbol as a spellcasting focus."
+  },
+  {
+    "id": "holy-water-flask",
+    "name": "Holy Water (flask)",
+    "kind": "gear",
+    "weight": 1,
+    "cost": "25 gp",
+    "description": "As an action, you can splash the contents of this flask onto a creature within 5 feet of you or throw it up to 20 feet, shattering on impact. If the target is a fiend or undead, it takes 2d6 radiant damage."
+  },
+  {
+    "id": "spellbook",
+    "name": "Spellbook",
+    "kind": "gear",
+    "weight": 3,
+    "cost": "50 gp",
+    "description": "Essential for wizards, a spellbook is a leather-bound tome with 100 blank vellum pages suitable for recording spells."
+  },
+  {
+    "id": "component-pouch",
+    "name": "Component Pouch",
+    "kind": "gear",
+    "weight": 2,
+    "cost": "25 gp",
+    "description": "A component pouch is a small, watertight leather belt pouch that has compartments to hold all the material components and other special items you need to cast your spells, except for those components that have a specific cost."
+  },
+  {
+    "id": "arcane-focus-crystal",
+    "name": "Crystal (arcane focus)",
+    "kind": "gear",
+    "weight": 1,
+    "cost": "10 gp",
+    "description": "A crystal used as an arcane focus, a special item designed to channel the power of arcane spells."
+  },
+  {
+    "id": "arcane-focus-orb",
+    "name": "Orb (arcane focus)",
+    "kind": "gear",
+    "weight": 3,
+    "cost": "20 gp",
+    "description": "An orb used as an arcane focus, a special item designed to channel the power of arcane spells."
+  },
+  {
+    "id": "arcane-focus-rod",
+    "name": "Rod (arcane focus)",
+    "kind": "gear",
+    "weight": 2,
+    "cost": "10 gp",
+    "description": "A rod used as an arcane focus, a special item designed to channel the power of arcane spells."
+  },
+  {
+    "id": "arcane-focus-staff",
+    "name": "Staff (arcane focus)",
+    "kind": "gear",
+    "weight": 4,
+    "cost": "5 gp",
+    "description": "A staff used as an arcane focus, a special item designed to channel the power of arcane spells. Also functions as a quarterstaff."
+  },
+  {
+    "id": "arcane-focus-wand",
+    "name": "Wand (arcane focus)",
+    "kind": "gear",
+    "weight": 1,
+    "cost": "10 gp",
+    "description": "A wand used as an arcane focus, a special item designed to channel the power of arcane spells."
+  },
+  {
+    "id": "druidic-focus-sprig-of-mistletoe",
+    "name": "Sprig of Mistletoe (druidic focus)",
+    "kind": "gear",
+    "weight": 0,
+    "cost": "1 gp",
+    "description": "A sprig of mistletoe used as a druidic focus."
+  },
+  {
+    "id": "druidic-focus-totem",
+    "name": "Totem (druidic focus)",
+    "kind": "gear",
+    "weight": 0,
+    "cost": "1 gp",
+    "description": "A totem used as a druidic focus."
+  },
+  {
+    "id": "druidic-focus-wooden-staff",
+    "name": "Wooden Staff (druidic focus)",
+    "kind": "gear",
+    "weight": 4,
+    "cost": "5 gp",
+    "description": "A wooden staff used as a druidic focus. Also functions as a quarterstaff."
+  },
+  {
+    "id": "druidic-focus-yew-wand",
+    "name": "Yew Wand (druidic focus)",
+    "kind": "gear",
+    "weight": 1,
+    "cost": "10 gp",
+    "description": "A yew wand used as a druidic focus."
+  },
+  {
+    "id": "lock",
+    "name": "Lock",
+    "kind": "gear",
+    "weight": 1,
+    "cost": "10 gp",
+    "description": "A key is provided with the lock. Without the key, a creature proficient with thieves' tools can pick this lock with a successful DC 15 Dexterity check."
+  },
+  {
+    "id": "manacles",
+    "name": "Manacles",
+    "kind": "gear",
+    "weight": 6,
+    "cost": "2 gp",
+    "description": "These metal restraints can bind a Small or Medium creature. Escaping the manacles requires a successful DC 20 Dexterity check. Breaking them requires a successful DC 20 Strength check."
+  },
+  {
+    "id": "mess-kit",
+    "name": "Mess Kit",
+    "kind": "gear",
+    "weight": 1,
+    "cost": "2 sp",
+    "description": "This tin box contains a cup and simple cutlery. The box clamps together, and one side can be used as a cooking pan and the other as a plate or shallow bowl."
+  },
+  {
+    "id": "soap",
+    "name": "Soap",
+    "kind": "gear",
+    "weight": 0,
+    "cost": "2 cp",
+    "description": "A bar of soap."
+  },
+  {
+    "id": "pole-10ft",
+    "name": "Pole (10-foot)",
+    "kind": "gear",
+    "weight": 7,
+    "cost": "5 cp",
+    "description": "A 10-foot wooden pole, useful for prodding suspicious objects from a safe distance."
+  },
+  {
+    "id": "ball-bearings",
+    "name": "Ball Bearings (bag of 1,000)",
+    "kind": "gear",
+    "weight": 2,
+    "cost": "1 gp",
+    "description": "As an action, you can spill these tiny metal balls from their pouch to cover a level, square area that is 10 feet on a side. A creature moving across the covered area must succeed on a DC 10 Dexterity saving throw or fall prone."
+  },
+  {
+    "id": "caltrops",
+    "name": "Caltrops (bag of 20)",
+    "kind": "gear",
+    "weight": 2,
+    "cost": "1 gp",
+    "description": "As an action, you can spread a single bag of caltrops to cover a 5-foot-square area. Any creature that enters the area must succeed on a DC 15 Dexterity saving throw or stop moving and take 1 piercing damage."
+  },
+  {
+    "id": "hunting-trap",
+    "name": "Hunting Trap",
+    "kind": "gear",
+    "weight": 25,
+    "cost": "5 gp",
+    "description": "When you use your action to set it, this trap forms a saw-toothed steel ring that snaps shut when a creature steps on a pressure plate in the center. The trap is affixed by a heavy chain to an immobile object. A creature stepping on the plate must succeed on a DC 13 Dexterity saving throw or take 1d4 piercing damage and stop moving."
+  },
+  {
+    "id": "signal-whistle",
+    "name": "Signal Whistle",
+    "kind": "gear",
+    "weight": 0,
+    "cost": "5 cp",
+    "description": "A whistle used to signal allies or sound an alarm."
+  },
+  {
+    "id": "ink-bottle",
+    "name": "Ink (1-ounce bottle)",
+    "kind": "gear",
+    "weight": 0,
+    "cost": "10 gp",
+    "description": "A 1-ounce bottle of black ink."
+  },
+  {
+    "id": "ink-pen",
+    "name": "Ink Pen",
+    "kind": "gear",
+    "weight": 0,
+    "cost": "2 cp",
+    "description": "A simple pen for writing with ink."
+  },
+  {
+    "id": "paper-sheet",
+    "name": "Paper (one sheet)",
+    "kind": "gear",
+    "weight": 0,
+    "cost": "2 sp",
+    "description": "A single sheet of paper."
+  },
+  {
+    "id": "parchment-sheet",
+    "name": "Parchment (one sheet)",
+    "kind": "gear",
+    "weight": 0,
+    "cost": "1 sp",
+    "description": "A single sheet of parchment."
+  },
+  {
+    "id": "book",
+    "name": "Book",
+    "kind": "gear",
+    "weight": 5,
+    "cost": "25 gp",
+    "description": "A book might contain poetry, historical accounts, information pertaining to a particular field of lore, diagrams and notes on gnomish contraptions, or just about anything else."
+  },
+  {
+    "id": "robes",
+    "name": "Robes",
+    "kind": "gear",
+    "weight": 4,
+    "cost": "1 gp",
+    "description": "A set of robes, typically worn by scholars, priests, or wizards."
+  },
+  {
+    "id": "clothes-common",
+    "name": "Clothes, common",
+    "kind": "gear",
+    "weight": 3,
+    "cost": "5 sp",
+    "description": "A set of common clothes."
+  },
+  {
+    "id": "clothes-costume",
+    "name": "Clothes, costume",
+    "kind": "gear",
+    "weight": 4,
+    "cost": "5 gp",
+    "description": "A set of costume clothes, suitable for performances or disguises."
+  },
+  {
+    "id": "clothes-fine",
+    "name": "Clothes, fine",
+    "kind": "gear",
+    "weight": 6,
+    "cost": "15 gp",
+    "description": "A set of fine clothes, suitable for nobility or formal occasions."
+  },
+  {
+    "id": "clothes-travelers",
+    "name": "Clothes, traveler's",
+    "kind": "gear",
+    "weight": 4,
+    "cost": "2 gp",
+    "description": "A set of sturdy traveler's clothes."
+  },
+  {
+    "id": "perfume-vial",
+    "name": "Perfume (vial)",
+    "kind": "gear",
+    "weight": 0,
+    "cost": "5 gp",
+    "description": "A vial of perfume."
+  },
+  {
+    "id": "shovel",
+    "name": "Shovel",
+    "kind": "gear",
+    "weight": 5,
+    "cost": "2 gp",
+    "description": "A short-handled shovel suitable for digging."
+  },
+  {
+    "id": "sealing-wax",
+    "name": "Sealing Wax",
+    "kind": "gear",
+    "weight": 0,
+    "cost": "5 sp",
+    "description": "A stick of sealing wax, used to seal letters and documents."
+  },
+  {
+    "id": "signet-ring",
+    "name": "Signet Ring",
+    "kind": "gear",
+    "weight": 0,
+    "cost": "5 gp",
+    "description": "A ring engraved with a personal or family seal, used to seal documents in wax."
+  },
+  {
+    "id": "whetstone",
+    "name": "Whetstone",
+    "kind": "gear",
+    "weight": 1,
+    "cost": "1 cp",
+    "description": "A small stone used to sharpen bladed weapons and tools."
+  },
+  {
+    "id": "fishing-tackle",
+    "name": "Fishing Tackle",
+    "kind": "gear",
+    "weight": 4,
+    "cost": "1 gp",
+    "description": "This kit includes a wooden rod, silken line, corkwood bobbers, steel hooks, lead sinkers, velvet lures, and narrow netting."
+  },
+  {
+    "id": "antitoxin-vial",
+    "name": "Antitoxin (vial)",
+    "kind": "gear",
+    "weight": 0,
+    "cost": "50 gp",
+    "description": "A creature that drinks this vial of liquid gains advantage on saving throws against poison for 1 hour. It confers no benefit to undead or constructs."
+  },
+  {
+    "id": "acid-vial",
+    "name": "Acid (vial)",
+    "kind": "gear",
+    "weight": 1,
+    "cost": "25 gp",
+    "description": "As an action, you can splash the contents of this vial onto a creature within 5 feet of you or throw the vial up to 20 feet, shattering it on impact. On a hit, the target takes 2d6 acid damage."
+  },
+  {
+    "id": "alchemists-fire-flask",
+    "name": "Alchemist's Fire (flask)",
+    "kind": "gear",
+    "weight": 1,
+    "cost": "50 gp",
+    "description": "This sticky, adhesive fluid ignites when exposed to air. As an action, you can throw this flask up to 20 feet, shattering on impact. On a hit, the target takes 1d4 fire damage at the start of each of its turns. A creature can end this damage by using its action to make a DC 10 Dexterity check to extinguish the flames."
+  },
+  {
+    "id": "poison-basic-vial",
+    "name": "Poison, basic (vial)",
+    "kind": "gear",
+    "weight": 0,
+    "cost": "100 gp",
+    "description": "You can use the poison in this vial to coat one slashing or piercing weapon or up to three pieces of ammunition. Applying the poison takes an action. A creature hit by the poisoned weapon or ammunition must make a DC 10 Constitution saving throw or take 1d4 poison damage."
+  },
+  {
+    "id": "tent-two-person",
+    "name": "Tent, two-person",
+    "kind": "gear",
+    "weight": 20,
+    "cost": "2 gp",
+    "description": "A simple and portable canvas shelter, a tent sleeps two."
+  },
+  {
+    "id": "burglars-pack",
+    "name": "Burglar's Pack",
+    "kind": "gear",
+    "weight": 42,
+    "cost": "16 gp",
+    "description": "Includes a backpack, a bag of 1,000 ball bearings, 10 feet of string, a bell, 5 candles, a crowbar, a hammer, 10 pitons, a hooded lantern, 2 flasks of oil, 5 days rations, a tinderbox, a waterskin, and 50 feet of hempen rope."
+  },
+  {
+    "id": "diplomats-pack",
+    "name": "Diplomat's Pack",
+    "kind": "gear",
+    "weight": 39,
+    "cost": "39 gp",
+    "description": "Includes a chest, 2 cases for maps and scrolls, a set of fine clothes, a bottle of ink, an ink pen, a lamp, 2 flasks of oil, 5 sheets of paper, a vial of perfume, sealing wax, and soap."
+  },
+  {
+    "id": "dungeoneers-pack",
+    "name": "Dungeoneer's Pack",
+    "kind": "gear",
+    "weight": 61,
+    "cost": "12 gp",
+    "description": "Includes a backpack, a crowbar, a hammer, 10 pitons, 10 torches, a tinderbox, 10 days of rations, and a waterskin. The pack also has 50 feet of hempen rope strapped to the side of it."
+  },
+  {
+    "id": "entertainers-pack",
+    "name": "Entertainer's Pack",
+    "kind": "gear",
+    "weight": 38,
+    "cost": "40 gp",
+    "description": "Includes a backpack, a bedroll, 2 costumes, 5 candles, 5 days of rations, a waterskin, and a disguise kit."
+  },
+  {
+    "id": "explorers-pack",
+    "name": "Explorer's Pack",
+    "kind": "gear",
+    "weight": 59,
+    "cost": "10 gp",
+    "description": "Includes a backpack, a bedroll, a mess kit, a tinderbox, 10 torches, 10 days of rations, and a waterskin. The pack also has 50 feet of hempen rope strapped to the side of it."
+  },
+  {
+    "id": "priests-pack",
+    "name": "Priest's Pack",
+    "kind": "gear",
+    "weight": 24,
+    "cost": "19 gp",
+    "description": "Includes a backpack, a blanket, 10 candles, a tinderbox, an alms box, 2 blocks of incense, a censer, vestments, 2 days of rations, and a waterskin."
+  },
+  {
+    "id": "scholars-pack",
+    "name": "Scholar's Pack",
+    "kind": "gear",
+    "weight": 10,
+    "cost": "40 gp",
+    "description": "Includes a backpack, a book of lore, a bottle of ink, an ink pen, 10 sheets of parchment, a little bag of sand, and a small knife."
+  }
+]

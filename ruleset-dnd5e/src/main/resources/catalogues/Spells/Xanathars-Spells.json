@@ -1,0 +1,236 @@
+[
+  {
+    "index": "toll-the-dead",
+    "name": "Toll the Dead",
+    "level": 0,
+    "school": { "index": "necromancy", "name": "Necromancy" },
+    "casting_time": "1 action",
+    "range": "60 feet",
+    "duration": "Instantaneous",
+    "concentration": false,
+    "ritual": false,
+    "components": ["V", "S"],
+    "desc": [
+      "You point at one creature you can see within range, and the sound of a dolorous bell fills the air around it for a moment. The target must succeed on a Wisdom saving throw or take 1d8 necrotic damage. If the target is missing any of its hit points, it instead takes 1d12 necrotic damage.",
+      "The spell's damage increases by one die when you reach 5th level (2d8 or 2d12), 11th level (3d8 or 3d12), and 17th level (4d8 or 4d12)."
+    ],
+    "classes": [
+      { "name": "Cleric" },
+      { "name": "Warlock" },
+      { "name": "Wizard" }
+    ],
+    "dc": {
+      "dc_type": { "index": "wis", "name": "WIS" },
+      "dc_success": "none"
+    },
+    "damage": {
+      "damage_type": { "index": "necrotic", "name": "Necrotic" },
+      "damage_at_character_level": {
+        "1": "1d8",
+        "5": "2d8",
+        "11": "3d8",
+        "17": "4d8"
+      }
+    },
+    "sourceID": "xanathars"
+  },
+  {
+    "index": "frostbite",
+    "name": "Frostbite",
+    "level": 0,
+    "school": { "index": "evocation", "name": "Evocation" },
+    "casting_time": "1 action",
+    "range": "60 feet",
+    "duration": "Instantaneous",
+    "concentration": false,
+    "ritual": false,
+    "components": ["V", "S"],
+    "desc": [
+      "You cause numbing frost to form on one creature that you can see within range. The target must make a Constitution saving throw. On a failed save, the target takes 1d6 cold damage, and it has disadvantage on the next weapon attack roll it makes before the end of its next turn.",
+      "The spell's damage increases by 1d6 when you reach 5th level (2d6), 11th level (3d6), and 17th level (4d6)."
+    ],
+    "classes": [
+      { "name": "Druid" },
+      { "name": "Sorcerer" },
+      { "name": "Warlock" },
+      { "name": "Wizard" }
+    ],
+    "dc": {
+      "dc_type": { "index": "con", "name": "CON" },
+      "dc_success": "none"
+    },
+    "damage": {
+      "damage_type": { "index": "cold", "name": "Cold" },
+      "damage_at_character_level": {
+        "1": "1d6",
+        "5": "2d6",
+        "11": "3d6",
+        "17": "4d6"
+      }
+    },
+    "sourceID": "xanathars"
+  },
+  {
+    "index": "catnap",
+    "name": "Catnap",
+    "level": 3,
+    "school": { "index": "enchantment", "name": "Enchantment" },
+    "casting_time": "1 minute",
+    "range": "30 feet",
+    "duration": "10 minutes",
+    "concentration": false,
+    "ritual": false,
+    "components": ["S", "M"],
+    "material": "a pinch of sand",
+    "desc": [
+      "You make a calming gesture, and up to three willing creatures of your choice that you can see within range fall unconscious for the spell's duration. The spell ends on a target early if it takes damage or someone uses an action to shake or slap it awake. If a target remains unconscious for the full duration, that creature gains the benefit of a short rest, and it can't be affected by this spell again until it finishes a long rest."
+    ],
+    "classes": [
+      { "name": "Bard" },
+      { "name": "Sorcerer" },
+      { "name": "Wizard" }
+    ],
+    "sourceID": "xanathars"
+  },
+  {
+    "index": "mold-earth",
+    "name": "Mold Earth",
+    "level": 0,
+    "school": { "index": "transmutation", "name": "Transmutation" },
+    "casting_time": "1 action",
+    "range": "30 feet",
+    "duration": "Instantaneous or 1 hour (see description)",
+    "concentration": false,
+    "ritual": false,
+    "components": ["S"],
+    "desc": [
+      "You choose a portion of dirt or stone that you can see within range and that fits within a 5-foot cube. You manipulate it in one of the following ways: excavate up to a 5-foot cube of loose earth (moving it along the ground); change the appearance of dirt or stone in the cube (shaping it into letters, images, or grooves); or cause stone or dirt in the cube to become difficult terrain or revert. You can have no more than two of the spell's non-instantaneous effects active at a time, and you can dismiss such an effect as an action."
+    ],
+    "classes": [
+      { "name": "Druid" },
+      { "name": "Sorcerer" },
+      { "name": "Wizard" }
+    ],
+    "sourceID": "xanathars"
+  },
+  {
+    "index": "shape-water",
+    "name": "Shape Water",
+    "level": 0,
+    "school": { "index": "transmutation", "name": "Transmutation" },
+    "casting_time": "1 action",
+    "range": "30 feet",
+    "duration": "Instantaneous or 1 hour (see description)",
+    "concentration": false,
+    "ritual": false,
+    "components": ["S"],
+    "desc": [
+      "You choose an area of water that you can see within range and that fits within a 5-foot cube. You manipulate it in one of the following ways: move the water (and anything in it floating); shape it into simple shapes for the duration; change its colour or opacity; or freeze it (the ice has no weight). You can have no more than two of the spell's non-instantaneous effects active at a time, and you can dismiss such an effect as an action."
+    ],
+    "classes": [
+      { "name": "Druid" },
+      { "name": "Sorcerer" },
+      { "name": "Wizard" }
+    ],
+    "sourceID": "xanathars"
+  },
+  {
+    "index": "healing-spirit",
+    "name": "Healing Spirit",
+    "level": 2,
+    "school": { "index": "conjuration", "name": "Conjuration" },
+    "casting_time": "1 bonus action",
+    "range": "60 feet",
+    "duration": "Concentration, up to 1 minute",
+    "concentration": true,
+    "ritual": false,
+    "components": ["V", "S"],
+    "desc": [
+      "You call forth a nature spirit to soothe the wounded. The intangible spirit appears in a space that is a 5-foot cube you can see within range. Until the spell ends, whenever you or a creature you can see moves into the spirit's space for the first time on a turn or starts its turn there, you can cause the spirit to restore 1d6 hit points to that creature (no action required). The spirit can't heal constructs or undead. As a bonus action on your turn, you can move the spirit up to 30 feet to a space you can see. You can use this healing a number of times equal to 1 + your spellcasting ability modifier (a minimum of twice). After you use all these healing uses, the spell ends."
+    ],
+    "higher_level": [
+      "When you cast this spell using a spell slot of 3rd level or higher, the healing increases by 1d6 for each slot level above 2nd."
+    ],
+    "classes": [
+      { "name": "Druid" },
+      { "name": "Ranger" }
+    ],
+    "sourceID": "xanathars"
+  },
+  {
+    "index": "word-of-radiance",
+    "name": "Word of Radiance",
+    "level": 0,
+    "school": { "index": "evocation", "name": "Evocation" },
+    "casting_time": "1 action",
+    "range": "5 feet",
+    "duration": "Instantaneous",
+    "concentration": false,
+    "ritual": false,
+    "components": ["V", "M"],
+    "material": "A holy symbol",
+    "desc": [
+      "You utter a divine word, and burning radiance erupts from you. Each creature of your choice that you can see within range must succeed on a Constitution saving throw or take 1d6 radiant damage.",
+      "The spell's damage increases by 1d6 when you reach 5th level (2d6), 11th level (3d6), and 17th level (4d6)."
+    ],
+    "classes": [
+      { "name": "Cleric" }
+    ],
+    "dc": {
+      "dc_type": { "index": "con", "name": "CON" },
+      "dc_success": "none"
+    },
+    "damage": {
+      "damage_type": { "index": "radiant", "name": "Radiant" },
+      "damage_at_character_level": {
+        "1": "1d6",
+        "5": "2d6",
+        "11": "3d6",
+        "17": "4d6"
+      }
+    },
+    "sourceID": "xanathars"
+  },
+  {
+    "index": "catapult",
+    "name": "Catapult",
+    "level": 1,
+    "school": { "index": "transmutation", "name": "Transmutation" },
+    "casting_time": "1 action",
+    "range": "60 feet",
+    "duration": "Instantaneous",
+    "concentration": false,
+    "ritual": false,
+    "components": ["S"],
+    "desc": [
+      "Choose one object weighing 1 to 5 pounds within range that isn't being worn or carried. The object flies in a straight line up to 90 feet in a direction you choose before falling to the ground, stopping early if it impacts against a solid surface. If the object would strike a creature, that creature must make a Dexterity saving throw. On a failed save, the object strikes the target and stops moving. In either case, both the object and the creature or solid surface take 3d8 bludgeoning damage."
+    ],
+    "higher_level": [
+      "When you cast this spell using a spell slot of 2nd level or higher, the maximum weight of the object you can target increases by 5 pounds, and the damage increases by 1d8, for each slot level above 1st."
+    ],
+    "classes": [
+      { "name": "Artificer" },
+      { "name": "Sorcerer" },
+      { "name": "Wizard" }
+    ],
+    "dc": {
+      "dc_type": { "index": "dex", "name": "DEX" },
+      "dc_success": "none"
+    },
+    "damage": {
+      "damage_type": { "index": "bludgeoning", "name": "Bludgeoning" },
+      "damage_at_slot_level": {
+        "1": "3d8",
+        "2": "4d8",
+        "3": "5d8",
+        "4": "6d8",
+        "5": "7d8",
+        "6": "8d8",
+        "7": "9d8",
+        "8": "10d8",
+        "9": "11d8"
+      }
+    },
+    "sourceID": "xanathars"
+  }
+]

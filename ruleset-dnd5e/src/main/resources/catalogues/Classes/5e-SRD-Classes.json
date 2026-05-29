@@ -1,0 +1,1177 @@
+[
+  {
+    "id": "fighter",
+    "name": "Fighter",
+    "description": "A master of martial combat, skilled with a variety of weapons and armor.",
+    "hitDie": 10,
+    "primaryAbilities": ["strength", "dexterity"],
+    "savingThrows": ["strength", "constitution"],
+    "armorProficiencies": ["Light armor", "Medium armor", "Heavy armor", "Shields"],
+    "weaponProficiencies": ["Simple weapons", "Martial weapons"],
+    "toolProficiencies": [],
+    "skillChoiceCount": 2,
+    "skillChoiceFrom": ["acrobatics", "animalHandling", "athletics", "history", "insight", "intimidation", "perception", "survival"],
+    "features": [
+      { "level": 1, "name": "Fighting Style", "body": "You adopt a particular style of fighting as your specialty. Choose one option (Archery, Defense, Dueling, Great Weapon Fighting, Protection, or Two-Weapon Fighting).", "kind": "combat", "appliesTo": ["attack"] },
+      { "level": 1, "name": "Second Wind", "body": "On your turn, you can use a bonus action to regain hit points equal to 1d10 + your fighter level. Once you use this feature, you must finish a short or long rest before you can use it again.", "kind": "combat" },
+      { "level": 2, "name": "Action Surge", "body": "On your turn, you can take one additional action. Once you use this feature, you must finish a short or long rest before you can use it again. Starting at 17th level, you can use it twice before a rest, but only once on the same turn.", "kind": "combat", "appliesTo": ["attack"] },
+      { "level": 3, "name": "Martial Archetype", "body": "Choose an archetype that you strive to emulate in your combat styles and techniques (Champion, Battle Master, or Eldritch Knight). The archetype you choose grants you features at 3rd level and again at 7th, 10th, 15th, and 18th level." },
+      { "level": 4, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 5, "name": "Extra Attack", "body": "You can attack twice, instead of once, whenever you take the Attack action on your turn. The number of attacks increases to three when you reach 11th level and to four at 20th level.", "kind": "combat", "appliesTo": ["attack"] },
+      { "level": 6, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 8, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 9, "name": "Indomitable", "body": "You can reroll a saving throw that you fail, but you must use the new roll. You can use this feature once per long rest. You gain a second use at 13th level and a third use at 17th level.", "kind": "combat", "appliesTo": ["save"] },
+      { "level": 11, "name": "Extra Attack (2)", "body": "You can attack three times, instead of once, whenever you take the Attack action on your turn.", "kind": "combat", "appliesTo": ["attack"] },
+      { "level": 12, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 13, "name": "Indomitable (two uses)", "body": "You can use Indomitable twice between long rests.", "kind": "combat", "appliesTo": ["save"] },
+      { "level": 14, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 16, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 17, "name": "Action Surge (two uses)", "body": "You can use Action Surge twice before a rest, but only once on the same turn.", "kind": "combat" },
+      { "level": 17, "name": "Indomitable (three uses)", "body": "You can use Indomitable three times between long rests.", "kind": "combat", "appliesTo": ["save"] },
+      { "level": 19, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 20, "name": "Extra Attack (3)", "body": "You can attack four times, instead of once, whenever you take the Attack action on your turn.", "kind": "combat", "appliesTo": ["attack"] },
+      { "level": 1, "name": "Martial Versatility", "body": "Tasha's optional feature: whenever you gain a level in this class, you can replace one Fighting Style you know with another Fighting Style available to fighters. The swap is narrative for now — the L1 Fighting Style picker can be re-run via the Edit pill.", "optional": true }
+    ],
+    "multiclassRequirements": {
+      "mode": "any",
+      "minimums": [
+        { "ability": "strength", "amount": 13 },
+        { "ability": "dexterity", "amount": 13 }
+      ]
+    },
+    "caster": null,
+    "subclasses": [
+      {
+        "id": "champion",
+        "name": "Champion",
+        "description": "A Fighter who pursues raw physical perfection. Improved Critical, additional Fighting Style, and a survivor's grit at the highest tiers — mechanically simple, mechanically powerful.",
+        "features": [
+          { "level": 3, "name": "Improved Critical", "body": "Your weapon attacks score a critical hit on a roll of 19 or 20.", "kind": "combat", "appliesTo": ["attack"] },
+          { "level": 7, "name": "Remarkable Athlete", "body": "Add half your proficiency bonus (round up) to any Strength, Dexterity, or Constitution check you make that doesn't already use your proficiency bonus. In addition, when you make a running long jump, the distance you can cover increases by a number of feet equal to your Strength modifier.", "kind": "both", "appliesTo": ["check"] },
+          { "level": 10, "name": "Additional Fighting Style", "body": "You can choose a second option from the Fighting Style feature." },
+          { "level": 15, "name": "Superior Critical", "body": "Your weapon attacks score a critical hit on a roll of 18-20.", "kind": "combat", "appliesTo": ["attack"] },
+          { "level": 18, "name": "Survivor", "body": "At the start of each of your turns, you regain hit points equal to 5 + your Constitution modifier if you have no more than half of your hit points left. You don't gain this benefit if you have 0 hit points.", "kind": "combat" }
+        ]
+      },
+      {
+        "id": "battle-master",
+        "name": "Battle Master",
+        "description": "A martial scholar — manoeuvres turn each attack into a tactical choice. Combat Superiority dice drive trip attacks, ripostes, feinting, and rallying allies. Maneuver picker is a follow-up; the feature text records the grant.",
+        "features": [
+          { "level": 3, "name": "Combat Superiority", "body": "You learn three maneuvers of your choice from the manoeuvre list. You gain four superiority dice (d8s), expended when you use a manoeuvre and regained on a short or long rest. Save DC = 8 + proficiency bonus + STR or DEX modifier (your choice). You learn additional manoeuvres at fighter levels 7, 10, and 15. The mechanical manoeuvre picker is tracked under step 11's LevelChoice.manoeuvre follow-up.", "kind": "combat", "appliesTo": ["attack"] },
+          { "level": 3, "name": "Student of War", "body": "You gain proficiency with one type of artisan's tools of your choice." },
+          { "level": 7, "name": "Know Your Enemy", "body": "If you spend at least 1 minute observing or interacting with another creature outside combat, you can learn certain information about its capabilities compared to your own (relative STR/DEX/CON, AC, HP, total class levels)." },
+          { "level": 10, "name": "Improved Combat Superiority", "body": "Your superiority dice turn into d10s. They later become d12s at 18th level.", "kind": "combat" },
+          { "level": 15, "name": "Relentless", "body": "When you roll initiative and have no superiority dice remaining, you regain one superiority die.", "kind": "combat" }
+        ]
+      },
+      {
+        "id": "eldritch-knight",
+        "name": "Eldritch Knight",
+        "description": "A fighter who supplements martial mastery with arcane study, learning wizard cantrips and 1st-level spells from L3. A third-caster: spell slots and the abjuration / evocation spell pool scale slower than a full caster, but Weapon Bond + War Magic make the Eldritch Knight a durable, self-reliant gish. (INT-based casting + the wizard spell-list pool aren't yet surfaced in the creation wizard's Spells step — tracked under the third-caster follow-up.)",
+        "features": [
+          { "level": 3, "name": "Spellcasting", "body": "When you reach 3rd level, you augment your martial prowess with the ability to cast spells. Intelligence is your spellcasting ability for these spells. You learn three cantrips of your choice from the wizard spell list, and your spellbook starts with three 1st-level spells (two from abjuration or evocation, one from any school). Spell slots follow the third-caster table.", "appliesTo": ["cast"] },
+          { "level": 3, "name": "Weapon Bond", "body": "At 3rd level, you learn a ritual that creates a magical bond between yourself and one weapon. You perform the ritual over the course of 1 hour, which can be done during a short rest. The weapon must be within your reach throughout the ritual, at the conclusion of which you touch the weapon and forge the bond. Once you have bonded a weapon to yourself, you can't be disarmed of that weapon unless you are incapacitated. If it is on the same plane of existence, you can summon that weapon as a bonus action on your turn, causing it to teleport instantly to your hand. You can have up to two bonded weapons, but can only summon one with a single bonus action. You must be within 5 feet of a bonded weapon to perform the ritual.", "kind": "combat" },
+          { "level": 7, "name": "War Magic", "body": "Beginning at 7th level, when you use your action to cast a cantrip, you can make one weapon attack as a bonus action.", "kind": "combat", "appliesTo": ["cast", "attack"] },
+          { "level": 10, "name": "Eldritch Strike", "body": "At 10th level, you learn how to make your weapon strikes undercut a creature's resistance to your spells. When you hit a creature with a weapon attack, that creature has disadvantage on the next saving throw it makes against a spell you cast before the end of your next turn.", "kind": "combat", "appliesTo": ["attack", "cast"] },
+          { "level": 15, "name": "Arcane Charge", "body": "At 15th level, you gain the ability to teleport up to 30 feet to an unoccupied space you can see when you use your Action Surge. You can teleport before or after the additional action.", "kind": "combat" },
+          { "level": 18, "name": "Improved War Magic", "body": "Starting at 18th level, when you use your action to cast a spell, you can make one weapon attack as a bonus action.", "kind": "combat", "appliesTo": ["cast", "attack"] }
+        ]
+      }
+    ],
+    "subclassLevel": 3,
+    "starterEquipment": [
+      { "id": "chain-mail", "quantity": 1 },
+      { "id": "longsword", "quantity": 1 },
+      { "id": "shield", "quantity": 1 },
+      { "id": "light-crossbow", "quantity": 1 },
+      { "id": "crossbow-bolts-20", "quantity": 1 },
+      { "id": "dungeoneers-pack", "quantity": 1 }
+    ]
+  },
+  {
+    "id": "wizard",
+    "name": "Wizard",
+    "description": "A scholarly magic-user capable of manipulating the structures of reality.",
+    "hitDie": 6,
+    "primaryAbilities": ["intelligence"],
+    "savingThrows": ["intelligence", "wisdom"],
+    "armorProficiencies": [],
+    "weaponProficiencies": ["Daggers", "Darts", "Slings", "Quarterstaffs", "Light crossbows"],
+    "toolProficiencies": [],
+    "skillChoiceCount": 2,
+    "skillChoiceFrom": ["arcana", "history", "insight", "investigation", "medicine", "religion"],
+    "features": [
+      { "level": 1, "name": "Spellcasting", "body": "As a student of arcane magic, you have a spellbook containing spells that show the first glimmerings of your true power. Intelligence is your spellcasting ability." },
+      { "level": 1, "name": "Arcane Recovery", "body": "Once per day when you finish a short rest, you can choose expended spell slots to recover. The slots can have a combined level equal to or less than half your wizard level (rounded up), and none of the slots can be 6th level or higher.", "appliesTo": ["cast"] },
+      { "level": 2, "name": "Arcane Tradition", "body": "When you reach 2nd level, you choose an arcane tradition, shaping your practice of magic through one of eight schools (Abjuration, Conjuration, Divination, Enchantment, Evocation, Illusion, Necromancy, or Transmutation). Your choice grants you features at 2nd level and again at 6th, 10th, and 14th level." },
+      { "level": 4, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 8, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 12, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 16, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 18, "name": "Spell Mastery", "body": "Choose a 1st-level wizard spell and a 2nd-level wizard spell that are in your spellbook. You can cast those spells at their lowest level without expending a spell slot when you have them prepared. If you want to cast either spell at a higher level, you must expend a slot as normal. By spending 8 hours of study, you can exchange one or both of the spells for different spells of the same levels.", "appliesTo": ["cast"] },
+      { "level": 19, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 20, "name": "Signature Spells", "body": "You gain mastery over two powerful spells and can cast them with little effort. Choose two 3rd-level wizard spells in your spellbook as your signature spells. You always have these spells prepared, they don't count against the number of spells you have prepared, and you can cast each of them once at 3rd level without expending a spell slot. You must finish a short or long rest before you can do so again. If you want to cast either spell at a higher level, you must expend a spell slot as normal.", "appliesTo": ["cast"] },
+      { "level": 3, "name": "Cantrip Formulas", "body": "Tasha's optional feature: at 3rd level you have scribed a set of arcane formulas in your spellbook that you can use to formulate a cantrip in your mind. Whenever you finish a long rest and consult those formulas, you can replace one wizard cantrip you know with another cantrip from the wizard spell list.", "optional": true }
+    ],
+    "multiclassRequirements": {
+      "mode": "all",
+      "minimums": [
+        { "ability": "intelligence", "amount": 13 }
+      ]
+    },
+    "caster": {
+      "kind": "full",
+      "startsAtLevel": 1,
+      "cantripsKnown": 3,
+      "knownL1Spells": 6,
+      "preparation": "spellbook"
+    },
+    "subclasses": [
+      {
+        "id": "school-of-abjuration",
+        "name": "School of Abjuration",
+        "description": "The School of Abjuration emphasizes magic that blocks, banishes, or protects. Hallmark: a regenerating Arcane Ward that soaks damage equal to twice your wizard level, refreshed every time you cast another abjuration spell.",
+        "features": [
+          { "level": 2, "name": "Abjuration Savant", "body": "Beginning when you select this school at 2nd level, the gold and time you must spend to copy an abjuration spell into your spellbook is halved." },
+          { "level": 2, "name": "Arcane Ward", "body": "Starting at 2nd level, you can weave magic around yourself for protection. When you cast an abjuration spell of 1st level or higher, you can simultaneously use a strand of the spell's magic to create a magical ward on yourself that lasts until you finish a long rest. The ward has hit points equal to twice your wizard level + your Intelligence modifier. Whenever you take damage, the ward takes the damage instead. If this damage reduces the ward to 0 hit points, you take any remaining damage. While the ward has 0 hit points, it can't absorb damage, but its magic remains. Whenever you cast an abjuration spell of 1st level or higher, the ward regains a number of hit points equal to twice the level of the spell. Once you create the ward, you can't create it again until you finish a long rest.", "kind": "combat", "appliesTo": ["cast"] },
+          { "level": 6, "name": "Projected Ward", "body": "Starting at 6th level, when a creature that you can see within 30 feet of you takes damage, you can use your reaction to cause your Arcane Ward to absorb that damage. If this damage reduces the ward to 0 hit points, the warded creature takes any remaining damage.", "kind": "combat" },
+          { "level": 10, "name": "Improved Abjuration", "body": "Beginning at 10th level, when you cast an abjuration spell that requires you to make an ability check as a part of casting that spell (as in counterspell and dispel magic), you add your proficiency bonus to that ability check.", "kind": "combat", "appliesTo": ["cast"] },
+          { "level": 14, "name": "Spell Resistance", "body": "Starting at 14th level, you have advantage on saving throws against spells. Furthermore, you have resistance against the damage of spells.", "kind": "combat", "appliesTo": ["save"] }
+        ]
+      },
+      {
+        "id": "school-of-conjuration",
+        "name": "School of Conjuration",
+        "description": "Conjurers summon creatures and objects from other planes — or pluck them out of nothing. Hallmark: Minor Conjuration lets you fabricate tools and mundane gear on demand, and Focused Conjuration makes your summons unbreakable in concentration.",
+        "features": [
+          { "level": 2, "name": "Conjuration Savant", "body": "When you reach this level, the gold and time you must spend to copy a conjuration spell into your spellbook is halved." },
+          { "level": 2, "name": "Minor Conjuration", "body": "Starting at 2nd level, you can use your action to conjure up an inanimate object in your hand or on the ground in an unoccupied space that you can see within 10 feet of you. This object can be no larger than 3 feet on a side and weigh no more than 10 pounds, and its form must be that of a nonmagical object that you have seen. The object is visibly magical, radiating dim light out to 5 feet. The object disappears after 1 hour, when you use this feature again, or if it takes any damage.", "kind": "both", "appliesTo": ["cast"] },
+          { "level": 6, "name": "Benign Transposition", "body": "Starting at 6th level, you can use your action to teleport up to 30 feet to an unoccupied space that you can see. Alternatively, you can choose a space within range that is occupied by a Small or Medium creature. If that creature is willing, you both teleport, swapping places. Once you use this feature, you can't use it again until you finish a long rest or you cast a conjuration spell of 1st level or higher.", "kind": "combat" },
+          { "level": 10, "name": "Focused Conjuration", "body": "Beginning at 10th level, while you are concentrating on a conjuration spell, your concentration can't be broken as a result of taking damage.", "kind": "combat", "appliesTo": ["save"] },
+          { "level": 14, "name": "Durable Summons", "body": "Starting at 14th level, any creature that you summon or create with a conjuration spell has 30 temporary hit points.", "kind": "combat", "appliesTo": ["cast"] }
+        ]
+      },
+      {
+        "id": "school-of-divination",
+        "name": "School of Divination",
+        "description": "Diviners glimpse the future and twist it. Hallmark: Portent — you roll d20s at dawn and use them later to replace any roll you or an enemy makes. Mid-fight, that means turning a critical hit into a miss, or a failed save into a success.",
+        "features": [
+          { "level": 2, "name": "Divination Savant", "body": "When you reach this level, the gold and time you must spend to copy a divination spell into your spellbook is halved." },
+          { "level": 2, "name": "Portent", "body": "Starting at 2nd level, glimpses of the future begin to press in on your awareness. When you finish a long rest, roll two d20s and record the numbers rolled. You can replace any attack roll, saving throw, or ability check made by you or a creature that you can see with one of these foretelling rolls. You must choose to do so before the roll, and you can replace a roll in this way only once per turn. Each foretelling roll can be used only once. When you finish a long rest, you lose any unused foretelling rolls.", "kind": "both", "appliesTo": ["attack", "save", "check", "skill"] },
+          { "level": 6, "name": "Expert Divination", "body": "Beginning at 6th level, casting divination spells comes so easily to you that it expends only a fraction of your spellcasting efforts. When you cast a divination spell of 2nd level or higher using a spell slot, you regain one expended spell slot. The slot you regain must be of a level lower than the spell you cast and can't be higher than 5th level.", "appliesTo": ["cast"] },
+          { "level": 10, "name": "The Third Eye", "body": "Starting at 10th level, you can use your action to increase your powers of perception. When you do so, choose one of the following benefits, which lasts until you are incapacitated or you take a short or long rest. You can't use the feature again until you finish a rest: Darkvision out to 60 feet; Ethereal Sight (60 ft); Greater Comprehension (read any language); See Invisibility (10 ft)." },
+          { "level": 14, "name": "Greater Portent", "body": "Starting at 14th level, the visions in your dreams intensify and paint a more accurate picture in your mind of what is to come. You roll three d20s for your Portent feature, rather than two.", "kind": "both", "appliesTo": ["attack", "save", "check", "skill"] }
+        ]
+      },
+      {
+        "id": "school-of-enchantment",
+        "name": "School of Enchantment",
+        "description": "Enchanters bend minds — charm, command, control. Hallmark: Hypnotic Gaze freezes a single creature in place every encounter, and Instinctive Charm bounces attacks onto someone else.",
+        "features": [
+          { "level": 2, "name": "Enchantment Savant", "body": "When you reach this level, the gold and time you must spend to copy an enchantment spell into your spellbook is halved." },
+          { "level": 2, "name": "Hypnotic Gaze", "body": "Starting at 2nd level, your soft words and enchanting gaze can magically enthrall another creature. As an action, choose one creature that you can see within 5 feet of you. If the target can see or hear you, it must succeed on a Wisdom saving throw against your wizard spell save DC or be charmed by you until the end of your next turn. The charmed creature's speed drops to 0, and the creature is incapacitated and visibly dazed. On subsequent turns, you can use your action to maintain this effect, extending its duration until the end of your next turn. However, the effect ends if the creature ends its turn out of line of sight or more than 60 feet away from you. Once the effect ends, or if the creature succeeds on its initial saving throw against this effect, you can't use this feature on that creature again until you finish a long rest.", "kind": "combat", "appliesTo": ["cast"] },
+          { "level": 6, "name": "Instinctive Charm", "body": "Beginning at 6th level, when a creature you can see within 30 feet of you makes an attack roll against you, you can use your reaction to divert the attack, provided that another creature is within the attack's range. The attacker must make a Wisdom saving throw against your wizard spell save DC. On a failed save, the attacker must target the creature that is closest to it, not including you or itself. If multiple creatures are closest, the attacker chooses which one to target. On a successful save, you can't use this feature on the attacker again until you finish a long rest. You must choose to use this feature before knowing whether the attack hits or misses.", "kind": "combat", "appliesTo": ["save"] },
+          { "level": 10, "name": "Split Enchantment", "body": "Starting at 10th level, when you cast an enchantment spell of 1st level or higher that targets only one creature, it can target a second creature.", "kind": "combat", "appliesTo": ["cast"] },
+          { "level": 14, "name": "Alter Memories", "body": "At 14th level, you gain the ability to make a creature unaware of your magical influence on it. When you cast an enchantment spell to charm one or more creatures, you can alter one creature's understanding so that it remains unaware of being charmed. Additionally, once before the spell expires, you can use your action to try to make the chosen creature forget some of the time it spent charmed. The creature must succeed on an Intelligence saving throw against your wizard spell save DC or lose a number of hours of its memories equal to 1 + your Charisma modifier (minimum 1).", "appliesTo": ["cast"] }
+        ]
+      },
+      {
+        "id": "school-of-evocation",
+        "name": "School of Evocation",
+        "description": "Evocation wizards channel raw elemental energy into the world — fire, lightning, thunder, force. Hallmark abilities reshape their own AoE spells around allies and squeeze more damage from every cast.",
+        "features": [
+          { "level": 2, "name": "Evocation Savant", "body": "When you reach this level, the gold and time you must spend to copy an evocation spell into your spellbook is halved." },
+          { "level": 2, "name": "Sculpt Spells", "body": "When you cast an evocation spell that affects other creatures you can see, you can choose a number of them equal to 1 + the spell's level. The chosen creatures automatically succeed on their saving throws against the spell, and they take no damage if they would normally take half damage on a successful save.", "kind": "combat", "appliesTo": ["cast"] },
+          { "level": 6, "name": "Potent Cantrip", "body": "Your damaging cantrips affect even creatures that avoid the brunt of the effect. When a creature succeeds on a saving throw against your cantrip, the creature takes half the cantrip's damage (if any) but suffers no additional effect from the cantrip.", "kind": "combat", "appliesTo": ["cast"] },
+          { "level": 10, "name": "Empowered Evocation", "body": "You can add your Intelligence modifier to one damage roll of any wizard evocation spell you cast.", "kind": "combat", "appliesTo": ["cast"] },
+          { "level": 14, "name": "Overchannel", "body": "When you cast a wizard spell of 1st through 5th level that deals damage, you can deal maximum damage with that spell. The first time you do so, you suffer no adverse effect. If you use this feature again before you finish a long rest, you take 2d12 necrotic damage for each level of the spell, immediately after you cast it. Each time you use this feature again before finishing a long rest, the necrotic damage per spell level increases by 1d12. This damage ignores resistance and immunity.", "kind": "combat", "appliesTo": ["cast"] }
+        ]
+      },
+      {
+        "id": "school-of-illusion",
+        "name": "School of Illusion",
+        "description": "Illusionists deceive senses and bend perception. Hallmark: Malleable Illusions lets you reshape an active illusion mid-cast, and at L14 you can turn parts of an illusion into actual reality.",
+        "features": [
+          { "level": 2, "name": "Illusion Savant", "body": "When you reach this level, the gold and time you must spend to copy an illusion spell into your spellbook is halved." },
+          { "level": 2, "name": "Improved Minor Illusion", "body": "When you choose this school at 2nd level, you learn the minor illusion cantrip. If you already know it, you learn a different wizard cantrip of your choice. The cantrip doesn't count against your number of cantrips known. When you cast minor illusion, you can create both a sound and an image with a single casting of the spell.", "appliesTo": ["cast"] },
+          { "level": 6, "name": "Malleable Illusions", "body": "Starting at 6th level, when you cast an illusion spell that has a duration of 1 minute or longer, you can use your action to change the nature of that illusion (using the spell's normal parameters for the illusion), provided that you can see the illusion.", "appliesTo": ["cast"] },
+          { "level": 10, "name": "Illusory Self", "body": "Beginning at 10th level, you can create an illusory duplicate of yourself as an instant, almost instinctual reaction to danger. When a creature makes an attack roll against you, you can use your reaction to interpose the illusory duplicate between the attacker and yourself. The attack automatically misses you, then the illusion dissipates. Once you use this feature, you can't use it again until you finish a short or long rest.", "kind": "combat", "appliesTo": ["save"] },
+          { "level": 14, "name": "Illusory Reality", "body": "By 14th level, you have learned the secret of weaving shadow magic into your illusions to give them a semi-reality. When you cast an illusion spell of 1st level or higher, you can choose one inanimate, nonmagical object that is part of the illusion and make that object real. You can do this on your turn as a bonus action while the spell is ongoing. The object remains real for 1 minute.", "appliesTo": ["cast"] }
+        ]
+      },
+      {
+        "id": "school-of-necromancy",
+        "name": "School of Necromancy",
+        "description": "Necromancers manipulate the energies of life, death, and undeath. Hallmark: Grim Harvest heals you off every killing-blow spell, and Undead Thralls turns Animate Dead into a much beefier army with each cast.",
+        "features": [
+          { "level": 2, "name": "Necromancy Savant", "body": "When you reach this level, the gold and time you must spend to copy a necromancy spell into your spellbook is halved." },
+          { "level": 2, "name": "Grim Harvest", "body": "At 2nd level, you gain the ability to reap life energy from creatures you kill with your spells. Once per turn when you kill one or more creatures with a spell of 1st level or higher, you regain hit points equal to twice the spell's level, or three times its level if the spell belongs to the School of Necromancy. You don't gain this benefit for killing constructs or undead.", "kind": "combat", "appliesTo": ["cast"] },
+          { "level": 6, "name": "Undead Thralls", "body": "At 6th level, you add the animate dead spell to your spellbook if it is not there already. When you cast animate dead, you can target one additional corpse or pile of bones, creating another zombie or skeleton, as appropriate. Whenever you create an undead using a necromancy spell, it has additional benefits: the creature's hit point maximum is increased by an amount equal to your wizard level; the creature adds your proficiency bonus to its weapon damage rolls.", "kind": "combat", "appliesTo": ["cast"] },
+          { "level": 10, "name": "Inured to Undeath", "body": "Beginning at 10th level, you have resistance to necrotic damage, and your hit point maximum can't be reduced. You have spent so much time dealing with undead and the forces that animate them that you have become inured to some of their worst effects.", "kind": "combat", "appliesTo": ["save"] },
+          { "level": 14, "name": "Command Undead", "body": "Starting at 14th level, you can use magic to bring undead under your control, even those created by other wizards. As an action, you can choose one undead that you can see within 60 feet of you. That creature must make a Charisma saving throw against your wizard spell save DC. On a failed save, the creature falls under your control for 24 hours, obeying your commands and not attacking you. Intelligent undead get advantage on the save; an INT 8+ undead can repeat the save every hour, and INT 12+ does so every minute. If the save succeeds, you can't use this feature on that creature again.", "kind": "combat", "appliesTo": ["cast"] }
+        ]
+      },
+      {
+        "id": "school-of-transmutation",
+        "name": "School of Transmutation",
+        "description": "Transmuters reshape matter and energy — turning lead into gold, transforming people into beasts, granting magical enhancements to allies. Hallmark: the Transmuter's Stone, a swappable attunement that grants darkvision / speed / save proficiency / resistance.",
+        "features": [
+          { "level": 2, "name": "Transmutation Savant", "body": "When you reach this level, the gold and time you must spend to copy a transmutation spell into your spellbook is halved." },
+          { "level": 2, "name": "Minor Alchemy", "body": "Starting at 2nd level, you can temporarily alter the physical properties of one nonmagical object, changing it from one substance into another. You perform a special alchemical procedure on one object composed entirely of wood, stone (but not a gemstone), iron, copper, or silver, transforming it into a different one of those materials. For each 10 minutes you spend performing the procedure, you can transform up to 1 cubic foot of material. After 1 hour, or until you lose your concentration (as if you were concentrating on a spell), the material reverts to its original substance." },
+          { "level": 6, "name": "Transmuter's Stone", "body": "Starting at 6th level, you can spend 8 hours creating a transmuter's stone that stores transmutation magic. You can benefit from the stone yourself or give it to another creature. A creature gains a benefit of your choice as long as the stone is in the creature's possession: darkvision out to 60 feet; an increase to speed of 10 feet while the creature is unencumbered; proficiency in Constitution saving throws; or resistance to acid, cold, fire, lightning, or thunder damage (your choice when the stone is created). Each time you cast a transmutation spell of 1st level or higher, you can change the effect of your stone if it is on your person.", "kind": "both" },
+          { "level": 10, "name": "Shapechanger", "body": "At 10th level, you add the polymorph spell to your spellbook, if it is not there already. You can cast polymorph without expending a spell slot. When you do so, you can target only yourself and transform into a beast whose challenge rating is 1 or lower. Once you cast polymorph in this way, you can't do so again until you finish a short or long rest, though you can still cast it normally using an available spell slot.", "kind": "combat", "appliesTo": ["cast"] },
+          { "level": 14, "name": "Master Transmuter", "body": "Starting at 14th level, you can use your action to consume the reserve of transmutation magic stored within your transmuter's stone in a single burst. When you do so, choose one of the following effects: Major Transformation (transform one non-magical object up to 5 ft on a side into another object of similar size and mass and equal or lesser value); Panacea (remove curses, diseases, poisons; restore HP); Restore Life (cast raise dead as an action, no material); Restore Youth (target's apparent age reduced by 3d10 years, minimum 13). Once you use this feature, you can't use it again until you finish a long rest.", "appliesTo": ["cast"] }
+        ]
+      },
+      {
+        "id": "bladesinging",
+        "name": "Bladesinging",
+        "description": "Bladesingers are elven wizard-warriors who weave spell and sword into a dance of grace and lethality. The classic 5e gish — entering Bladesong gives a Wizard the front-line stats they always wished they had: AC bonus, speed boost, concentration advantage, and an extra attack at L6.",
+        "features": [
+          { "level": 2, "name": "Training in War and Song", "body": "When you adopt this tradition at 2nd level, you gain proficiency with light armor, and you gain proficiency with one type of one-handed melee weapon of your choice. You also gain proficiency in the Performance skill if you don't already have it." },
+          { "level": 2, "name": "Bladesong", "body": "Starting at 2nd level, you can invoke an elven magic called the Bladesong, provided that you aren't wearing medium or heavy armor or using a shield. As a bonus action, you can begin the Bladesong, which lasts for 1 minute. It ends early if you are incapacitated, if you don the disallowed armor or pick up a shield, or if you use two hands to make an attack with a weapon. While your Bladesong is active, you gain the following benefits: a bonus to AC equal to your Intelligence modifier (minimum +1); your walking speed increases by 10 feet; you have advantage on Dexterity (Acrobatics) checks; and you gain a bonus to any Constitution saving throw you make to maintain your concentration on a spell, equal to your Intelligence modifier. You can use this feature a number of times equal to your proficiency bonus, and you regain all expended uses when you finish a short or long rest.", "kind": "combat", "appliesTo": ["save"] },
+          { "level": 6, "name": "Extra Attack", "body": "Starting at 6th level, you can attack twice, instead of once, whenever you take the Attack action on your turn. Moreover, you can cast one of your cantrips in place of one of those attacks.", "kind": "combat", "appliesTo": ["attack"] },
+          { "level": 10, "name": "Song of Defense", "body": "Beginning at 10th level, you can direct your magic to absorb damage while your Bladesong is active. When you take damage, you can use your reaction to expend one spell slot and reduce that damage to you by an amount equal to five times the slot's level.", "kind": "combat" },
+          { "level": 14, "name": "Song of Victory", "body": "Starting at 14th level, you add your Intelligence modifier (minimum of +1) to the damage of your melee weapon attacks while your Bladesong is active.", "kind": "combat", "appliesTo": ["attack"] }
+        ],
+        "sourceID": "tashas"
+      }
+    ],
+    "subclassLevel": 2,
+    "starterEquipment": [
+      { "id": "quarterstaff", "quantity": 1 },
+      { "id": "component-pouch", "quantity": 1 },
+      { "id": "scholars-pack", "quantity": 1 },
+      { "id": "spellbook", "quantity": 1 }
+    ]
+  },
+  {
+    "id": "cleric",
+    "name": "Cleric",
+    "description": "A priestly champion who wields divine magic in service of a higher power.",
+    "hitDie": 8,
+    "primaryAbilities": ["wisdom"],
+    "savingThrows": ["wisdom", "charisma"],
+    "armorProficiencies": ["Light armor", "Medium armor", "Shields"],
+    "weaponProficiencies": ["Simple weapons"],
+    "toolProficiencies": [],
+    "skillChoiceCount": 2,
+    "skillChoiceFrom": ["history", "insight", "medicine", "persuasion", "religion"],
+    "features": [
+      { "level": 1, "name": "Spellcasting", "body": "As a conduit for divine power, you can cast cleric spells. Wisdom is your spellcasting ability." },
+      { "level": 1, "name": "Divine Domain", "body": "Choose one domain related to your deity (Knowledge, Life, Light, Nature, Tempest, Trickery, or War). Your choice grants you domain spells and other features when you choose it at 1st level." },
+      { "level": 2, "name": "Channel Divinity", "body": "You can channel divine energy directly from your deity, using that energy to fuel magical effects. You start with two such effects: Turn Undead and an effect determined by your domain. Each use, you choose which effect to create. You must finish a short or long rest to use the feature again. Save DCs equal your cleric spell save DC. Uses scale to 2/rest at 6th level and 3/rest at 18th level.", "kind": "both", "appliesTo": ["cast"] },
+      { "level": 2, "name": "Turn Undead", "body": "As an action, you present your holy symbol and speak a prayer censuring the undead. Each undead that can see or hear you within 30 feet must make a Wisdom saving throw. If it fails, it is turned for 1 minute or until it takes any damage. A turned creature must spend its turns trying to move as far from you as it can, can't willingly move to a space within 30 feet of you, can't take reactions, and can use only the Dash action or try to escape an effect that prevents it from moving.", "kind": "combat" },
+      { "level": 4, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 5, "name": "Destroy Undead (CR 1/2)", "body": "When an undead fails its saving throw against your Turn Undead feature, the creature is instantly destroyed if its challenge rating is 1/2 or lower.", "kind": "combat" },
+      { "level": 6, "name": "Channel Divinity (2/rest)", "body": "You can use your Channel Divinity twice between rests.", "kind": "both", "appliesTo": ["cast"] },
+      { "level": 8, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 8, "name": "Destroy Undead (CR 1)", "body": "Undead destroyed by your Turn Undead feature now includes creatures of challenge rating 1 or lower.", "kind": "combat" },
+      { "level": 10, "name": "Divine Intervention", "body": "You can call on your deity to intervene on your behalf when your need is great. As an action, describe the assistance you seek and roll percentile dice. If you roll a number equal to or lower than your cleric level, your deity intervenes (the GM chooses the nature of the intervention). On success, you can't use this feature again for 7 days; otherwise you can use it again after a long rest. At 20th level, your call succeeds automatically.", "appliesTo": ["cast"] },
+      { "level": 11, "name": "Destroy Undead (CR 2)", "body": "Undead destroyed by your Turn Undead feature now includes creatures of challenge rating 2 or lower.", "kind": "combat" },
+      { "level": 12, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 14, "name": "Destroy Undead (CR 3)", "body": "Undead destroyed by your Turn Undead feature now includes creatures of challenge rating 3 or lower.", "kind": "combat" },
+      { "level": 16, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 17, "name": "Destroy Undead (CR 4)", "body": "Undead destroyed by your Turn Undead feature now includes creatures of challenge rating 4 or lower.", "kind": "combat" },
+      { "level": 18, "name": "Channel Divinity (3/rest)", "body": "You can use your Channel Divinity three times between rests.", "kind": "both", "appliesTo": ["cast"] },
+      { "level": 19, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 20, "name": "Divine Intervention Improvement", "body": "Your call for intervention succeeds automatically, no roll required.", "appliesTo": ["cast"] },
+      { "level": 1, "name": "Channel Divinity (L1)", "body": "Tasha's alternative: Channel Divinity comes online at 1st level instead of 2nd. Mechanics are otherwise identical to the standard Channel Divinity feature. Hides the PHB L2 Channel Divinity grant when active.", "kind": "both", "appliesTo": ["cast"], "optional": true, "replaces": "Channel Divinity" },
+      { "level": 1, "name": "Cantrip Versatility", "body": "Tasha's optional feature: whenever you finish a long rest, you can replace one cantrip you learned from this class's spellcasting feature with a different cantrip from the cleric spell list.", "optional": true }
+    ],
+    "multiclassRequirements": {
+      "mode": "all",
+      "minimums": [
+        { "ability": "wisdom", "amount": 13 }
+      ]
+    },
+    "caster": {
+      "kind": "full",
+      "startsAtLevel": 1,
+      "cantripsKnown": 3,
+      "knownL1Spells": 0,
+      "preparation": "prepared"
+    },
+    "subclasses": [
+      {
+        "id": "knowledge-domain",
+        "name": "Knowledge Domain",
+        "description": "Gods of knowledge value learning and understanding above all. Their clerics serve as sages and scholars, voracious for any fragment of insight into the workings of the world. Hallmark: pick up new tools and skills on demand via Channel Divinity, plus Potent Spellcasting for cantrip-heavy builds.",
+        "features": [
+          { "level": 1, "name": "Blessings of Knowledge", "body": "At 1st level, you learn two languages of your choice. You also become proficient in your choice of two of the following skills: Arcana, History, Nature, or Religion. Your proficiency bonus is doubled for any ability check you make that uses either of those skills.", "appliesTo": ["skill"] },
+          { "level": 2, "name": "Channel Divinity: Knowledge of the Ages", "body": "Starting at 2nd level, you can use your Channel Divinity to tap into a divine well of knowledge. As an action, you choose one skill or tool. For 10 minutes, you have proficiency with the chosen skill or tool.", "appliesTo": ["skill"] },
+          { "level": 6, "name": "Channel Divinity: Read Thoughts", "body": "At 6th level, you can use your Channel Divinity to read a creature's thoughts. As an action, choose one creature you can see within 60 feet of you. That creature must make a Wisdom saving throw. If the creature succeeds, you can't use this feature on it again until you finish a long rest. If fails, you can read its surface thoughts for 1 minute as long as it stays within 60 feet of you. As an action you can end this and cast suggestion on the creature without expending a spell slot — automatically failing the save.", "appliesTo": ["cast"] },
+          { "level": 8, "name": "Potent Spellcasting", "body": "Starting at 8th level, you add your Wisdom modifier to the damage you deal with any cleric cantrip.", "kind": "combat", "appliesTo": ["cast"] },
+          { "level": 17, "name": "Visions of the Past", "body": "Starting at 17th level, you can call up visions of the past that relate to an object you hold or your immediate surroundings. You spend at least 1 minute in meditation and prayer, then receive dreamlike, shadowy glimpses of recent events. Object reading reveals events of the past day per minute (max 7 days); area reading reveals events within 50 feet of the past 24 hours per minute (max 7 days). Once you use this feature, you can't use it again until you finish a short or long rest." }
+        ]
+      },
+      {
+        "id": "life-domain",
+        "name": "Life Domain",
+        "description": "The Life Domain focuses on the vibrant positive energy that sustains all life. Healing the sick and dying is the bread and butter of a Life cleric — they squeeze every drop of HP out of every cure they cast.",
+        "features": [
+          { "level": 1, "name": "Bonus Proficiency", "body": "When you choose this domain at 1st level, you gain proficiency with heavy armor." },
+          { "level": 1, "name": "Disciple of Life", "body": "Whenever you use a 1st-level or higher spell to restore hit points to a creature, the creature regains additional hit points equal to 2 + the spell's level.", "kind": "both", "appliesTo": ["cast"] },
+          { "level": 2, "name": "Channel Divinity: Preserve Life", "body": "As an action, you present your holy symbol and evoke healing energy. Choose any creatures within 30 feet of you and divide hit points equal to five times your cleric level among them. This feature can restore a creature to no more than half of its hit point maximum. You can't use this feature on an undead or a construct.", "kind": "both", "appliesTo": ["cast"] },
+          { "level": 6, "name": "Blessed Healer", "body": "The healing spells you cast on others heal you as well: when you cast a spell of 1st level or higher that restores hit points to a creature other than you, you regain hit points equal to 2 + the spell's level.", "kind": "both", "appliesTo": ["cast"] },
+          { "level": 8, "name": "Divine Strike", "body": "Once on each of your turns when you hit a creature with a weapon attack, you can cause the attack to deal an extra 1d8 radiant damage to the target. When you reach 14th level, the extra damage increases to 2d8.", "kind": "combat", "appliesTo": ["attack"] },
+          { "level": 17, "name": "Supreme Healing", "body": "When you would normally roll one or more dice to restore hit points with a spell, you instead use the highest number possible for each die. (For example, instead of restoring 2d6 hit points to a creature, you restore 12.)", "kind": "both", "appliesTo": ["cast"] }
+        ]
+      },
+      {
+        "id": "light-domain",
+        "name": "Light Domain",
+        "description": "Gods of light promote ideals of rebirth and renewal, truth, vigilance, and beauty. Clerics raise the sun, manifest pure light, and burn enemies with sacred radiance. Hallmark: Warding Flare lets you reaction-impose disadvantage on attackers, and at high levels you turn into a literal lantern of doom.",
+        "features": [
+          { "level": 1, "name": "Bonus Cantrip", "body": "When you choose this domain at 1st level, you gain the light cantrip if you don't already know it.", "appliesTo": ["cast"] },
+          { "level": 1, "name": "Warding Flare", "body": "Also at 1st level, you can interpose divine light between yourself and an attacking enemy. When you are attacked by a creature within 30 feet of you that you can see, you can use your reaction to impose disadvantage on the attack roll, causing light to flare before the attacker before it hits or misses. An attacker that can't be blinded is immune to this feature. You can use this feature a number of times equal to your Wisdom modifier (a minimum of once). You regain all expended uses when you finish a long rest.", "kind": "combat", "appliesTo": ["attack"] },
+          { "level": 2, "name": "Channel Divinity: Radiance of the Dawn", "body": "Starting at 2nd level, you can use your Channel Divinity to harness sunlight, banishing darkness and dealing radiant damage. As an action, you present your holy symbol, and any magical darkness within 30 feet of you is dispelled. Additionally, each hostile creature within 30 feet of you must make a Constitution saving throw. A creature takes radiant damage equal to 2d10 + your cleric level on a failed save, and half as much damage on a successful one.", "kind": "combat", "appliesTo": ["cast"] },
+          { "level": 6, "name": "Improved Flare", "body": "Starting at 6th level, you can also use your Warding Flare feature when a creature that you can see within 30 feet of you attacks a creature other than you.", "kind": "combat", "appliesTo": ["attack"] },
+          { "level": 8, "name": "Potent Spellcasting", "body": "Starting at 8th level, you add your Wisdom modifier to the damage you deal with any cleric cantrip.", "kind": "combat", "appliesTo": ["cast"] },
+          { "level": 17, "name": "Corona of Light", "body": "Starting at 17th level, you can use your action to activate an aura of sunlight that lasts for 1 minute or until you dismiss it using another action. You emit bright light in a 60-foot radius and dim light 30 feet beyond that. Your enemies in the bright light have disadvantage on saving throws against any spell that deals fire or radiant damage.", "kind": "combat", "appliesTo": ["cast"] }
+        ]
+      },
+      {
+        "id": "nature-domain",
+        "name": "Nature Domain",
+        "description": "Gods of nature are as varied as the natural world itself, from inscrutable gods of the deep forests to friendly deities of streams and meadows. Druidic clerics — straddling the line between two traditions. Hallmark: nature-themed cantrip + heavy armor + a sphere-of-influence over plants and beasts.",
+        "features": [
+          { "level": 1, "name": "Acolyte of Nature", "body": "At 1st level, you learn one druid cantrip of your choice. You also gain proficiency in one of the following skills of your choice: Animal Handling, Nature, or Survival.", "appliesTo": ["skill", "cast"] },
+          { "level": 1, "name": "Bonus Proficiency", "body": "Also at 1st level, you gain proficiency with heavy armor." },
+          { "level": 2, "name": "Channel Divinity: Charm Animals and Plants", "body": "Starting at 2nd level, you can use your Channel Divinity to charm animals and plants. As an action, you present your holy symbol and invoke the name of your deity. Each beast or plant creature that can see you within 30 feet of you must make a Wisdom saving throw. If the creature fails its saving throw, it is charmed by you for 1 minute or until it takes damage. While charmed, it is friendly to you and other creatures you designate.", "kind": "combat", "appliesTo": ["cast"] },
+          { "level": 6, "name": "Dampen Elements", "body": "Starting at 6th level, when you or a creature within 30 feet of you takes acid, cold, fire, lightning, or thunder damage, you can use your reaction to grant resistance to the creature against that instance of the damage.", "kind": "combat", "appliesTo": ["save"] },
+          { "level": 8, "name": "Divine Strike", "body": "At 8th level, you gain the ability to infuse your weapon strikes with divine energy. Once on each of your turns when you hit a creature with a weapon attack, you can cause the attack to deal an extra 1d8 cold, fire, or lightning damage to the target (your choice). When you reach 14th level, the extra damage increases to 2d8.", "kind": "combat", "appliesTo": ["attack"] },
+          { "level": 17, "name": "Master of Nature", "body": "At 17th level, you gain the ability to command animals and plant creatures. While creatures are charmed by your Charm Animals and Plants feature, you can take a bonus action on your turn to verbally command what each of those creatures will do on its next turn.", "kind": "combat" }
+        ]
+      },
+      {
+        "id": "tempest-domain",
+        "name": "Tempest Domain",
+        "description": "Gods whose portfolios include the Tempest domain — among them Talos, Umberlee, Kord, Zeboim, Thor — govern storms, sea, and sky. Their clerics are the chosen of thunder gods, hurling lightning and storm. Hallmark: max-damage thunder/lightning crits via Destructive Wrath + a reaction zap whenever something hits you.",
+        "features": [
+          { "level": 1, "name": "Bonus Proficiencies", "body": "At 1st level, you gain proficiency with martial weapons and heavy armor." },
+          { "level": 1, "name": "Wrath of the Storm", "body": "Also at 1st level, you can thunderously rebuke attackers. When a creature within 5 feet of you that you can see hits you with an attack, you can use your reaction to deal 2d8 lightning or thunder damage (your choice) to that creature. The creature must make a Dexterity saving throw — on a successful save, the creature takes half damage. You can use this feature a number of times equal to your Wisdom modifier (a minimum of once). You regain all expended uses when you finish a long rest.", "kind": "combat", "appliesTo": ["attack"] },
+          { "level": 2, "name": "Channel Divinity: Destructive Wrath", "body": "Starting at 2nd level, you can use your Channel Divinity to wield the power of the storm with unchecked ferocity. When you roll lightning or thunder damage, you can use your Channel Divinity to deal maximum damage, instead of rolling.", "kind": "combat", "appliesTo": ["cast", "attack"] },
+          { "level": 6, "name": "Thunderbolt Strike", "body": "At 6th level, when you deal lightning damage to a Large or smaller creature, you can also push it up to 10 feet away from you.", "kind": "combat", "appliesTo": ["cast", "attack"] },
+          { "level": 8, "name": "Divine Strike", "body": "At 8th level, you gain the ability to infuse your weapon strikes with divine energy. Once on each of your turns when you hit a creature with a weapon attack, you can cause the attack to deal an extra 1d8 thunder damage to the target. When you reach 14th level, the extra damage increases to 2d8.", "kind": "combat", "appliesTo": ["attack"] },
+          { "level": 17, "name": "Stormborn", "body": "At 17th level, you have a flying speed equal to your current walking speed whenever you are not underground or indoors.", "kind": "combat" }
+        ]
+      },
+      {
+        "id": "trickery-domain",
+        "name": "Trickery Domain",
+        "description": "Gods of trickery — such as Tymora, Beshaba, Olidammara, the Traveler, Garl Glittergold, and Loki — are mischief-makers and instigators who stand as a constant challenge to the accepted order. Hallmark: illusion-fueled Invoke Duplicity gives you an attack-advantage projection, and at L17 you have four of them at once.",
+        "features": [
+          { "level": 1, "name": "Blessing of the Trickster", "body": "Starting when you choose this domain at 1st level, you can use your action to touch a willing creature other than yourself to give it advantage on Dexterity (Stealth) checks. This blessing lasts for 1 hour or until you use this feature again.", "appliesTo": ["skill"] },
+          { "level": 2, "name": "Channel Divinity: Invoke Duplicity", "body": "Starting at 2nd level, you can use your Channel Divinity to create an illusory duplicate of yourself. As an action, you create a perfect illusion of yourself that lasts for 1 minute, or until you lose your concentration. The illusion appears in an unoccupied space that you can see within 30 feet of you. As a bonus action on your turn, you can move the illusion up to 30 feet to a space you can see, but it must remain within 120 feet of you. While the illusion persists, you can cast spells as though you were in the illusion's space, but you must use your own senses. Additionally, when both you and your illusion are within 5 feet of a creature that can see the illusion, you have advantage on attack rolls against that creature, given how distracting the illusion is to the target.", "kind": "combat", "appliesTo": ["attack", "cast"] },
+          { "level": 6, "name": "Channel Divinity: Cloak of Shadows", "body": "Starting at 6th level, you can use your Channel Divinity to vanish. As an action, you become invisible until the end of your next turn. You become visible if you attack or cast a spell.", "kind": "combat" },
+          { "level": 8, "name": "Divine Strike", "body": "At 8th level, you gain the ability to infuse your weapon strikes with poison — a gift from your deity. Once on each of your turns when you hit a creature with a weapon attack, you can cause the attack to deal an extra 1d8 poison damage to the target. When you reach 14th level, the extra damage increases to 2d8.", "kind": "combat", "appliesTo": ["attack"] },
+          { "level": 17, "name": "Improved Duplicity", "body": "At 17th level, you can create up to four duplicates of yourself, instead of one, when you use Invoke Duplicity. As a bonus action on your turn, you can move any number of them up to 30 feet, to a maximum range of 120 feet.", "kind": "combat" }
+        ]
+      },
+      {
+        "id": "war-domain",
+        "name": "War Domain",
+        "description": "War has many manifestations. It can make heroes of ordinary people. Cleric of War lean into front-line combat — bonus action attacks, +10 to attack rolls or AC via Channel Divinity, eventually magic strikes on every swing.",
+        "features": [
+          { "level": 1, "name": "Bonus Proficiencies", "body": "At 1st level, you gain proficiency with martial weapons and heavy armor." },
+          { "level": 1, "name": "War Priest", "body": "From 1st level, your god delivers bolts of inspiration to you while you are engaged in battle. When you use the Attack action, you can make one weapon attack as a bonus action. You can use this feature a number of times equal to your Wisdom modifier (a minimum of once). You regain all expended uses when you finish a long rest.", "kind": "combat", "appliesTo": ["attack"] },
+          { "level": 2, "name": "Channel Divinity: Guided Strike", "body": "Starting at 2nd level, you can use your Channel Divinity to strike with supernatural accuracy. When you make an attack roll, you can use your Channel Divinity to gain a +10 bonus to the roll. You make this choice after you see the roll, but before the DM says whether the attack hits or misses.", "kind": "combat", "appliesTo": ["attack"] },
+          { "level": 6, "name": "Channel Divinity: War God's Blessing", "body": "At 6th level, when a creature within 30 feet of you makes an attack roll, you can use your reaction to grant that creature a +10 bonus to the roll, using your Channel Divinity. You make this choice after you see the roll, but before the DM says whether the attack hits or misses.", "kind": "combat" },
+          { "level": 8, "name": "Divine Strike", "body": "At 8th level, once on each of your turns when you hit a creature with a weapon attack, you can cause the attack to deal an extra 1d8 damage of the same type dealt by the weapon. When you reach 14th level, the extra damage increases to 2d8.", "kind": "combat", "appliesTo": ["attack"] },
+          { "level": 17, "name": "Avatar of Battle", "body": "At 17th level, you gain resistance to bludgeoning, piercing, and slashing damage from nonmagical attacks.", "kind": "combat" }
+        ]
+      },
+      {
+        "id": "twilight-domain",
+        "name": "Twilight Domain",
+        "description": "The Twilight Domain serves gods who deliver mortals' souls safely from the night, who illuminate the world at dusk and dawn, and who watch over the boundary between life and death. Hallmark: a 30-foot Twilight Sanctuary aura that gives every ally either temp HP or charm-/fear-removal each round.",
+        "features": [
+          { "level": 1, "name": "Bonus Proficiencies", "body": "When you choose this domain at 1st level, you gain proficiency with martial weapons and heavy armor." },
+          { "level": 1, "name": "Eyes of Night", "body": "Starting at 1st level, you can see through deepest gloom. You have darkvision out to a range of 300 feet. As an action, you can magically share the darkvision of this trait with willing creatures you can see within 10 feet of you, up to a number of creatures equal to your Wisdom modifier (a minimum of one). The shared darkvision lasts for 1 hour. Once you share it, you can't do so again until you finish a long rest, unless you expend a spell slot of any level to share it again." },
+          { "level": 1, "name": "Vigilant Blessing", "body": "At 1st level, the night has taught you to be vigilant. As an action, you give one creature you touch (including possibly yourself) advantage on the next initiative roll the creature makes. This benefit ends immediately after the roll or if you use this feature again.", "kind": "combat", "appliesTo": ["begin-encounter"] },
+          { "level": 2, "name": "Channel Divinity: Twilight Sanctuary", "body": "Starting at 2nd level, you can use your Channel Divinity to refresh your allies with soothing twilight. As an action, you present your holy symbol, and a sphere of twilight emanates from you. The sphere is centered on you, has a 30-foot radius, and is filled with dim light. The sphere moves with you, and it lasts for 1 minute or until you are incapacitated or die. Whenever a creature (including you) ends its turn in the sphere, you can grant that creature one of these benefits: you give it temporary hit points equal to 1d6 plus your cleric level; or you end one effect on it causing it to be charmed or frightened.", "kind": "combat" },
+          { "level": 6, "name": "Steps of Night", "body": "Starting at 6th level, you can draw on the mystical power of night to rise into the air. As a bonus action when you are in dim light or darkness, you can magically give yourself a flying speed equal to your walking speed for 1 minute. You can use this feature a number of times equal to your proficiency bonus, and you regain all expended uses when you finish a long rest." },
+          { "level": 8, "name": "Divine Strike", "body": "At 8th level, you gain the ability to infuse your weapon strikes with divine energy. Once on each of your turns when you hit a creature with a weapon attack, you can cause the attack to deal an extra 1d8 radiant damage to the target. When you reach 14th level, the extra damage increases to 2d8.", "kind": "combat", "appliesTo": ["attack"] },
+          { "level": 17, "name": "Twilight Shroud", "body": "At 17th level, the twilight that you summon offers a protective embrace: you and your allies have half cover while in the sphere created by your Twilight Sanctuary.", "kind": "combat" }
+        ],
+        "sourceID": "tashas"
+      }
+    ],
+    "subclassLevel": 1,
+    "starterEquipment": [
+      { "id": "mace", "quantity": 1 },
+      { "id": "scale-mail", "quantity": 1 },
+      { "id": "light-crossbow", "quantity": 1 },
+      { "id": "crossbow-bolts-20", "quantity": 1 },
+      { "id": "shield", "quantity": 1 },
+      { "id": "priests-pack", "quantity": 1 },
+      { "id": "holy-symbol-amulet", "quantity": 1 }
+    ]
+  },
+  {
+    "id": "rogue",
+    "name": "Rogue",
+    "description": "A scoundrel who uses stealth and trickery to overcome obstacles and enemies.",
+    "hitDie": 8,
+    "primaryAbilities": ["dexterity"],
+    "savingThrows": ["dexterity", "intelligence"],
+    "armorProficiencies": ["Light armor"],
+    "weaponProficiencies": ["Simple weapons", "Hand crossbows", "Longswords", "Rapiers", "Shortswords"],
+    "toolProficiencies": ["Thieves' tools"],
+    "skillChoiceCount": 4,
+    "skillChoiceFrom": ["acrobatics", "athletics", "deception", "insight", "intimidation", "investigation", "perception", "performance", "persuasion", "sleightOfHand", "stealth"],
+    "features": [
+      { "level": 1, "name": "Expertise", "body": "Choose two of your skill proficiencies, or one of your skill proficiencies and your proficiency with thieves' tools. Your proficiency bonus is doubled for any ability check you make that uses either of the chosen proficiencies.", "appliesTo": ["skill"] },
+      { "level": 1, "name": "Sneak Attack", "body": "Once per turn, you can deal an extra 1d6 damage to one creature you hit with an attack if you have advantage on the attack roll. The attack must use a finesse or ranged weapon. You don't need advantage if another enemy of the target is within 5 feet of it and you don't have disadvantage. Damage increases by 1d6 at every odd rogue level (3rd, 5th, 7th, ..., 19th).", "kind": "combat", "appliesTo": ["attack"] },
+      { "level": 1, "name": "Thieves' Cant", "body": "You have learnt thieves' cant, a secret mix of dialect, jargon, and code that lets you hide messages in seemingly normal conversation." },
+      { "level": 2, "name": "Cunning Action", "body": "Your quick thinking and agility allow you to move and act quickly. You can take a bonus action on each of your turns in combat. The action can be used only to take the Dash, Disengage, or Hide action.", "kind": "combat" },
+      { "level": 3, "name": "Roguish Archetype", "body": "Choose an archetype that you emulate in the exercise of your rogue abilities (Thief, Assassin, or Arcane Trickster). Your archetype grants you features at 3rd level and again at 9th, 13th, and 17th level." },
+      { "level": 4, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 5, "name": "Uncanny Dodge", "body": "When an attacker that you can see hits you with an attack, you can use your reaction to halve the attack's damage against you.", "kind": "combat", "appliesTo": ["save"] },
+      { "level": 6, "name": "Expertise (additional)", "body": "Choose two more of your proficiencies (in skills or with thieves' tools) to gain expertise — your proficiency bonus is doubled for any ability check you make that uses either of the chosen proficiencies.", "appliesTo": ["skill"] },
+      { "level": 7, "name": "Evasion", "body": "You can nimbly dodge out of the way of certain area effects. When you are subjected to an effect that allows you to make a Dexterity saving throw to take only half damage, you instead take no damage if you succeed on the saving throw, and only half damage if you fail.", "kind": "combat", "appliesTo": ["save"] },
+      { "level": 8, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 10, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 11, "name": "Reliable Talent", "body": "You have refined your chosen skills until they approach perfection. Whenever you make an ability check that lets you add your proficiency bonus, you can treat a d20 roll of 9 or lower as a 10.", "appliesTo": ["skill", "check"] },
+      { "level": 12, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 14, "name": "Blindsense", "body": "If you are able to hear, you are aware of the location of any hidden or invisible creature within 10 feet of you.", "kind": "both" },
+      { "level": 15, "name": "Slippery Mind", "body": "You have acquired greater mental strength. You gain proficiency in Wisdom saving throws.", "appliesTo": ["save"] },
+      { "level": 16, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 18, "name": "Elusive", "body": "You are so evasive that attackers rarely gain the upper hand against you. No attack roll has advantage against you while you aren't incapacitated.", "kind": "combat" },
+      { "level": 19, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 20, "name": "Stroke of Luck", "body": "You have an uncanny knack for succeeding when you need to. If your attack misses a target within range, you can turn the miss into a hit. Alternatively, if you fail an ability check, you can treat the d20 roll as a 20. Once you use this feature, you can't use it again until you finish a short or long rest.", "kind": "both", "appliesTo": ["check"] },
+      { "level": 3, "name": "Steady Aim", "body": "Tasha's optional feature: as a bonus action, you give yourself advantage on your next attack roll on the current turn. You can use this bonus action only if you haven't moved during this turn, and after you use the bonus action, your speed is 0 until the end of the current turn.", "kind": "combat", "appliesTo": ["attack"], "optional": true }
+    ],
+    "multiclassRequirements": {
+      "mode": "all",
+      "minimums": [
+        { "ability": "dexterity", "amount": 13 }
+      ]
+    },
+    "caster": null,
+    "subclasses": [
+      {
+        "id": "thief",
+        "name": "Thief",
+        "description": "Quick-fingered larcenist who uses speed and dexterity to outpace any obstacle. Burglars, treasure hunters, and the occasional adventurer-spy lean on these tools. Hallmarks: bonus-action utility, urban traversal, and the only PHB rogue who gets a second turn in round one.",
+        "features": [
+          { "level": 3, "name": "Fast Hands", "body": "You can use the bonus action granted by your Cunning Action to make a Dexterity (Sleight of Hand) check, use your thieves' tools to disarm a trap or open a lock, or take the Use an Object action." },
+          { "level": 3, "name": "Second-Story Work", "body": "When you choose this archetype at 3rd level, you gain the ability to climb faster than normal; climbing no longer costs you extra movement. In addition, when you make a running jump, the distance you cover increases by a number of feet equal to your Dexterity modifier." },
+          { "level": 9, "name": "Supreme Sneak", "body": "Starting at 9th level, you have advantage on a Dexterity (Stealth) check if you move no more than half your speed on the same turn.", "appliesTo": ["skill"] },
+          { "level": 13, "name": "Use Magic Device", "body": "By 13th level, you have learned enough about the workings of magic that you can improvise the use of items even when they are not intended for you. You ignore all class, race, and level requirements on the use of magic items." },
+          { "level": 17, "name": "Thief's Reflexes", "body": "When you reach 17th level, you have become adept at laying ambushes and quickly escaping danger. You can take two turns during the first round of any combat. You take your first turn at your normal initiative and your second turn at your initiative minus 10. You can't use this feature when you are surprised.", "kind": "combat", "appliesTo": ["begin-encounter"] }
+        ]
+      },
+      {
+        "id": "assassin",
+        "name": "Assassin",
+        "description": "You focus your training on the grim art of death. Those who adhere to this archetype are diverse: hired killers, spies, bounty hunters, and even specially anointed priests trained to exterminate the enemies of their deity. Hallmark: surprise rounds make your day — automatic crit on a surprised target.",
+        "features": [
+          { "level": 3, "name": "Bonus Proficiencies", "body": "When you choose this archetype at 3rd level, you gain proficiency with the disguise kit and the poisoner's kit." },
+          { "level": 3, "name": "Assassinate", "body": "Starting at 3rd level, you are at your deadliest when you get the drop on your enemies. You have advantage on attack rolls against any creature that hasn't taken a turn in the combat yet. In addition, any hit you score against a creature that is surprised is a critical hit.", "kind": "combat", "appliesTo": ["attack", "begin-encounter"] },
+          { "level": 9, "name": "Infiltration Expertise", "body": "Starting at 9th level, you can unfailingly create false identities for yourself. You must spend seven days and 25 gp to establish the history, profession, and affiliations for an identity. You can't establish an identity that belongs to someone else." },
+          { "level": 13, "name": "Impostor", "body": "At 13th level, you gain the ability to unerringly mimic another person's speech, writing, and behavior. You must spend at least three hours studying these three components of the person's behavior, listening to speech, examining handwriting, and observing mannerisms.", "appliesTo": ["skill"] },
+          { "level": 17, "name": "Death Strike", "body": "Starting at 17th level, you become a master of instant death. When you attack and hit a creature that is surprised, it must make a Constitution saving throw (DC 8 + your Dexterity modifier + your proficiency bonus). On a failed save, double the damage of your attack against the creature.", "kind": "combat", "appliesTo": ["attack"] }
+        ]
+      },
+      {
+        "id": "arcane-trickster",
+        "name": "Arcane Trickster",
+        "description": "A rogue who augments cunning with arcane illusion and enchantment magic. A third-caster: wizard cantrips and 1st-level spells from L3, with spell slots scaling on the third-caster table. Mage Hand Legerdemain turns the cantrip into a remote-controlled thief's hand. (INT-based casting + the wizard spell-list pool aren't yet surfaced in the creation wizard's Spells step — tracked under the third-caster follow-up.)",
+        "features": [
+          { "level": 3, "name": "Spellcasting", "body": "When you reach 3rd level, you augment your rogue's cunning with magic from the wizard's spell list. Intelligence is your spellcasting ability. You learn three cantrips (one must be mage hand) and three 1st-level spells (two from enchantment or illusion, one from any school). Spell slots follow the third-caster table.", "appliesTo": ["cast"] },
+          { "level": 3, "name": "Mage Hand Legerdemain", "body": "Starting at 3rd level, when you cast mage hand, you can make the spectral hand invisible, and you can perform the following additional tasks with it: stow one object the hand is holding in a container worn or carried by another creature; retrieve an object in a container worn or carried by another creature; use thieves' tools to pick locks and disarm traps at range. You can perform one of these tasks without being noticed by a creature if you succeed on a Dexterity (Sleight of Hand) check contested by the creature's Wisdom (Perception) check.", "kind": "both", "appliesTo": ["cast", "skill"] },
+          { "level": 9, "name": "Magical Ambush", "body": "Starting at 9th level, if you are hidden from a creature when you cast a spell on it, the creature has disadvantage on any saving throw it makes against the spell this turn.", "kind": "combat", "appliesTo": ["cast"] },
+          { "level": 13, "name": "Versatile Trickster", "body": "At 13th level, you gain the ability to distract targets with your mage hand. As a bonus action on your turn, you can designate a creature within 5 feet of the spectral hand created by the spell. Doing so gives you advantage on attack rolls against that creature until the end of the turn.", "kind": "combat", "appliesTo": ["attack"] },
+          { "level": 17, "name": "Spell Thief", "body": "At 17th level, you gain the ability to magically steal the knowledge of how to cast a spell from another spellcaster. Immediately after a creature casts a spell that targets you or includes you in its area of effect, you can use your reaction to force the creature to make a saving throw with its spellcasting ability modifier (DC = 8 + your proficiency bonus + your Intelligence modifier). On a failed save, you negate the spell's effect against you, and you steal the knowledge of the spell if it is at least 1st level and of a level you can cast. For the next 8 hours, you know the spell and can cast it using your spell slots. Once you use this feature, you can't use it again until you finish a long rest.", "kind": "combat", "appliesTo": ["save", "cast"] }
+        ]
+      }
+    ],
+    "subclassLevel": 3,
+    "starterEquipment": [
+      { "id": "rapier", "quantity": 1 },
+      { "id": "shortbow", "quantity": 1 },
+      { "id": "arrows-20", "quantity": 1 },
+      { "id": "burglars-pack", "quantity": 1 },
+      { "id": "leather", "quantity": 1 },
+      { "id": "dagger", "quantity": 2 },
+      { "id": "thieves-tools", "quantity": 1 }
+    ]
+  },
+  {
+    "id": "barbarian",
+    "name": "Barbarian",
+    "description": "A fierce warrior of primitive background who can enter a battle rage.",
+    "hitDie": 12,
+    "primaryAbilities": ["strength"],
+    "savingThrows": ["strength", "constitution"],
+    "armorProficiencies": ["Light armor", "Medium armor", "Shields"],
+    "weaponProficiencies": ["Simple weapons", "Martial weapons"],
+    "toolProficiencies": [],
+    "skillChoiceCount": 2,
+    "skillChoiceFrom": ["animalHandling", "athletics", "intimidation", "nature", "perception", "survival"],
+    "features": [
+      { "level": 1, "name": "Rage", "body": "On your turn, you can enter a rage as a bonus action. Your rage lasts for 1 minute and ends early if you fall unconscious, are knocked unconscious, or end your turn without attacking a hostile creature or taking damage since your last turn. While raging you gain advantage on Strength checks and Strength saving throws, bonus damage on melee weapon attacks using Strength (+2 at 1st, +3 at 9th, +4 at 16th), and resistance to bludgeoning, piercing, and slashing damage. Uses per long rest: 2 (1st), 3 (3rd), 4 (6th), 5 (12th), 6 (17th), unlimited (20th).", "kind": "combat", "appliesTo": ["attack", "save", "skill", "check"] },
+      { "level": 1, "name": "Unarmored Defense", "body": "While you are not wearing any armor, your Armor Class equals 10 + your Dexterity modifier + your Constitution modifier. You can use a shield and still gain this benefit.", "kind": "combat" },
+      { "level": 2, "name": "Reckless Attack", "body": "When you make your first attack on your turn, you can decide to attack recklessly. Doing so gives you advantage on melee weapon attack rolls using Strength during this turn, but attack rolls against you have advantage until your next turn.", "kind": "combat", "appliesTo": ["attack"] },
+      { "level": 2, "name": "Danger Sense", "body": "You have an uncanny sense of when things nearby aren't as they should be. You have advantage on Dexterity saving throws against effects that you can see, such as traps and spells. To gain this benefit, you can't be blinded, deafened, or incapacitated.", "kind": "combat", "appliesTo": ["begin-encounter", "save"] },
+      { "level": 3, "name": "Primal Path", "body": "Choose a path that shapes the nature of your rage (Path of the Berserker or Path of the Totem Warrior). Your choice grants you features at 3rd level and again at 6th, 10th, and 14th level." },
+      { "level": 4, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 5, "name": "Extra Attack", "body": "You can attack twice, instead of once, whenever you take the Attack action on your turn.", "kind": "combat", "appliesTo": ["attack"] },
+      { "level": 5, "name": "Fast Movement", "body": "Your speed increases by 10 feet while you aren't wearing heavy armor.", "kind": "both" },
+      { "level": 7, "name": "Feral Instinct", "body": "Your instincts are so honed that you have advantage on initiative rolls. Additionally, if you are surprised at the beginning of combat and aren't incapacitated, you can act normally on your first turn, but only if you enter your rage before doing anything else on that turn.", "kind": "combat", "appliesTo": ["begin-encounter"] },
+      { "level": 8, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 9, "name": "Brutal Critical", "body": "You can roll one additional weapon damage die when determining the extra damage for a critical hit with a melee attack. This increases to two additional dice at 13th level and three additional dice at 17th level.", "kind": "combat", "appliesTo": ["attack"] },
+      { "level": 11, "name": "Relentless Rage", "body": "Your rage can keep you fighting despite grievous wounds. If you drop to 0 hit points while you're raging and don't die outright, you can make a DC 10 Constitution saving throw. If you succeed, you drop to 1 hit point instead. Each time you use this feature after the first, the DC increases by 5. The DC resets to 10 when you finish a short or long rest.", "kind": "combat" },
+      { "level": 12, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 13, "name": "Brutal Critical (2 dice)", "body": "You roll two additional weapon damage dice on a critical hit with a melee attack.", "kind": "combat", "appliesTo": ["attack"] },
+      { "level": 15, "name": "Persistent Rage", "body": "Your rage is so fierce that it ends early only if you fall unconscious or if you choose to end it.", "kind": "combat" },
+      { "level": 16, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 17, "name": "Brutal Critical (3 dice)", "body": "You roll three additional weapon damage dice on a critical hit with a melee attack.", "kind": "combat", "appliesTo": ["attack"] },
+      { "level": 18, "name": "Indomitable Might", "body": "If your total for a Strength check is less than your Strength score, you can use that score in place of the total.", "kind": "both", "appliesTo": ["check"] },
+      { "level": 19, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 20, "name": "Primal Champion", "body": "You embody the power of the wilds. Your Strength and Constitution scores increase by 4. Your maximum for those scores is now 24." },
+      { "level": 3, "name": "Primal Knowledge", "body": "Tasha's optional feature: at 3rd level you gain proficiency in one skill of your choice from the list of skills available to barbarians at 1st level (Animal Handling, Athletics, Intimidation, Nature, Perception, Survival). You gain proficiency in one additional skill from that list at 10th level. Pick the skill manually on the Skills step for now — a Tasha's-knowledge skill picker is a follow-up.", "appliesTo": ["skill"], "optional": true }
+    ],
+    "multiclassRequirements": {
+      "mode": "all",
+      "minimums": [
+        { "ability": "strength", "amount": 13 }
+      ]
+    },
+    "caster": null,
+    "subclasses": [
+      {
+        "id": "path-of-the-berserker",
+        "name": "Path of the Berserker",
+        "description": "For some barbarians, rage is a means to an end — that end being violence. The Path of the Berserker is a path of untrammeled fury, slick with blood. Berserkers trade exhaustion for the heaviest single-target output the class can muster.",
+        "features": [
+          { "level": 3, "name": "Frenzy", "body": "Starting when you choose this path at 3rd level, you can go into a frenzy when you rage. If you do so, for the duration of your rage you can make a single melee weapon attack as a bonus action on each of your turns after this one. When your rage ends, you suffer one level of exhaustion (as described in appendix A).", "kind": "combat", "appliesTo": ["attack"] },
+          { "level": 6, "name": "Mindless Rage", "body": "Beginning at 6th level, you can't be charmed or frightened while raging. If you are charmed or frightened when you enter your rage, the effect is suspended for the duration of the rage.", "kind": "combat", "appliesTo": ["save"] },
+          { "level": 10, "name": "Intimidating Presence", "body": "Beginning at 10th level, you can use your action to frighten someone with your menacing presence. When you do so, choose one creature that you can see within 30 feet of you. If the creature can see or hear you, it must succeed on a Wisdom saving throw (DC equal to 8 + your proficiency bonus + your Charisma modifier) or be frightened of you until the end of your next turn. On subsequent turns, you can use your action to extend the duration of this effect on the frightened creature until the end of your next turn. This effect ends if the creature ends its turn out of line of sight or more than 60 feet away from you." },
+          { "level": 14, "name": "Retaliation", "body": "Starting at 14th level, when you take damage from a creature that is within 5 feet of you, you can use your reaction to make a melee weapon attack against that creature.", "kind": "combat" }
+        ]
+      },
+      {
+        "id": "path-of-the-totem-warrior",
+        "name": "Path of the Totem Warrior",
+        "description": "A barbarian who walks the spiritual path of the animal world, taking guardians and aspects from totem beasts. Hallmark: a CON-based defender — Bear totem resistance to nearly everything makes the totem warrior the table's incoming-damage sponge.",
+        "features": [
+          { "level": 3, "name": "Spirit Seeker", "body": "Yours is a path that seeks attunement with the natural world, giving you a kinship with beasts. At 3rd level, you gain the ability to cast the beast sense and speak with animals spells, but only as rituals.", "appliesTo": ["cast"] },
+          { "level": 3, "name": "Totem Spirit", "body": "At 3rd level, when you adopt this path, you choose a totem spirit and gain its feature. Bear: while raging, you have resistance to all damage except psychic damage. Eagle: while raging, opportunity attacks against you have disadvantage, and you can use the Dash action as a bonus action. Wolf: while raging, your friends have advantage on melee attack rolls against any creature within 5 feet of you. Pick one — track which totem you chose manually for now.", "kind": "combat", "appliesTo": ["attack"] },
+          { "level": 6, "name": "Aspect of the Beast", "body": "At 6th level, you gain a magical benefit based on the totem animal of your choice (can differ from your 3rd-level pick). Bear: carrying capacity doubled + advantage on STR checks to push/pull/lift/break objects. Eagle: see clearly up to 1 mile; perceive in dim light as bright. Wolf: tracking expert + lead allies through difficult terrain at full speed if no larger than Medium. Pick one — narrative for now.", "appliesTo": ["check"] },
+          { "level": 10, "name": "Spirit Walker", "body": "At 10th level, you can cast the commune with nature spell, but only as a ritual. When you do so, a spiritual version of one of the animals you chose for Totem Spirit or Aspect of the Beast appears to give you the information.", "appliesTo": ["cast"] },
+          { "level": 14, "name": "Totemic Attunement", "body": "At 14th level, you gain a magical benefit based on a totem animal of your choice. Bear: while raging, creatures within 5 feet that are hostile have disadvantage on attack rolls against creatures other than you. Eagle: while raging, you gain a flying speed equal to your walking speed. Wolf: while raging, when you knock a Large or smaller creature prone with a melee attack on your turn, you can use a bonus action to make a melee attack against that creature. Pick one — narrative.", "kind": "combat" }
+        ]
+      }
+    ],
+    "subclassLevel": 3,
+    "starterEquipment": [
+      { "id": "greataxe", "quantity": 1 },
+      { "id": "handaxe", "quantity": 2 },
+      { "id": "javelin", "quantity": 4 },
+      { "id": "explorers-pack", "quantity": 1 }
+    ]
+  },
+  {
+    "id": "paladin",
+    "name": "Paladin",
+    "description": "A holy warrior bound to a sacred oath.",
+    "hitDie": 10,
+    "primaryAbilities": ["strength", "charisma"],
+    "savingThrows": ["wisdom", "charisma"],
+    "armorProficiencies": ["Light armor", "Medium armor", "Heavy armor", "Shields"],
+    "weaponProficiencies": ["Simple weapons", "Martial weapons"],
+    "toolProficiencies": [],
+    "skillChoiceCount": 2,
+    "skillChoiceFrom": ["athletics", "insight", "intimidation", "medicine", "persuasion", "religion"],
+    "features": [
+      { "level": 1, "name": "Divine Sense", "body": "As an action, you can open your awareness to detect celestials, fiends, and undead within 60 feet. You can use this feature a number of times equal to 1 + your Charisma modifier per long rest." },
+      { "level": 1, "name": "Lay on Hands", "body": "You have a pool of healing power that replenishes each long rest. With that pool, you can restore a total number of hit points equal to your paladin level × 5. As an action, you can touch a creature and draw from the pool to restore hit points or to cure a disease or poison (5 points per disease/poison cured).", "kind": "both" },
+      { "level": 2, "name": "Fighting Style", "body": "You adopt a style of fighting as your specialty. Choose one: Defense (+1 AC while wearing armor), Dueling (+2 damage with one-handed melee weapons when no other weapon is held), Great Weapon Fighting (reroll 1s and 2s on damage dice for two-handed melee weapons), or Protection (impose disadvantage on an attack against a creature within 5 ft as a reaction).", "kind": "combat", "appliesTo": ["attack"] },
+      { "level": 2, "name": "Spellcasting", "body": "You have learnt to draw on divine magic through meditation and prayer to cast spells as a cleric does. Charisma is your spellcasting ability. You prepare a list of paladin spells available to cast equal to your Charisma modifier + half your paladin level (minimum one)." },
+      { "level": 2, "name": "Divine Smite", "body": "When you hit a creature with a melee weapon attack, you can expend one paladin spell slot to deal radiant damage to the target, in addition to the weapon's damage. The extra damage is 2d8 for a 1st-level slot, plus 1d8 for each spell level higher than 1st, to a maximum of 5d8. The damage increases by 1d8 if the target is an undead or a fiend, to a maximum of 6d8.", "kind": "combat", "appliesTo": ["attack"] },
+      { "level": 3, "name": "Divine Health", "body": "By 3rd level, the divine magic flowing through you makes you immune to disease." },
+      { "level": 3, "name": "Sacred Oath", "body": "Choose your oath (Oath of Devotion, Oath of the Ancients, or Oath of Vengeance). Your choice grants you features at 3rd level and again at 7th, 15th, and 20th level. It also grants you Channel Divinity options and Oath Spells unique to your oath." },
+      { "level": 4, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 5, "name": "Extra Attack", "body": "You can attack twice, instead of once, whenever you take the Attack action on your turn.", "kind": "combat", "appliesTo": ["attack"] },
+      { "level": 6, "name": "Aura of Protection", "body": "Whenever you or a friendly creature within 10 feet of you must make a saving throw, the creature gains a bonus to the saving throw equal to your Charisma modifier (with a minimum bonus of +1). You must be conscious to grant this bonus. At 18th level, the range of this aura increases to 30 feet.", "kind": "combat", "appliesTo": ["save"] },
+      { "level": 8, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 10, "name": "Aura of Courage", "body": "You and friendly creatures within 10 feet of you can't be frightened while you are conscious. At 18th level, the range of this aura increases to 30 feet.", "kind": "combat", "appliesTo": ["save"] },
+      { "level": 11, "name": "Improved Divine Smite", "body": "You are so suffused with righteous might that all your melee weapon strikes carry divine power with them. Whenever you hit a creature with a melee weapon, the creature takes an extra 1d8 radiant damage.", "kind": "combat", "appliesTo": ["attack"] },
+      { "level": 12, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 14, "name": "Cleansing Touch", "body": "You can use your action to end one spell on yourself or on one willing creature that you touch. You can use this feature a number of times equal to your Charisma modifier (a minimum of once). You regain expended uses when you finish a long rest.", "appliesTo": ["save"] },
+      { "level": 16, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 18, "name": "Aura Improvements", "body": "The range of your Aura of Protection and Aura of Courage increases to 30 feet.", "kind": "combat", "appliesTo": ["save"] },
+      { "level": 19, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 3, "name": "Channel Divinity: Harness Divine Power", "body": "Tasha's optional Channel Divinity: as a bonus action, you draw on the divine to recover one spell slot of your choice from a level no higher than half your proficiency bonus (rounded up). Once you use this Channel Divinity, you can't use it again until you finish a short or long rest unless you expend a 1st-level spell slot to use it again.", "kind": "both", "appliesTo": ["cast"], "optional": true }
+    ],
+    "multiclassRequirements": {
+      "mode": "all",
+      "minimums": [
+        { "ability": "strength", "amount": 13 },
+        { "ability": "charisma", "amount": 13 }
+      ]
+    },
+    "caster": {
+      "kind": "half",
+      "startsAtLevel": 2,
+      "cantripsKnown": 0,
+      "knownL1Spells": 0,
+      "preparation": "prepared"
+    },
+    "subclasses": [
+      {
+        "id": "oath-of-devotion",
+        "name": "Oath of Devotion",
+        "description": "The classic knight in shining armor. The Oath of Devotion binds a paladin to the loftiest ideals of justice, virtue, and order. Hallmark: anti-undead/fiend tools and a charm-proof aura around the party.",
+        "features": [
+          { "level": 3, "name": "Channel Divinity: Sacred Weapon", "body": "As an action, you can imbue one weapon that you are holding with positive energy, using your Channel Divinity. For 1 minute, you add your Charisma modifier to attack rolls made with that weapon (with a minimum bonus of +1). The weapon also emits bright light in a 20-foot radius and dim light 20 feet beyond that. If the weapon is not already magical, it becomes magical for the duration. You can end this effect on your turn as part of any other action.", "kind": "combat", "appliesTo": ["attack"] },
+          { "level": 3, "name": "Channel Divinity: Turn the Unholy", "body": "As an action, you present your holy symbol and speak a prayer censuring fiends and undead. Each fiend or undead that can see or hear you within 30 feet of you must make a Wisdom saving throw. If the creature fails, it is turned for 1 minute or until it takes damage.", "kind": "combat", "appliesTo": ["cast"] },
+          { "level": 7, "name": "Aura of Devotion", "body": "Starting at 7th level, you and friendly creatures within 10 feet of you can't be charmed while you are conscious. At 18th level, the range of this aura increases to 30 feet.", "kind": "combat", "appliesTo": ["save"] },
+          { "level": 15, "name": "Purity of Spirit", "body": "Beginning at 15th level, you are always under the effects of a protection from evil and good spell.", "kind": "combat", "appliesTo": ["save"] },
+          { "level": 20, "name": "Holy Nimbus", "body": "At 20th level, as an action, you can emanate an aura of sunlight. For 1 minute, bright light shines from you in a 30-foot radius, and dim light shines 30 feet beyond that. Whenever an enemy creature starts its turn in the bright light, the creature takes 10 radiant damage. In addition, for the duration, you have advantage on saving throws against spells cast by fiends or undead. Once you use this feature, you can't use it again until you finish a long rest.", "kind": "combat" }
+        ]
+      },
+      {
+        "id": "oath-of-the-ancients",
+        "name": "Oath of the Ancients",
+        "description": "The Oath of the Ancients is as old as the race of elves and the rituals of the druids. Sometimes called fey knights, green knights, or horned knights, paladins who swear this oath cast their lot with the side of the light in the cosmic struggle against darkness. Hallmark: spell-resistance aura makes the whole party a magic sponge.",
+        "features": [
+          { "level": 3, "name": "Channel Divinity: Nature's Wrath", "body": "You can use your Channel Divinity to invoke primeval forces to ensnare a foe. As an action, you can cause spectral vines to spring up and reach for a creature within 10 feet of you that you can see. The creature must succeed on a Strength or Dexterity saving throw (its choice) or be restrained. While restrained by the vines, the creature repeats the saving throw at the end of each of its turns. On a success, it frees itself and the vines vanish.", "kind": "combat", "appliesTo": ["cast"] },
+          { "level": 3, "name": "Channel Divinity: Turn the Faithless", "body": "You can use your Channel Divinity to utter ancient words that are painful for fey and fiends to hear. As an action, you present your holy symbol, and each fey or fiend within 30 feet of you that can hear you must make a Wisdom saving throw. On a failed save, the creature is turned for 1 minute or until it takes damage. A turned creature must spend its turns trying to move as far away from you as it can, and it can't willingly move to a space within 30 feet of you.", "kind": "combat", "appliesTo": ["cast"] },
+          { "level": 7, "name": "Aura of Warding", "body": "Starting at 7th level, ancient magic lies so heavily upon you that it forms an eldritch ward. You and friendly creatures within 10 feet of you have resistance to damage from spells. At 18th level, the range of this aura increases to 30 feet.", "kind": "combat", "appliesTo": ["save"] },
+          { "level": 15, "name": "Undying Sentinel", "body": "Starting at 15th level, when you are reduced to 0 hit points and are not killed outright, you can choose to drop to 1 hit point instead. Once you use this ability, you can't do so again until you finish a long rest. Additionally, you suffer none of the drawbacks of old age and can't be aged magically.", "kind": "combat" },
+          { "level": 20, "name": "Elder Champion", "body": "At 20th level, you can assume the form of an ancient force of nature, taking on an appearance you choose (e.g. green skin or bark-like skin). For 1 minute, you gain: regain 10 HP at the start of each of your turns; spells you cast with a casting time of 1 action take a bonus action instead; enemy creatures within 10 feet of you have disadvantage on saves against your paladin spells and Channel Divinity options. Once you use this feature, you can't use it again until you finish a long rest.", "kind": "combat" }
+        ]
+      },
+      {
+        "id": "oath-of-vengeance",
+        "name": "Oath of Vengeance",
+        "description": "A grim oath that calls a paladin to punish those who have committed a grievous sin — sometimes called Avengers or Dark Knights. Hallmark: relentless single-target hunters with the Vow of Enmity Channel Divinity granting advantage on every attack against the marked foe.",
+        "features": [
+          { "level": 3, "name": "Channel Divinity: Abjure Enemy", "body": "As an action, you present your holy symbol and speak a prayer of denunciation, using your Channel Divinity. Choose one creature within 60 feet of you that you can see. That creature must make a Wisdom saving throw, unless it is immune to being frightened. Fiends and undead have disadvantage on this saving throw. On a failed save, the creature is frightened for 1 minute or until it takes any damage. While frightened, the creature's speed is 0 and it can't benefit from any bonus to its speed. On a successful save, the creature's speed is halved for 1 minute or until the creature takes any damage.", "kind": "combat", "appliesTo": ["cast"] },
+          { "level": 3, "name": "Channel Divinity: Vow of Enmity", "body": "As a bonus action, you can utter a vow of enmity against a creature you can see within 10 feet of you, using your Channel Divinity. You gain advantage on attack rolls against the creature for 1 minute or until it drops to 0 hit points or falls unconscious.", "kind": "combat", "appliesTo": ["attack"] },
+          { "level": 7, "name": "Relentless Avenger", "body": "By 7th level, your supernatural focus helps you close off a foe's retreat. When you hit a creature with an opportunity attack, you can move up to half your speed immediately after the attack and as part of the same reaction. This movement doesn't provoke opportunity attacks.", "kind": "combat", "appliesTo": ["attack"] },
+          { "level": 15, "name": "Soul of Vengeance", "body": "Starting at 15th level, the authority with which you speak your Vow of Enmity gives you greater power over your foe. When a creature under the effect of your Vow of Enmity makes an attack, you can use your reaction to make a melee weapon attack against that creature if it is within range.", "kind": "combat", "appliesTo": ["attack"] },
+          { "level": 20, "name": "Avenging Angel", "body": "At 20th level, you can assume the form of an angelic avenger. Using your action, you undergo a transformation. For 1 hour, you gain the following benefits: wings sprout from your back and grant you a flying speed of 60 feet; you emanate an aura of menace in a 30-foot radius — the first time any enemy creature enters the aura or starts its turn there during a battle, the creature must succeed on a Wisdom saving throw or be frightened for 1 minute or until it takes any damage. Attack rolls against the frightened creature have advantage. Once you use this feature, you can't use it again until you finish a long rest.", "kind": "combat" }
+        ]
+      }
+    ],
+    "subclassLevel": 3,
+    "starterEquipment": [
+      { "id": "longsword", "quantity": 1 },
+      { "id": "chain-mail", "quantity": 1 },
+      { "id": "shield", "quantity": 1 },
+      { "id": "javelin", "quantity": 5 },
+      { "id": "priests-pack", "quantity": 1 },
+      { "id": "holy-symbol-amulet", "quantity": 1 }
+    ]
+  },
+  {
+    "id": "bard",
+    "name": "Bard",
+    "description": "An inspiring magician whose power echoes the music of creation.",
+    "hitDie": 8,
+    "primaryAbilities": ["charisma"],
+    "savingThrows": ["dexterity", "charisma"],
+    "armorProficiencies": ["Light armor"],
+    "weaponProficiencies": ["Simple weapons", "Hand crossbows", "Longswords", "Rapiers", "Shortswords"],
+    "toolProficiencies": ["Three musical instruments of your choice"],
+    "skillChoiceCount": 3,
+    "skillChoiceFrom": ["acrobatics", "animalHandling", "arcana", "athletics", "deception", "history", "insight", "intimidation", "investigation", "medicine", "nature", "perception", "performance", "persuasion", "religion", "sleightOfHand", "stealth", "survival"],
+    "features": [
+      { "level": 1, "name": "Spellcasting", "body": "You have learnt to untangle and reshape the fabric of reality in harmony with your wishes and music. Charisma is your spellcasting ability for your bard spells." },
+      { "level": 1, "name": "Bardic Inspiration", "body": "As a bonus action, you can choose one creature other than yourself within 60 feet who can hear you. That creature gains one Bardic Inspiration die. Within the next 10 minutes, the creature can roll the die and add the number to one ability check, attack roll, or saving throw it makes. The die is a d6 at 1st level, a d8 at 5th, a d10 at 10th, and a d12 at 15th. You can use this feature a number of times equal to your Charisma modifier (a minimum of once), and you regain expended uses on a long rest (a short rest from 5th level on).", "kind": "both", "appliesTo": ["begin-encounter"] },
+      { "level": 2, "name": "Jack of All Trades", "body": "You can add half your proficiency bonus, rounded down, to any ability check you make that doesn't already include your proficiency bonus.", "appliesTo": ["skill", "check"] },
+      { "level": 2, "name": "Song of Rest", "body": "You can use soothing music or oration during a short rest. If you or any friendly creatures who can hear your performance regain hit points at the end of the short rest by spending one or more Hit Dice, each of those creatures regains an extra 1d6 hit points. The extra hit points increase to 1d8 at 9th level, 1d10 at 13th, and 1d12 at 17th." },
+      { "level": 3, "name": "Bard College", "body": "Choose a bard college that grants you features at 3rd level and again at 6th and 14th level (College of Lore or College of Valor)." },
+      { "level": 3, "name": "Expertise", "body": "Choose two of your skill proficiencies. Your proficiency bonus is doubled for any ability check you make that uses either of the chosen proficiencies. At 10th level, you can choose another two skill proficiencies to gain this benefit.", "appliesTo": ["skill"] },
+      { "level": 4, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 5, "name": "Font of Inspiration", "body": "You regain all of your expended uses of Bardic Inspiration when you finish a short or long rest.", "kind": "both" },
+      { "level": 6, "name": "Countercharm", "body": "As an action, you can start a performance that lasts until the end of your next turn. During that time, you and any friendly creatures within 30 feet of you have advantage on saving throws against being frightened or charmed. A creature must be able to hear you to gain this benefit. The performance ends early if you are incapacitated or silenced or if you voluntarily end it.", "kind": "combat", "appliesTo": ["save"] },
+      { "level": 8, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 10, "name": "Magical Secrets", "body": "You have plundered magical knowledge from a wide spectrum of disciplines. Choose two spells from any class, including this one. A spell you choose must be of a level you can cast, or a cantrip. The chosen spells count as bard spells for you and are included in the number of spells you know. You learn two additional spells from any class at 14th level and again at 18th level.", "appliesTo": ["cast"] },
+      { "level": 10, "name": "Expertise (additional)", "body": "Choose another two of your skill proficiencies to gain expertise — your proficiency bonus is doubled for any ability check using those skills.", "appliesTo": ["skill"] },
+      { "level": 12, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 14, "name": "Magical Secrets (additional)", "body": "You learn two additional spells from any class through Magical Secrets.", "appliesTo": ["cast"] },
+      { "level": 16, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 18, "name": "Magical Secrets (additional)", "body": "You learn two additional spells from any class through Magical Secrets.", "appliesTo": ["cast"] },
+      { "level": 19, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 20, "name": "Superior Inspiration", "body": "When you roll initiative and have no uses of Bardic Inspiration left, you regain one use.", "kind": "combat", "appliesTo": ["begin-encounter"] },
+      { "level": 2, "name": "Magical Inspiration", "body": "Tasha's optional feature: if a creature has a Bardic Inspiration die from you and casts a spell that restores hit points or deals damage, the creature can roll the die and choose a target — a creature damaged by the spell adds the result to a damage roll, or a creature healed by the spell adds the roll to one of its hit point totals. The Bardic Inspiration die is then lost.", "kind": "combat", "appliesTo": ["cast"], "optional": true }
+    ],
+    "multiclassRequirements": {
+      "mode": "all",
+      "minimums": [{ "ability": "charisma", "amount": 13 }]
+    },
+    "caster": {
+      "kind": "full",
+      "startsAtLevel": 1,
+      "cantripsKnown": 2,
+      "knownL1Spells": 4,
+      "preparation": "known"
+    },
+    "subclasses": [
+      {
+        "id": "college-of-lore",
+        "name": "College of Lore",
+        "description": "Bards of the College of Lore know something about most things, collecting bits of knowledge wherever they wander. The college values the truth and seeks it out — useful skills, salient tales, and the precise word that unmakes another's confidence.",
+        "features": [
+          { "level": 3, "name": "Bonus Proficiencies", "body": "When you join the College of Lore at 3rd level, you gain proficiency with three skills of your choice." },
+          { "level": 3, "name": "Cutting Words", "body": "Starting at 3rd level, you can use your wit to distract, confuse, and otherwise sap the confidence and competence of others. When a creature that you can see within 60 feet of you makes an attack roll, an ability check, or a damage roll, you can use your reaction to expend one of your uses of Bardic Inspiration, rolling a Bardic Inspiration die and subtracting the number rolled from the creature's roll. You can choose to use this feature after the creature makes its roll, but before the GM determines whether the attack roll or ability check succeeds or fails, or before the creature deals its damage. The creature is immune if it can't hear you or if it's immune to being charmed.", "kind": "combat", "appliesTo": ["attack", "check"] },
+          { "level": 6, "name": "Additional Magical Secrets", "body": "At 6th level, you learn two spells of your choice from any class. A spell you choose must be of a level you can cast, as shown on the bard table, or a cantrip. The chosen spells count as bard spells for you but don't count against the number of bard spells you know." },
+          { "level": 14, "name": "Peerless Skill", "body": "Starting at 14th level, when you make an ability check, you can expend one use of Bardic Inspiration. Roll a Bardic Inspiration die and add the number rolled to your ability check. You can choose to do so after you roll the die for the ability check, but before the GM tells you whether you succeed or fail.", "kind": "both", "appliesTo": ["check"] }
+        ]
+      },
+      {
+        "id": "college-of-valor",
+        "name": "College of Valor",
+        "description": "Bards of the College of Valor are daring skalds whose tales keep alive the memory of the great heroes of the past, and thereby inspire a new generation of heroes. These bards gather in mead halls or around great bonfires to sing of heroic deeds and stoke courage in the souls of warriors.",
+        "features": [
+          { "level": 3, "name": "Bonus Proficiencies", "body": "When you join the College of Valor at 3rd level, you gain proficiency with medium armor, shields, and martial weapons." },
+          { "level": 3, "name": "Combat Inspiration", "body": "Also at 3rd level, you learn to inspire others in battle. A creature that has a Bardic Inspiration die from you can roll that die and add the number rolled to a weapon damage roll it just made. Alternatively, when an attack roll is made against the creature, it can use its reaction to roll the Bardic Inspiration die and add the number rolled to its AC against that attack, after seeing the roll but before knowing whether it hits or misses.", "kind": "combat", "appliesTo": ["attack"] },
+          { "level": 6, "name": "Extra Attack", "body": "Starting at 6th level, you can attack twice, instead of once, whenever you take the Attack action on your turn.", "kind": "combat", "appliesTo": ["attack"] },
+          { "level": 14, "name": "Battle Magic", "body": "At 14th level, you have mastered the art of weaving spellcasting and weapon use into a single harmonious act. When you use your action to cast a bard spell, you can make one weapon attack as a bonus action.", "kind": "combat", "appliesTo": ["cast"] }
+        ]
+      }
+    ],
+    "subclassLevel": 3,
+    "starterEquipment": [
+      { "id": "rapier", "quantity": 1 },
+      { "id": "leather", "quantity": 1 },
+      { "id": "dagger", "quantity": 1 },
+      { "id": "diplomats-pack", "quantity": 1 },
+      { "id": "lute", "quantity": 1 }
+    ]
+  },
+  {
+    "id": "druid",
+    "name": "Druid",
+    "description": "A priest of the Old Faith, wielding the powers of nature — moonlight and plant growth, fire and lightning — and adopting animal forms.",
+    "hitDie": 8,
+    "primaryAbilities": ["wisdom"],
+    "savingThrows": ["intelligence", "wisdom"],
+    "armorProficiencies": ["Light armor (non-metal)", "Medium armor (non-metal)", "Shields (non-metal)"],
+    "weaponProficiencies": ["Clubs", "Daggers", "Darts", "Javelins", "Maces", "Quarterstaffs", "Scimitars", "Sickles", "Slings", "Spears"],
+    "toolProficiencies": ["Herbalism kit"],
+    "skillChoiceCount": 2,
+    "skillChoiceFrom": ["arcana", "animalHandling", "insight", "medicine", "nature", "perception", "religion", "survival"],
+    "features": [
+      { "level": 1, "name": "Druidic", "body": "You know Druidic, the secret language of druids. You can speak it and use it to leave hidden messages." },
+      { "level": 1, "name": "Spellcasting", "body": "Drawing on the divine essence of nature itself, you can cast spells to shape that essence to your will. Wisdom is your spellcasting ability. You prepare a list of druid spells equal to your Wisdom modifier + your druid level (minimum one)." },
+      { "level": 2, "name": "Wild Shape", "body": "As an action, you can magically assume the shape of a beast that you have seen before. You can use this feature twice per short or long rest. You can stay in beast shape for hours equal to half your druid level. At 2nd level you can transform into a beast with a challenge rating of 1/4 or lower that has no flying or swimming speed. The CR limit increases as you level (see Wild Shape Improvement). You revert when the duration ends, when you fall unconscious, when you drop to 0 hit points, or when you use a bonus action to do so.", "kind": "both", "appliesTo": ["cast"] },
+      { "level": 2, "name": "Druid Circle", "body": "Choose to identify with a circle of druids: the Circle of the Land or the Circle of the Moon. Your choice grants you features at 2nd level and again at 6th, 10th, and 14th level." },
+      { "level": 4, "name": "Wild Shape Improvement", "body": "You can now use your Wild Shape to transform into a beast with a challenge rating as high as 1/2 (no flying speed).", "appliesTo": ["cast"] },
+      { "level": 4, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 8, "name": "Wild Shape Improvement", "body": "You can now use your Wild Shape to transform into a beast with a challenge rating as high as 1, including beasts with a flying speed.", "appliesTo": ["cast"] },
+      { "level": 8, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 12, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 16, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 18, "name": "Timeless Body", "body": "The primal magic that you wield causes you to age more slowly. For every 10 years that pass, your body ages only 1 year." },
+      { "level": 18, "name": "Beast Spells", "body": "You can cast many of your druid spells in any shape you assume using Wild Shape. You can perform the somatic and verbal components of a druid spell while in a beast shape, but not material components.", "appliesTo": ["cast"] },
+      { "level": 19, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 20, "name": "Archdruid", "body": "You can use your Wild Shape an unlimited number of times. Additionally, you can ignore the verbal and somatic components of your druid spells, as well as any material components that lack a cost and aren't consumed by a spell.", "appliesTo": ["cast"] },
+      { "level": 1, "name": "Cantrip Versatility", "body": "Tasha's optional feature: whenever you finish a long rest, you can replace one druid cantrip you know with another cantrip from the druid spell list.", "optional": true }
+    ],
+    "multiclassRequirements": {
+      "mode": "all",
+      "minimums": [{ "ability": "wisdom", "amount": 13 }]
+    },
+    "caster": {
+      "kind": "full",
+      "startsAtLevel": 1,
+      "cantripsKnown": 2,
+      "knownL1Spells": 0,
+      "preparation": "prepared"
+    },
+    "subclasses": [
+      {
+        "id": "circle-of-the-land",
+        "name": "Circle of the Land",
+        "description": "The Circle of the Land is made up of mystics and sages who safeguard ancient knowledge and rites through a vast oral tradition. These druids meet within sacred circles of trees or standing stones to whisper primal secrets in Druidic.",
+        "features": [
+          { "level": 2, "name": "Bonus Cantrip", "body": "When you choose this circle at 2nd level, you learn one additional druid cantrip of your choice." },
+          { "level": 2, "name": "Natural Recovery", "body": "Starting at 2nd level, you can regain some of your magical energy by sitting in meditation and communing with nature. During a short rest, you choose expended spell slots to recover. The slots can have a combined level that is equal to or less than half your druid level (rounded up), and none of the slots can be 6th level or higher.", "kind": "combat", "appliesTo": ["cast"] },
+          { "level": 3, "name": "Circle Spells", "body": "Your mystical connection to the land infuses you with the ability to cast certain spells. At 3rd, 5th, 7th, and 9th level you gain access to circle spells connected to the land where you became a druid (arctic, coast, desert, forest, grassland, mountain, swamp, Underdark, or Underwater). Once you choose the associated land you can't change it. The circle spell list is added to your prepared spells and doesn't count against the number you can prepare. (Pick your land manually for now — the land-specific spell granter is a follow-up.)", "appliesTo": ["cast"] },
+          { "level": 6, "name": "Land's Stride", "body": "Starting at 6th level, moving through nonmagical difficult terrain costs you no extra movement. You can also pass through nonmagical plants without being slowed by them and without taking damage from them if they have thorns, spines, or a similar hazard. In addition, you have advantage on saving throws against plants that are magically created or manipulated to impede movement.", "appliesTo": ["save"] },
+          { "level": 10, "name": "Nature's Ward", "body": "When you reach 10th level, you can't be charmed or frightened by elementals or fey, and you are immune to poison and disease.", "kind": "combat", "appliesTo": ["save"] },
+          { "level": 14, "name": "Nature's Sanctuary", "body": "When you reach 14th level, creatures of the natural world sense your connection to nature and become hesitant to attack you. When a beast or plant creature attacks you, that creature must make a Wisdom saving throw against your druid spell save DC. On a failed save, the creature must choose a different target, or the attack automatically misses. On a successful save, the creature is immune to this effect for 24 hours.", "kind": "combat" }
+        ]
+      },
+      {
+        "id": "circle-of-the-moon",
+        "name": "Circle of the Moon",
+        "description": "Druids of the Moon are fierce guardians of the wild. They walk paths of moonlight and wear forms of swift and savage beasts. Hallmark: turn into beasts much earlier and much bigger than other druids, and use Wild Shape as a combat resource.",
+        "features": [
+          { "level": 2, "name": "Combat Wild Shape", "body": "When you choose this circle at 2nd level, you gain the ability to use Wild Shape on your turn as a bonus action, rather than as an action. Additionally, while you are transformed by Wild Shape, you can use a bonus action to expend one spell slot to regain 1d8 hit points per level of the spell slot expended.", "kind": "combat" },
+          { "level": 2, "name": "Circle Forms", "body": "The rites of your circle grant you the ability to transform into more dangerous animal forms. Starting at 2nd level, you can use your Wild Shape to transform into a beast with a challenge rating as high as 1. You ignore the Max. CR column of the Beast Shapes table, but must abide by the other limitations there. Starting at 6th level, you can transform into a beast with a challenge rating as high as your druid level divided by 3, rounded down.", "kind": "combat" },
+          { "level": 6, "name": "Primal Strike", "body": "Starting at 6th level, your attacks in beast form count as magical for the purpose of overcoming resistance and immunity to nonmagical attacks and damage.", "kind": "combat", "appliesTo": ["attack"] },
+          { "level": 10, "name": "Elemental Wild Shape", "body": "At 10th level, you can expend two uses of Wild Shape at the same time to transform into an air elemental, an earth elemental, a fire elemental, or a water elemental.", "kind": "combat" },
+          { "level": 14, "name": "Thousand Forms", "body": "By 14th level, you have learned to use magic to alter your physical form in more subtle ways. You can cast the alter self spell at will." }
+        ]
+      }
+    ],
+    "subclassLevel": 2,
+    "starterEquipment": [
+      { "id": "scimitar", "quantity": 1 },
+      { "id": "leather", "quantity": 1 },
+      { "id": "shield", "quantity": 1 },
+      { "id": "herbalism-kit", "quantity": 1 },
+      { "id": "explorers-pack", "quantity": 1 },
+      { "id": "druidic-focus-totem", "quantity": 1 }
+    ]
+  },
+  {
+    "id": "monk",
+    "name": "Monk",
+    "description": "A master of martial arts, harnessing the power of the body in pursuit of physical and spiritual perfection.",
+    "hitDie": 8,
+    "primaryAbilities": ["dexterity", "wisdom"],
+    "savingThrows": ["strength", "dexterity"],
+    "armorProficiencies": [],
+    "weaponProficiencies": ["Simple weapons", "Shortswords"],
+    "toolProficiencies": ["One type of artisan's tools or one musical instrument"],
+    "skillChoiceCount": 2,
+    "skillChoiceFrom": ["acrobatics", "athletics", "history", "insight", "religion", "stealth"],
+    "features": [
+      { "level": 1, "name": "Unarmored Defense", "body": "While you are wearing no armor and not wielding a shield, your AC equals 10 + your Dexterity modifier + your Wisdom modifier.", "kind": "combat" },
+      { "level": 1, "name": "Martial Arts", "body": "Your practice of martial arts gives you mastery of combat styles that use unarmed strikes and monk weapons. You can use Dexterity instead of Strength for the attack and damage rolls of your unarmed strikes and monk weapons. You can roll a martial-arts die in place of the normal damage (d4 at 1st, d6 at 5th, d8 at 11th, d10 at 17th). When you take the Attack action with an unarmed strike or a monk weapon, you can make one unarmed strike as a bonus action.", "kind": "combat", "appliesTo": ["attack"] },
+      { "level": 2, "name": "Ki", "body": "Your training allows you to harness the mystic energy of ki. Your access to this energy is represented by a number of ki points (equal to your monk level). You can spend these points to fuel various ki features (Flurry of Blows, Patient Defense, Step of the Wind), regaining all expended ki on a short or long rest. Save DC for ki features = 8 + your proficiency bonus + your Wisdom modifier.", "kind": "combat" },
+      { "level": 2, "name": "Unarmored Movement", "body": "Your speed increases by 10 feet while you are not wearing armor or wielding a shield. The bonus increases when you reach certain monk levels: +15 ft at 6th, +20 ft at 10th, +25 ft at 14th, +30 ft at 18th.", "kind": "both" },
+      { "level": 3, "name": "Monastic Tradition", "body": "Choose a monastic tradition (Way of the Open Hand, Way of Shadow, or Way of the Four Elements). Your choice grants you features at 3rd level and again at 6th, 11th, and 17th level." },
+      { "level": 3, "name": "Deflect Missiles", "body": "You can use your reaction to deflect or catch a missile when you are hit by a ranged weapon attack. The damage you take is reduced by 1d10 + your Dexterity modifier + your monk level. If you reduce the damage to 0 and the missile is small enough, you can catch it and spend 1 ki point to throw it back as a ranged attack.", "kind": "combat" },
+      { "level": 4, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 4, "name": "Slow Fall", "body": "You can use your reaction when you fall to reduce any falling damage you take by an amount equal to five times your monk level.", "kind": "combat" },
+      { "level": 5, "name": "Extra Attack", "body": "You can attack twice, instead of once, whenever you take the Attack action on your turn.", "kind": "combat", "appliesTo": ["attack"] },
+      { "level": 5, "name": "Stunning Strike", "body": "You can interfere with the flow of ki in an opponent's body. When you hit another creature with a melee weapon attack, you can spend 1 ki point to attempt a stunning strike. The target must succeed on a Constitution saving throw or be stunned until the end of your next turn.", "kind": "combat", "appliesTo": ["attack"] },
+      { "level": 6, "name": "Ki-Empowered Strikes", "body": "Your unarmed strikes count as magical for the purpose of overcoming resistance and immunity to nonmagical attacks and damage.", "kind": "combat", "appliesTo": ["attack"] },
+      { "level": 7, "name": "Evasion", "body": "Your instinctive agility lets you dodge out of the way of certain area effects, such as a blue dragon's breath or a fireball spell. When subjected to an effect that allows a Dex save for half damage, you take no damage on a success and only half on a failure.", "kind": "combat", "appliesTo": ["save"] },
+      { "level": 7, "name": "Stillness of Mind", "body": "You can use your action to end one effect on yourself that is causing you to be charmed or frightened.", "kind": "combat", "appliesTo": ["save"] },
+      { "level": 8, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 9, "name": "Unarmored Movement Improvement", "body": "You gain the ability to move along vertical surfaces and across liquids on your turn without falling during the move.", "kind": "both" },
+      { "level": 10, "name": "Purity of Body", "body": "Your mastery of ki suffuses your body with vigor: you are immune to disease and poison." },
+      { "level": 12, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 13, "name": "Tongue of the Sun and Moon", "body": "You learn to touch the ki of other minds so that you understand all spoken languages. Moreover, any creature that can understand a language can understand what you say." },
+      { "level": 14, "name": "Diamond Soul", "body": "Your mastery of ki grants you proficiency in all saving throws. Additionally, whenever you make a saving throw and fail, you can spend 1 ki point to reroll it and take the second result.", "kind": "combat", "appliesTo": ["save"] },
+      { "level": 15, "name": "Timeless Body", "body": "Your ki sustains you so that you suffer none of the frailty of old age, and you can't be aged magically. You no longer need food or water." },
+      { "level": 16, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 18, "name": "Empty Body", "body": "You can use your action to spend 4 ki points to become invisible for 1 minute. During that time, you also have resistance to all damage but force damage. Additionally, you can spend 8 ki points to cast astral projection without needing material components. When you do so, you can't take any other creatures with you.", "kind": "combat" },
+      { "level": 19, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 20, "name": "Perfect Self", "body": "When you roll initiative and have no ki points remaining, you regain 4 ki points.", "kind": "combat", "appliesTo": ["begin-encounter"] },
+      { "level": 2, "name": "Dedicated Weapon", "body": "Tasha's optional feature: whenever you finish a short or long rest, you can touch one weapon, provided it is not a heavy weapon, and that you are proficient with it. When you attack with that weapon, you can use your Dexterity instead of Strength for the attack and damage rolls, and the weapon's damage die counts as your Martial Arts die. The effect ends if you later use this feature on a different weapon, or if you don any armor or wield a shield.", "kind": "combat", "appliesTo": ["attack"], "optional": true },
+      { "level": 3, "name": "Ki-Fueled Attack", "body": "Tasha's optional feature: if you spend 1 ki point or more as part of your action on your turn, you can make one attack with an unarmed strike or monk weapon as a bonus action before the end of your turn.", "kind": "combat", "appliesTo": ["attack"], "optional": true },
+      { "level": 4, "name": "Quickened Healing", "body": "Tasha's optional feature: as a bonus action, you can spend 2 ki points and roll your martial arts die. You regain a number of hit points equal to the number rolled + your proficiency bonus.", "kind": "combat", "optional": true }
+    ],
+    "multiclassRequirements": {
+      "mode": "all",
+      "minimums": [
+        { "ability": "dexterity", "amount": 13 },
+        { "ability": "wisdom", "amount": 13 }
+      ]
+    },
+    "caster": null,
+    "subclasses": [
+      {
+        "id": "way-of-the-open-hand",
+        "name": "Way of the Open Hand",
+        "description": "The classic martial-arts master. Specialise in striking down foes, both with mystic chi and a flurry of well-aimed blows. Manipulate the energies in your body to heal and survive what others can't.",
+        "features": [
+          { "level": 3, "name": "Open Hand Technique", "body": "Starting when you choose this tradition at 3rd level, you can manipulate your enemy's ki when you harness your own. Whenever you hit a creature with one of the attacks granted by your Flurry of Blows, you can impose one of the following effects on that target: it must succeed on a Dexterity saving throw or be knocked prone; it must make a Strength saving throw — fail, and you push it up to 15 feet away from you; it can't take reactions until the end of your next turn.", "kind": "combat", "appliesTo": ["attack"] },
+          { "level": 6, "name": "Wholeness of Body", "body": "At 6th level, you gain the ability to heal yourself. As an action, you can regain hit points equal to three times your monk level. You must finish a long rest before you can use this feature again.", "kind": "combat" },
+          { "level": 11, "name": "Tranquility", "body": "At 11th level, you can enter a special meditation that surrounds you with an aura of peace. At the end of a long rest, you gain the effect of a sanctuary spell that lasts until the start of your next long rest (the spell can end early as normal). The saving throw DC for the spell equals 8 + your Wisdom modifier + your proficiency bonus.", "kind": "combat", "appliesTo": ["save"] },
+          { "level": 17, "name": "Quivering Palm", "body": "At 17th level, you gain the ability to set up lethal vibrations in someone's body. When you hit a creature with an unarmed strike, you can spend 3 ki points to start these imperceptible vibrations, which last for a number of days equal to your monk level. The vibrations are harmless unless you use your action to end them. To do so, you and the target must be on the same plane of existence. When you use this action, the creature must make a Constitution saving throw. If it fails, it is reduced to 0 hit points. If it succeeds, it takes 10d10 necrotic damage. You can have only one creature under the effect of this feature at a time. You can choose to end the vibrations harmlessly without using an action.", "kind": "combat", "appliesTo": ["attack"] }
+        ]
+      },
+      {
+        "id": "way-of-shadow",
+        "name": "Way of Shadow",
+        "description": "Monks of the Way of Shadow follow a tradition that values stealth and subterfuge. These monks might be called ninjas or shadowdancers, and they serve as spies and assassins. Hallmark: ki-fuelled stealth spells, teleport-between-shadows, and ambushes from impossible angles.",
+        "features": [
+          { "level": 3, "name": "Shadow Arts", "body": "Starting when you choose this tradition at 3rd level, you can use your ki to duplicate the effects of certain spells. As an action, you can spend 2 ki points to cast darkness, darkvision, pass without trace, or silence, without providing material components. Additionally, you gain the minor illusion cantrip if you don't already know it.", "appliesTo": ["cast"] },
+          { "level": 6, "name": "Shadow Step", "body": "At 6th level, you gain the ability to step from one shadow into another. When you are in dim light or darkness, as a bonus action you can teleport up to 60 feet to an unoccupied space you can see that is also in dim light or darkness. You then have advantage on the first melee attack you make before the end of the turn.", "kind": "combat", "appliesTo": ["attack"] },
+          { "level": 11, "name": "Cloak of Shadows", "body": "By 11th level, you have learned to become one with the shadows. When you are in an area of dim light or darkness, you can use your action to become invisible. You remain invisible until you make an attack, cast a spell, or are in an area of bright light.", "kind": "combat" },
+          { "level": 17, "name": "Opportunist", "body": "At 17th level, you can exploit a creature's momentary distraction when it is hit by an attack. Whenever a creature within 5 feet of you is hit by an attack made by a creature other than you, you can use your reaction to make a melee attack against that creature.", "kind": "combat", "appliesTo": ["attack"] }
+        ]
+      },
+      {
+        "id": "way-of-the-four-elements",
+        "name": "Way of the Four Elements",
+        "description": "Monks who follow the Way of the Four Elements channel elemental forces through their ki — elemental disciplines that spend ki points to unleash short bursts of fire, water, air, or earth magic. The signature monk gish. (Discipline picks are narrative for now — they spend the existing ki pool but aren't itemised as separate counters.)",
+        "features": [
+          { "level": 3, "name": "Disciple of the Elements", "body": "When you choose this tradition at 3rd level, you learn magical disciplines that harness the power of the four elements. A discipline requires you to spend ki points each time you use it. You know the Elemental Attunement discipline plus one other discipline of your choice. You learn one additional elemental discipline of your choice at 6th, 11th, and 17th level. Whenever you learn a new elemental discipline, you can also replace one elemental discipline that you already know with a different discipline. The DC for any saving throws caused by an elemental discipline = 8 + your proficiency bonus + your Wisdom modifier.", "kind": "both", "appliesTo": ["cast"] },
+          { "level": 3, "name": "Casting Elemental Spells", "body": "Some elemental disciplines allow you to cast spells. The maximum number of ki points you can spend to cast a spell scales with monk level: 5 ki by L5 (spell L1–2), 6 ki by L9 (up to spell L3), 7 ki by L13 (up to spell L4), 9 ki by L17 (up to spell L5). You must spend an additional ki point for each level of the spell beyond its base — for example, casting Fireball at 4th level costs 7 ki points. The maximum ki points you can spend on a single spell is limited by the table above.", "appliesTo": ["cast"] },
+          { "level": 17, "name": "Elemental Adept", "body": "By 17th level, your elemental disciplines are at their full power: you have access to disciplines requiring up to 9 ki points to use, you can cast monk-list elemental spells up to 5th level, and you've added Breath of Winter / Eternal Mountain Defense / River of Hungry Flame / Wave of Rolling Earth to the disciplines you can learn.", "kind": "combat", "appliesTo": ["cast"] }
+        ]
+      }
+    ],
+    "subclassLevel": 3,
+    "starterEquipment": [
+      { "id": "shortsword", "quantity": 1 },
+      { "id": "dungeoneers-pack", "quantity": 1 },
+      { "id": "dart", "quantity": 10 }
+    ]
+  },
+  {
+    "id": "ranger",
+    "name": "Ranger",
+    "description": "A warrior who uses martial prowess and nature magic to combat threats on the edges of civilisation.",
+    "hitDie": 10,
+    "primaryAbilities": ["dexterity", "wisdom"],
+    "savingThrows": ["strength", "dexterity"],
+    "armorProficiencies": ["Light armor", "Medium armor", "Shields"],
+    "weaponProficiencies": ["Simple weapons", "Martial weapons"],
+    "toolProficiencies": [],
+    "skillChoiceCount": 3,
+    "skillChoiceFrom": ["animalHandling", "athletics", "insight", "investigation", "nature", "perception", "stealth", "survival"],
+    "features": [
+      { "level": 1, "name": "Favored Enemy", "body": "Choose a type of favored enemy (aberrations, beasts, celestials, constructs, dragons, elementals, fey, fiends, giants, monstrosities, oozes, plants, or undead; or two races of humanoid). You have advantage on Wisdom (Survival) checks to track your favored enemies and on Intelligence checks to recall information about them. You also learn one language of your choice spoken by your favored enemies.", "kind": "both", "appliesTo": ["skill"] },
+      { "level": 1, "name": "Natural Explorer", "body": "Choose one type of favored terrain (arctic, coast, desert, forest, grassland, mountain, swamp, or the Underdark). While travelling for an hour or more in your favored terrain you gain many benefits: difficult terrain doesn't slow your group, your group can't become lost except by magical means, you remain alert to danger while doing another activity, you can move stealthily at a normal pace while alone, you find twice as much food while foraging, and you learn the exact number, sizes, and how long ago creatures passed while tracking them.", "appliesTo": ["skill"] },
+      { "level": 2, "name": "Fighting Style", "body": "You adopt a fighting style as your specialty. Choose one: Archery (+2 to attack rolls with ranged weapons), Defense (+1 AC while wearing armor), Dueling (+2 damage with one-handed melee weapons when no other weapon is held), or Two-Weapon Fighting (add ability modifier to off-hand damage).", "kind": "combat", "appliesTo": ["attack"] },
+      { "level": 2, "name": "Spellcasting", "body": "By the time you reach 2nd level, you have learnt to use the magical essence of nature to cast spells. Wisdom is your spellcasting ability. You prepare a list of ranger spells equal to your Wisdom modifier + half your ranger level (minimum one)." },
+      { "level": 3, "name": "Ranger Archetype", "body": "Choose an archetype that you strive to emulate (Hunter or Beast Master). Your choice grants you features at 3rd level and again at 7th, 11th, and 15th level." },
+      { "level": 3, "name": "Primeval Awareness", "body": "You can use your action and expend one ranger spell slot to focus your awareness on the region around you. For 1 minute per level of the spell slot expended, you can sense whether the following types of creatures are present within 1 mile of you (or 6 miles in your favored terrain): aberrations, celestials, dragons, elementals, fey, fiends, and undead." },
+      { "level": 4, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 5, "name": "Extra Attack", "body": "You can attack twice, instead of once, whenever you take the Attack action on your turn.", "kind": "combat", "appliesTo": ["attack"] },
+      { "level": 6, "name": "Favored Enemy (additional)", "body": "Choose one additional favored enemy and one additional language spoken by your favored enemies.", "kind": "both", "appliesTo": ["skill"] },
+      { "level": 6, "name": "Natural Explorer (additional)", "body": "Choose one additional favored terrain to apply Natural Explorer to." },
+      { "level": 8, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 8, "name": "Land's Stride", "body": "Moving through nonmagical difficult terrain costs you no extra movement. You can also pass through nonmagical plants without being slowed by them and without taking damage from them if they have thorns, spines, or a similar hazard. In addition, you have advantage on saving throws against plants that are magically created or manipulated to impede movement, such as those created by entangle." },
+      { "level": 10, "name": "Hide in Plain Sight", "body": "You can spend 1 minute creating camouflage for yourself. You must have access to fresh mud, dirt, plants, soot, and other naturally occurring materials. Once camouflaged, you gain a +10 bonus to Dexterity (Stealth) checks as long as you remain there without moving or taking actions." },
+      { "level": 10, "name": "Natural Explorer (third)", "body": "Choose one additional favored terrain to apply Natural Explorer to." },
+      { "level": 12, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 14, "name": "Favored Enemy (third)", "body": "Choose one additional favored enemy and one additional language spoken by your favored enemies.", "kind": "both", "appliesTo": ["skill"] },
+      { "level": 14, "name": "Vanish", "body": "You can use the Hide action as a bonus action on your turn. Also, you can't be tracked by nonmagical means, unless you choose to leave a trail." },
+      { "level": 16, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 18, "name": "Feral Senses", "body": "When you attack a creature you can't see, your inability to see it doesn't impose disadvantage on your attack rolls against it. You are also aware of the location of any invisible creature within 30 feet of you, provided that the creature isn't hidden from you and you aren't blinded or deafened.", "kind": "combat" },
+      { "level": 19, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 20, "name": "Foe Slayer", "body": "You become an unparalleled hunter of your enemies. Once on each of your turns, you can add your Wisdom modifier to the attack roll or the damage roll of an attack you make against one of your favored enemies. You can choose to use this feature before or after the roll, but before any effects of the roll are applied.", "kind": "combat", "appliesTo": ["attack"] },
+      { "level": 1, "name": "Deft Explorer", "body": "Tasha's alternative to Natural Explorer. You gain proficiency in one skill of your choice from the ranger's class skill list, plus one additional language. Additionally, you can move with little effort through difficult terrain — your speed isn't reduced by it. As you reach higher levels in this class, you gain extra Deft Explorer benefits (Roving at 6th, Tireless at 10th).", "kind": "both", "appliesTo": ["skill"], "optional": true, "replaces": "Natural Explorer" },
+      { "level": 1, "name": "Favored Foe", "body": "Tasha's alternative to Favored Enemy. You can call on your bond with nature to mark a creature as your favored enemy for a time. As a bonus action, you can hunter's-mark a creature you can see within 30 feet (concentration up to 1 minute). The first time on each of your turns that you hit it with an attack, the target takes extra damage equal to one Favored Foe die (1d4 at L1, 1d6 at L6, 1d8 at L14). You can use this feature a number of times equal to your proficiency bonus per long rest.", "kind": "both", "appliesTo": ["attack"], "optional": true, "replaces": "Favored Enemy" }
+    ],
+    "multiclassRequirements": {
+      "mode": "all",
+      "minimums": [
+        { "ability": "dexterity", "amount": 13 },
+        { "ability": "wisdom", "amount": 13 }
+      ]
+    },
+    "caster": {
+      "kind": "half",
+      "startsAtLevel": 2,
+      "cantripsKnown": 0,
+      "knownL1Spells": 2,
+      "preparation": "known"
+    },
+    "subclasses": [
+      {
+        "id": "hunter",
+        "name": "Hunter",
+        "description": "Emulating the Hunter archetype means accepting your place as a bulwark between civilization and the terrors of the wilderness. Pick-your-own kit of damage / defense / multi-attack options that adapts to whatever the table is fighting.",
+        "features": [
+          { "level": 3, "name": "Hunter's Prey", "body": "At 3rd level, you gain one of the following features of your choice. Colossus Slayer: once per turn deal +1d8 to a creature below max HP. Giant Killer: when a Large+ creature within 5 ft hits or misses you, reaction to attack it. Horde Breaker: once per turn, when you make a weapon attack, make another attack against a different creature within 5 ft of the first using the same weapon. Pick one — track which one your character chose manually for now.", "kind": "combat", "appliesTo": ["attack"] },
+          { "level": 7, "name": "Defensive Tactics", "body": "At 7th level, you gain one of the following features of your choice. Escape the Horde: disadvantage on opportunity attacks against you. Multiattack Defense: when a creature hits you, +4 AC against further attacks from that creature this turn. Steel Will: advantage on saves vs being frightened. Pick one — track which one your character chose manually for now.", "kind": "combat", "appliesTo": ["save"] },
+          { "level": 11, "name": "Multiattack", "body": "At 11th level, you gain one of the following features of your choice. Volley: ranged attack action targets all creatures in 10-ft radius. Whirlwind Attack: melee attack action targets all creatures in 5 ft. Pick one — track which one your character chose manually for now.", "kind": "combat", "appliesTo": ["attack"] },
+          { "level": 15, "name": "Superior Hunter's Defense", "body": "At 15th level, you gain one of the following features of your choice. Evasion: half damage on DEX saves that allow it; none on success. Stand Against the Tide: when a creature misses you with melee, reaction to redirect attack to another creature. Uncanny Dodge: reaction to halve damage from an attack you can see. Pick one — track manually.", "kind": "combat", "appliesTo": ["save"] }
+        ]
+      },
+      {
+        "id": "beast-master",
+        "name": "Beast Master",
+        "description": "Emulating the Beast Master archetype means committing yourself to a partnership with a wild creature. The two of you fight as a pair, your bond strengthening as you adventure together.",
+        "features": [
+          { "level": 3, "name": "Ranger's Companion", "body": "At 3rd level, you bond with a beast of CR 1/4 or lower of Medium size or smaller. The companion gains your proficiency bonus added to its AC, attack rolls, damage rolls, and saving throws / skills it's proficient in. Its hit point maximum equals 4 × your ranger level (or its statblock total, whichever is higher). Use the Resources → Bind companion action to pick its species; the picker applies the HP boost automatically.", "kind": "both", "appliesTo": ["attack", "save"] },
+          { "level": 7, "name": "Exceptional Training", "body": "At 7th level, on any of your turns when your beast companion doesn't attack, you can use a bonus action to command it to take the Dash, Disengage, or Help action. Its attacks count as magical for the purpose of overcoming resistance and immunity to nonmagical attacks.", "kind": "combat", "appliesTo": ["attack"] },
+          { "level": 11, "name": "Bestial Fury", "body": "At 11th level, your beast companion can make two attacks when you command it to attack.", "kind": "combat", "appliesTo": ["attack"] },
+          { "level": 15, "name": "Share Spells", "body": "At 15th level, when you cast a spell targeting yourself, you can also have the spell affect your beast companion if it is within 30 feet of you.", "kind": "combat", "appliesTo": ["cast"] }
+        ]
+      }
+    ],
+    "subclassLevel": 3,
+    "starterEquipment": [
+      { "id": "leather", "quantity": 1 },
+      { "id": "longsword", "quantity": 1 },
+      { "id": "shortsword", "quantity": 1 },
+      { "id": "dungeoneers-pack", "quantity": 1 },
+      { "id": "longbow", "quantity": 1 },
+      { "id": "arrows-20", "quantity": 1 }
+    ]
+  },
+  {
+    "id": "sorcerer",
+    "name": "Sorcerer",
+    "description": "A spellcaster who draws on inherent magic from a gift or bloodline.",
+    "hitDie": 6,
+    "primaryAbilities": ["charisma"],
+    "savingThrows": ["constitution", "charisma"],
+    "armorProficiencies": [],
+    "weaponProficiencies": ["Daggers", "Darts", "Slings", "Quarterstaffs", "Light crossbows"],
+    "toolProficiencies": [],
+    "skillChoiceCount": 2,
+    "skillChoiceFrom": ["arcana", "deception", "insight", "intimidation", "persuasion", "religion"],
+    "features": [
+      { "level": 1, "name": "Spellcasting", "body": "An event in your past, or in the life of a parent or ancestor, left an indelible mark on you, infusing you with arcane magic. Charisma is your spellcasting ability." },
+      { "level": 1, "name": "Sorcerous Origin", "body": "Choose a sorcerous origin, which describes the source of your innate magical power (Draconic Bloodline or Wild Magic). Your choice grants you features at 1st level and again at 6th, 14th, and 18th level." },
+      { "level": 2, "name": "Font of Magic", "body": "You tap into a deep wellspring of magic within yourself, represented by sorcery points. Your sorcery point maximum equals your sorcerer level. You regain all expended sorcery points on a long rest. You can convert sorcery points into spell slots as a bonus action (or convert unused slots back into sorcery points).", "kind": "both", "appliesTo": ["cast"] },
+      { "level": 3, "name": "Metamagic", "body": "You gain the ability to twist your spells to suit your needs. Choose two of the following Metamagic options: Careful Spell, Distant Spell, Empowered Spell, Extended Spell, Heightened Spell, Quickened Spell, Subtle Spell, or Twinned Spell. You gain another Metamagic option of your choice at 10th level and again at 17th level.", "kind": "both", "appliesTo": ["cast"] },
+      { "level": 4, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 8, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 10, "name": "Metamagic (additional)", "body": "Choose one additional Metamagic option.", "kind": "both", "appliesTo": ["cast"] },
+      { "level": 12, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 16, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 17, "name": "Metamagic (additional)", "body": "Choose one additional Metamagic option.", "kind": "both", "appliesTo": ["cast"] },
+      { "level": 19, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 20, "name": "Sorcerous Restoration", "body": "You regain 4 expended sorcery points whenever you finish a short rest.", "appliesTo": ["cast"] },
+      { "level": 4, "name": "Sorcerous Versatility", "body": "Tasha's optional feature: whenever you reach a level in this class that grants the Ability Score Improvement feature, you can replace one of the following options you have with another option of the same type: a cantrip you learned from this class's Spellcasting feature; one Metamagic option you know. Re-running the relevant Class step picker manually is the v1 workflow until the swap UI lands.", "optional": true }
+    ],
+    "multiclassRequirements": {
+      "mode": "all",
+      "minimums": [{ "ability": "charisma", "amount": 13 }]
+    },
+    "caster": {
+      "kind": "full",
+      "startsAtLevel": 1,
+      "cantripsKnown": 4,
+      "knownL1Spells": 2,
+      "preparation": "known"
+    },
+    "subclasses": [
+      {
+        "id": "draconic-bloodline",
+        "name": "Draconic Bloodline",
+        "description": "Your innate magic comes from draconic blood, latent in your veins. Most have a single ancestral dragon — chromatic or metallic — that gifts them an affinity for one damage type. Hallmark: tankier than a sorcerer should be, with bonus damage on every spell of your ancestral element.",
+        "features": [
+          { "level": 1, "name": "Dragon Ancestor", "body": "At 1st level, you choose one type of dragon as your ancestor. The damage type associated with each dragon is used by features you gain later. (Black/Copper: acid, Blue/Bronze: lightning, Brass/Gold/Red: fire, Green: poison, Silver/White: cold.) You can speak, read, and write Draconic. Additionally, whenever you make a Charisma check when interacting with dragons, your proficiency bonus is doubled if it applies to the check.", "appliesTo": ["check"] },
+          { "level": 1, "name": "Draconic Resilience", "body": "Your hit point maximum increases by 1 and increases by 1 again whenever you gain a level in this class. Additionally, parts of your skin are covered by a thin sheen of dragon-like scales. When you aren't wearing armor, your AC equals 13 + your Dexterity modifier.", "kind": "combat" },
+          { "level": 6, "name": "Elemental Affinity", "body": "Starting at 6th level, when you cast a spell that deals damage of the type associated with your draconic ancestry, you can add your Charisma modifier to one damage roll of that spell. At the same time, you can spend 1 sorcery point to gain resistance to that damage type for 1 hour.", "kind": "combat", "appliesTo": ["cast"] },
+          { "level": 14, "name": "Dragon Wings", "body": "At 14th level, you gain the ability to sprout a pair of dragon wings from your back, gaining a flying speed equal to your current speed. You can create these wings as a bonus action on your turn. They last until you dismiss them as a bonus action on your turn. You can't manifest your wings while wearing armor unless the armor is made to accommodate them, and clothing not made to accommodate your wings might be destroyed when you manifest them.", "kind": "combat" },
+          { "level": 18, "name": "Draconic Presence", "body": "Beginning at 18th level, you can channel the dread presence of your dragon ancestor, causing those around you to become awestruck or frightened. As an action, you can spend 5 sorcery points to draw on this power and exude an aura of awe or fear (your choice) to a distance of 60 feet. For 1 minute or until you lose your concentration (as if you were casting a concentration spell), each hostile creature that starts its turn in this aura must succeed on a Wisdom saving throw or be charmed (if you chose awe) or frightened (if you chose fear) until the aura ends. A creature that succeeds on this saving throw is immune to your aura for 24 hours.", "kind": "combat", "appliesTo": ["cast"] }
+        ]
+      },
+      {
+        "id": "wild-magic",
+        "name": "Wild Magic",
+        "description": "Your innate magic comes from the wild forces of chaos that underlie the order of creation. Your spells let you nudge fate, the world's energy flowing through you in unpredictable ways. Hallmark: the wild magic surge table — every spell cast is a roll of the dice for a chaotic side effect.",
+        "features": [
+          { "level": 1, "name": "Wild Magic Surge", "body": "Starting when you choose this origin at 1st level, your spellcasting can unleash surges of untamed magic. Immediately after you cast a sorcerer spell of 1st level or higher, the DM can have you roll a d20. If you roll a 1, roll on the Wild Magic Surge table to create a random magical effect. A Wild Magic Surge effect, if it's a spell, is too wild to be affected by your Metamagic. (Surge table is a DM-side reference for now; pick the result by hand.)", "kind": "combat", "appliesTo": ["cast"] },
+          { "level": 1, "name": "Tides of Chaos", "body": "Starting at 1st level, you can manipulate the forces of chance and chaos to gain advantage on one attack roll, ability check, or saving throw. Once you do so, you must finish a long rest before you can use this feature again. Any time before you regain the use of this feature, the DM can have you roll on the Wild Magic Surge table immediately after you cast a sorcerer spell of 1st level or higher. You then regain the use of this feature.", "kind": "both", "appliesTo": ["attack", "check", "save"] },
+          { "level": 6, "name": "Bend Luck", "body": "Starting at 6th level, you have the ability to twist fate using your wild magic. When another creature you can see makes an attack roll, an ability check, or a saving throw, you can use your reaction and spend 2 sorcery points to roll 1d4 and apply the number rolled as a bonus or penalty (your choice) to the creature's roll. You can do so after the creature rolls but before any effects of the roll occur.", "kind": "combat", "appliesTo": ["attack", "check", "save"] },
+          { "level": 14, "name": "Controlled Chaos", "body": "At 14th level, you gain a modicum of control over the surges of your wild magic. Whenever you roll on the Wild Magic Surge table, you can roll twice and use either number.", "kind": "combat", "appliesTo": ["cast"] },
+          { "level": 18, "name": "Spell Bombardment", "body": "Beginning at 18th level, the harmful energy of your spells intensifies. When you roll damage for a spell and roll the highest number possible on any of the dice, choose one of those dice, roll it again, and add that roll to the damage. You can use the feature only once per turn.", "kind": "combat", "appliesTo": ["cast"] }
+        ]
+      }
+    ],
+    "subclassLevel": 1,
+    "starterEquipment": [
+      { "id": "dagger", "quantity": 2 },
+      { "id": "arcane-focus-crystal", "quantity": 1 },
+      { "id": "dungeoneers-pack", "quantity": 1 },
+      { "id": "light-crossbow", "quantity": 1 },
+      { "id": "crossbow-bolts-20", "quantity": 1 }
+    ]
+  },
+  {
+    "id": "warlock",
+    "name": "Warlock",
+    "description": "A wielder of magic that is derived from a bargain with an extraplanar entity.",
+    "hitDie": 8,
+    "primaryAbilities": ["charisma"],
+    "savingThrows": ["wisdom", "charisma"],
+    "armorProficiencies": ["Light armor"],
+    "weaponProficiencies": ["Simple weapons"],
+    "toolProficiencies": [],
+    "skillChoiceCount": 2,
+    "skillChoiceFrom": ["arcana", "deception", "history", "intimidation", "investigation", "nature", "religion"],
+    "features": [
+      { "level": 1, "name": "Otherworldly Patron", "body": "You have struck a bargain with an otherworldly being of your choice — a Fiend, an Archfey, or a Great Old One. The choice grants you features at 1st level and again at 6th, 10th, and 14th level. It also grants you an Expanded Spell List." },
+      { "level": 1, "name": "Pact Magic", "body": "Your arcane research and the magic bestowed on you by your patron have given you facility with spells. Charisma is your spellcasting ability. Your pact slots recover on a short or long rest. Slot count and slot level both scale with warlock level (see the Warlock table)." },
+      { "level": 2, "name": "Eldritch Invocations", "body": "In your study of occult lore, you have unearthed fragments of forbidden knowledge that imbue you with an abiding magical ability. At 2nd level, you gain two eldritch invocations of your choice. You gain additional invocations of your choice at higher levels (3 at 5th, 4 at 7th, 5 at 9th, 6 at 12th, 7 at 15th, and 8 at 18th). Additionally, when you gain a warlock level, you can choose one of the invocations you know and replace it with another invocation that you could learn.", "kind": "both", "appliesTo": ["cast"] },
+      { "level": 3, "name": "Pact Boon", "body": "Your otherworldly patron bestows a gift upon you for your loyal service. You gain one of the following features of your choice: Pact of the Blade (summon a pact weapon), Pact of the Chain (gain the Find Familiar spell with extra forms), or Pact of the Tome (a Book of Shadows holding three extra cantrips).", "kind": "both" },
+      { "level": 4, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 8, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 11, "name": "Mystic Arcanum (6th)", "body": "Your patron bestows upon you a magical secret called an arcanum. Choose one 6th-level warlock spell as this arcanum. You can cast it once without expending a spell slot. You must finish a long rest before you can do so again.", "appliesTo": ["cast"] },
+      { "level": 12, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 13, "name": "Mystic Arcanum (7th)", "body": "Choose one 7th-level warlock spell as an arcanum. You can cast it once without expending a spell slot. You regain the ability to do so when you finish a long rest.", "appliesTo": ["cast"] },
+      { "level": 15, "name": "Mystic Arcanum (8th)", "body": "Choose one 8th-level warlock spell as an arcanum. You can cast it once without expending a spell slot. You regain the ability to do so when you finish a long rest.", "appliesTo": ["cast"] },
+      { "level": 16, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 17, "name": "Mystic Arcanum (9th)", "body": "Choose one 9th-level warlock spell as an arcanum. You can cast it once without expending a spell slot. You regain the ability to do so when you finish a long rest.", "appliesTo": ["cast"] },
+      { "level": 19, "name": "Ability Score Improvement", "body": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can't increase a score above 20 using this feature. You can instead take a feat." },
+      { "level": 20, "name": "Eldritch Master", "body": "You can draw on your inner reserve of mystical power while entreating your patron to regain expended spell slots. You can spend 1 minute entreating your patron for aid to regain all your expended pact magic spell slots. Once you regain spell slots with this feature, you must finish a long rest before you can do so again.", "appliesTo": ["cast"] },
+      { "level": 4, "name": "Eldritch Versatility", "body": "Tasha's optional feature: whenever you reach a level in this class that grants the Ability Score Improvement feature, you can replace a cantrip you learned from this class's Pact Magic feature with another cantrip from the warlock spell list, OR replace one option you chose for the Pact Boon feature with another option, OR replace one Eldritch Invocation you know with another invocation you could learn at your current level. If this change makes a character option on your sheet invalid, that option must also be changed accordingly.", "optional": true }
+    ],
+    "multiclassRequirements": {
+      "mode": "all",
+      "minimums": [{ "ability": "charisma", "amount": 13 }]
+    },
+    "caster": {
+      "kind": "pact",
+      "startsAtLevel": 1,
+      "cantripsKnown": 2,
+      "knownL1Spells": 2,
+      "preparation": "known"
+    },
+    "subclasses": [
+      {
+        "id": "the-archfey",
+        "name": "The Archfey",
+        "description": "Your patron is a lord or lady of the fey — a creature of legend who holds secrets that were forgotten before the mortal races were born. Hallmark: charm tools that mid-fight bounce enemies away, and at higher tiers, fey-step out of trouble.",
+        "features": [
+          { "level": 1, "name": "Expanded Spell List", "body": "The Archfey lets you choose from an expanded list of spells when you learn a warlock spell. The following spells are added to the warlock spell list for you: 1st — Faerie Fire, Sleep. 2nd — Calm Emotions, Phantasmal Force. 3rd — Blink, Plant Growth. 4th — Dominate Beast, Greater Invisibility. 5th — Dominate Person, Seeming." },
+          { "level": 1, "name": "Fey Presence", "body": "Starting at 1st level, your patron bestows upon you the ability to project the beguiling and fearsome presence of the fey. As an action, you can cause each creature in a 10-foot cube originating from you to make a Wisdom saving throw against your warlock spell save DC. The creatures that fail their saving throws are all charmed or frightened by you (your choice) until the end of your next turn. Once you use this feature, you can't use it again until you finish a short or long rest.", "kind": "combat", "appliesTo": ["cast"] },
+          { "level": 6, "name": "Misty Escape", "body": "Starting at 6th level, you can vanish in a puff of mist in response to harm. When you take damage, you can use your reaction to turn invisible and teleport up to 60 feet to an unoccupied space you can see. You remain invisible until the start of your next turn or until you attack or cast a spell. Once you use this feature, you can't use it again until you finish a short or long rest.", "kind": "combat" },
+          { "level": 10, "name": "Beguiling Defenses", "body": "Beginning at 10th level, your patron teaches you how to turn the mind-affecting magic of your enemies against them. You are immune to being charmed, and when another creature attempts to charm you, you can use your reaction to attempt to turn the charm back on that creature. The creature must succeed on a Wisdom saving throw against your warlock spell save DC or be charmed by you for 1 minute or until the creature takes any damage.", "kind": "combat", "appliesTo": ["save"] },
+          { "level": 14, "name": "Dark Delirium", "body": "Starting at 14th level, you can plunge a creature into an illusory realm. As an action, choose a creature that you can see within 60 feet of you. It must make a Wisdom saving throw against your warlock spell save DC. On a failed save, it is charmed or frightened by you (your choice) for 1 minute or until your concentration is broken (as if you are concentrating on a spell). This effect ends early if the creature takes any damage. While charmed or frightened, the creature thinks it is lost in a misty realm, the appearance of which you choose. The creature can see and hear only itself, you, and the illusion. Once you use this feature, you can't use it again until you finish a long rest.", "kind": "combat" }
+        ]
+      },
+      {
+        "id": "the-fiend",
+        "name": "The Fiend",
+        "description": "You have made a pact with a fiend from the lower planes — a being whose aims are evil, even if you strive against those aims. The classic warlock patron: blasty, durable, and rewarded for blowing things up.",
+        "features": [
+          { "level": 1, "name": "Dark One's Blessing", "body": "Starting at 1st level, when you reduce a hostile creature to 0 hit points, you gain temporary hit points equal to your Charisma modifier + your warlock level (minimum of 1).", "kind": "combat", "appliesTo": ["attack"] },
+          { "level": 1, "name": "Expanded Spell List", "body": "The Fiend lets you choose from an expanded list of spells when you learn a warlock spell. The following spells are added to the warlock spell list for you: 1st — Burning Hands, Command. 2nd — Blindness/Deafness, Scorching Ray. 3rd — Fireball, Stinking Cloud. 4th — Fire Shield, Wall of Fire. 5th — Flame Strike, Hallow." },
+          { "level": 6, "name": "Dark One's Own Luck", "body": "Starting at 6th level, you can call on your patron to alter fate in your favor. When you make an ability check or a saving throw, you can use this feature to add a d10 to your roll. You can do so after seeing the initial roll but before any of the roll's effects occur. Once you use this feature, you can't use it again until you finish a short or long rest.", "kind": "both", "appliesTo": ["check", "save"] },
+          { "level": 10, "name": "Fiendish Resilience", "body": "Starting at 10th level, you can choose one damage type when you finish a short or long rest. You gain resistance to that damage type until you choose a different one with this feature. Damage from magical weapons or silver weapons ignores this resistance.", "kind": "combat" },
+          { "level": 14, "name": "Hurl Through Hell", "body": "Starting at 14th level, when you hit a creature with an attack, you can use this feature to instantly transport the target through the lower planes. The creature disappears and hurtles through a nightmare landscape. At the end of your next turn, the target returns to the space it previously occupied, or the nearest unoccupied space. If the target is not a fiend, it takes 10d10 psychic damage as it reels from its horrific experience. Once you use this feature, you can't use it again until you finish a long rest.", "kind": "combat", "appliesTo": ["attack"] }
+        ]
+      },
+      {
+        "id": "the-great-old-one",
+        "name": "The Great Old One",
+        "description": "Your patron is a being of the Far Realm or an alien entity from the depths of space — Cthonic horrors whose alien minds touch yours across the gulfs between worlds. Hallmark: psionic-flavoured warlock with telepathy, mind-shielding, and a capstone that binds slain enemies as eternal thralls.",
+        "features": [
+          { "level": 1, "name": "Expanded Spell List", "body": "The Great Old One lets you choose from an expanded list of spells when you learn a warlock spell. The following spells are added to the warlock spell list for you: 1st — Dissonant Whispers, Tasha's Hideous Laughter. 2nd — Detect Thoughts, Phantasmal Force. 3rd — Clairvoyance, Sending. 4th — Dominate Beast, Evard's Black Tentacles. 5th — Dominate Person, Telekinesis." },
+          { "level": 1, "name": "Awakened Mind", "body": "Starting at 1st level, your alien knowledge gives you the ability to touch the minds of other creatures. You can speak telepathically to any creature you can see within 30 feet of you. You don't need to share a language with the creature for it to understand your telepathic utterances, but the creature must be able to understand at least one language." },
+          { "level": 6, "name": "Entropic Ward", "body": "At 6th level, you learn to magically ward yourself against attack and to turn an enemy's failed strike into good luck for yourself. When a creature makes an attack roll against you, you can use your reaction to impose disadvantage on that roll. If the attack misses you, your next attack roll against the creature has advantage if you make it before the end of your next turn. Once you use this feature, you can't use it again until you finish a short or long rest.", "kind": "combat", "appliesTo": ["attack", "save"] },
+          { "level": 10, "name": "Thought Shield", "body": "Starting at 10th level, your thoughts can't be read by telepathy or other means unless you allow it. You also have resistance to psychic damage, and whenever a creature deals psychic damage to you, that creature takes the same amount of damage that you do.", "kind": "combat", "appliesTo": ["save"] },
+          { "level": 14, "name": "Create Thrall", "body": "At 14th level, you gain the ability to infect a humanoid's mind with the alien magic of your patron. You can use your action to touch an incapacitated humanoid. That creature is then charmed by you until a remove curse spell is cast on it, the charmed condition is removed from it, or you use this feature again. You can communicate telepathically with the charmed creature as long as the two of you are on the same plane of existence.", "kind": "combat" }
+        ]
+      },
+      {
+        "id": "hexblade",
+        "name": "The Hexblade",
+        "description": "Xanathar's most popular Warlock patron. You've made your pact with a mysterious entity from the Shadowfell — a force that manifests in sentient magic weapons. Hallmark: Hex Warrior turns your CHA into your weapon attack stat, making the Warlock the cleanest gish chassis in the game.",
+        "features": [
+          { "level": 1, "name": "Expanded Spell List", "body": "The Hexblade lets you choose from an expanded list of spells when you learn a warlock spell. The following spells are added to the warlock spell list for you: 1st — Shield, Wrathful Smite. 2nd — Blur, Branding Smite. 3rd — Blink, Elemental Weapon. 4th — Phantasmal Killer, Staggering Smite. 5th — Banishing Smite, Cone of Cold." },
+          { "level": 1, "name": "Hexblade's Curse", "body": "Starting at 1st level, you gain the ability to place a baleful curse on someone. As a bonus action, choose one creature you can see within 30 feet of you. The target is cursed for 1 minute. The curse ends early if the target dies, you die, or you are incapacitated. Until the curse ends, you gain the following benefits: you gain a bonus to damage rolls against the cursed target equal to your proficiency bonus; any attack roll you make against the cursed target is a critical hit on a roll of 19 or 20; if the cursed target dies, you regain hit points equal to your warlock level + your Charisma modifier (minimum 1). Once you use this feature, you can't use it again until you finish a short or long rest.", "kind": "combat", "appliesTo": ["attack"] },
+          { "level": 1, "name": "Hex Warrior", "body": "At 1st level, you acquire the training necessary to effectively arm yourself for battle. You gain proficiency with medium armor, shields, and martial weapons. The influence of your patron also allows you to mystically channel your will through a particular weapon. Whenever you finish a long rest, you can touch one weapon that you are proficient with and that lacks the two-handed property. When you attack with that weapon, you can use your Charisma modifier, instead of Strength or Dexterity, for the attack and damage rolls.", "kind": "combat", "appliesTo": ["attack"] },
+          { "level": 6, "name": "Accursed Specter", "body": "Starting at 6th level, you can curse the soul of a person you slay, temporarily binding it to your service. When you slay a humanoid, you can cause its spirit to rise from its corpse as a specter that fights for you. When the specter appears, it gains temporary hit points equal to half your warlock level. Roll initiative for the specter, which has its own turns. It remains in your service until the end of your next long rest, at which point it vanishes to the afterlife. Once you bind a specter with this feature, you can't use the feature again until you finish a long rest. (Specter is a companion — full companion mechanics land with step 18.)", "kind": "combat" },
+          { "level": 10, "name": "Armor of Hexes", "body": "At 10th level, your hex grows more powerful. If the target cursed by your Hexblade's Curse hits you with an attack roll, you can use your reaction to roll a d6. On a 4 or higher, the attack instead misses you, regardless of its roll.", "kind": "combat", "appliesTo": ["save"] },
+          { "level": 14, "name": "Master of Hexes", "body": "Starting at 14th level, you can spread your Hexblade's Curse from a slain creature to another creature. When the creature cursed by your Hexblade's Curse dies, you can apply the curse to a different creature you can see within 30 feet of you, provided you aren't incapacitated. When you apply the curse in this way, you don't regain hit points from the death of the previously cursed creature.", "kind": "combat", "appliesTo": ["attack"] }
+        ],
+        "sourceID": "xanathars"
+      }
+    ],
+    "subclassLevel": 1,
+    "starterEquipment": [
+      { "id": "light-crossbow", "quantity": 1 },
+      { "id": "crossbow-bolts-20", "quantity": 1 },
+      { "id": "component-pouch", "quantity": 1 },
+      { "id": "scholars-pack", "quantity": 1 },
+      { "id": "leather", "quantity": 1 },
+      { "id": "dagger", "quantity": 2 }
+    ]
+  }
+]

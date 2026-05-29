@@ -1,0 +1,242 @@
+[
+  {
+    "id": "great-weapon-master",
+    "name": "Great Weapon Master",
+    "description": "Once per turn, when you score a critical hit or reduce a creature to 0 HP with a melee weapon, you can make one additional melee weapon attack as a bonus action. Before making a melee attack with a heavy weapon you're proficient with, you can choose to take −5 to the attack roll; on a hit, the attack deals +10 damage.",
+    "prerequisite": null
+  },
+  {
+    "id": "sharpshooter",
+    "name": "Sharpshooter",
+    "description": "Long range no longer imposes disadvantage on your ranged weapon attacks, and your ranged attacks ignore half cover and three-quarters cover. Before making a ranged attack with a weapon you're proficient with, you can choose to take −5 to the attack roll; on a hit, the attack deals +10 damage.",
+    "prerequisite": null
+  },
+  {
+    "id": "lucky",
+    "name": "Lucky",
+    "description": "You have 3 luck points, regained on a long rest. Spend one to roll an extra d20 on any attack roll, ability check, or saving throw — keep whichever d20 you prefer. You can also spend one to force an attacker to reroll an attack against you, again choosing which result is used.",
+    "prerequisite": null
+  },
+  {
+    "id": "alert",
+    "name": "Alert",
+    "description": "You gain a +5 bonus to initiative, you can't be surprised while conscious, and other creatures don't gain advantage on attack rolls against you as a result of being hidden from you.",
+    "prerequisite": null
+  },
+  {
+    "id": "tough",
+    "name": "Tough",
+    "description": "Your hit point maximum increases by an amount equal to twice your level when you take this feat, and it increases by 2 again whenever you gain a level.",
+    "prerequisite": null
+  },
+  {
+    "id": "war-caster",
+    "name": "War Caster",
+    "description": "You have advantage on Constitution saving throws to maintain concentration on a spell when you take damage. You can perform the somatic components of spells even while holding weapons or a shield in both hands. When a hostile creature provokes an opportunity attack from you, you can cast a single-target spell at it as the reaction (in place of the attack).",
+    "prerequisite": {
+      "minimumAbilityScores": {},
+      "requiresSpellcasting": true
+    }
+  },
+  {
+    "id": "polearm-master",
+    "name": "Polearm Master",
+    "description": "When you take the Attack action with a glaive, halberd, quarterstaff, or spear, you can make one melee attack as a bonus action with the opposite end of the weapon (1d4 bludgeoning, same ability mod as the main attack). Creatures provoke an opportunity attack from you when they enter your reach with one of these weapons.",
+    "prerequisite": null
+  },
+  {
+    "id": "crossbow-expert",
+    "name": "Crossbow Expert",
+    "description": "You ignore the loading property of crossbows you're proficient with. Being within 5 feet of a hostile creature doesn't impose disadvantage on your ranged attacks. When you take the Attack action with a one-handed weapon, you can make one bonus-action attack with a loaded hand crossbow you're holding.",
+    "prerequisite": null
+  },
+  {
+    "id": "sentinel",
+    "name": "Sentinel",
+    "description": "Creatures you hit with an opportunity attack have their speed reduced to 0 for the rest of the turn. Disengage doesn't prevent your opportunity attacks. When a creature within 5 feet attacks a target other than you (and that target doesn't have this feat), you can use your reaction to make a melee weapon attack against the attacker.",
+    "prerequisite": null
+  },
+  {
+    "id": "mobile",
+    "name": "Mobile",
+    "description": "Your speed increases by 10 feet. When you use the Dash action, difficult terrain doesn't cost you extra movement that turn. When you make a melee attack against a creature, you don't provoke opportunity attacks from that creature for the rest of the turn, whether or not the attack hits.",
+    "prerequisite": null
+  },
+  {
+    "id": "resilient",
+    "name": "Resilient",
+    "description": "+1 to an ability score of your choice (max 20). You also gain proficiency in saving throws using that ability. (Note: extra save proficiencies aren't yet tracked on the payload — the +1 bump lands; the save-proficiency rider is narrative for now.)",
+    "prerequisite": null,
+    "parameterKind": { "abilityChoice": { "from": [] } }
+  },
+  {
+    "id": "skill-expert",
+    "name": "Skill Expert",
+    "description": "+1 to an ability score (max 20). Gain proficiency in one skill of your choice. Choose one skill you have proficiency in — your proficiency bonus is doubled for any ability check you make using that skill (expertise).",
+    "prerequisite": null,
+    "sourceID": "tashas",
+    "parameterKind": { "skillExpert": {} }
+  },
+  {
+    "id": "telekinetic",
+    "name": "Telekinetic",
+    "description": "+1 to Intelligence, Wisdom, or Charisma (max 20). Learn the Mage Hand cantrip (or, if you already know it, the hand becomes invisible and you can boost its reach + carrying capacity). As a bonus action, shove a creature within 30 feet 5 feet away (CON save, your spell DC).",
+    "prerequisite": null,
+    "sourceID": "tashas",
+    "parameterKind": { "abilityChoice": { "from": ["intelligence", "wisdom", "charisma"] } }
+  },
+  {
+    "id": "telepathic",
+    "name": "Telepathic",
+    "description": "+1 to Intelligence, Wisdom, or Charisma (max 20). Speak telepathically with any creature within 60 feet that understands a language you know. You can cast Detect Thoughts once per long rest without expending a spell slot.",
+    "prerequisite": null,
+    "sourceID": "tashas",
+    "parameterKind": { "abilityChoice": { "from": ["intelligence", "wisdom", "charisma"] } }
+  },
+  {
+    "id": "magic-initiate",
+    "name": "Magic Initiate",
+    "description": "Pick a class — bard, cleric, druid, sorcerer, warlock, or wizard. Learn two cantrips of your choice from that class's spell list. Learn one 1st-level spell of your choice from the same list — you can cast it at its lowest level once per long rest without a slot, and also via any spell slots you have of the right level. Spellcasting ability for these spells = INT/WIS/CHA depending on the chosen class.",
+    "prerequisite": null,
+    "parameterKind": { "magicInitiate": {} }
+  },
+  {
+    "id": "fey-touched",
+    "name": "Fey Touched",
+    "description": "+1 to Intelligence, Wisdom, or Charisma (max 20). You learn Misty Step and one 1st-level spell from the divination or enchantment school. You can cast each spell once per long rest without expending a spell slot, and also using slots of the right level. The chosen ability is your spellcasting ability for these spells.",
+    "prerequisite": null,
+    "sourceID": "tashas",
+    "parameterKind": {
+      "spellGrantPlusAbility": {
+        "fixedSpell": "misty-step",
+        "learnableSchools": ["divination", "enchantment"],
+        "abilityChoices": ["intelligence", "wisdom", "charisma"]
+      }
+    }
+  },
+  {
+    "id": "shadow-touched",
+    "name": "Shadow Touched",
+    "description": "+1 to Intelligence, Wisdom, or Charisma (max 20). You learn Invisibility and one 1st-level spell from the illusion or necromancy school. You can cast each spell once per long rest without expending a spell slot, and also using slots of the right level. The chosen ability is your spellcasting ability for these spells.",
+    "prerequisite": null,
+    "sourceID": "tashas",
+    "parameterKind": {
+      "spellGrantPlusAbility": {
+        "fixedSpell": "invisibility",
+        "learnableSchools": ["illusion", "necromancy"],
+        "abilityChoices": ["intelligence", "wisdom", "charisma"]
+      }
+    }
+  },
+  {
+    "id": "athlete",
+    "name": "Athlete",
+    "description": "+1 to Strength or Dexterity (max 20). When you're prone, standing up uses only 5 feet of movement. Climbing doesn't cost extra movement. You can make a running long or high jump after a 5-foot run-up.",
+    "prerequisite": null,
+    "parameterKind": { "abilityChoice": { "from": ["strength", "dexterity"] } }
+  },
+  {
+    "id": "gunner",
+    "name": "Gunner",
+    "description": "+1 to Dexterity (max 20). You gain proficiency with firearms. You ignore the loading property of firearms. Being within 5 feet of a hostile creature doesn't impose disadvantage on your ranged attack rolls.",
+    "prerequisite": null,
+    "sourceID": "tashas",
+    "parameterKind": { "abilityChoice": { "from": ["dexterity"] } }
+  },
+  {
+    "id": "eldritch-adept",
+    "name": "Eldritch Adept",
+    "description": "Pick one eldritch invocation of your choice. RAW: you must satisfy any prerequisite the invocation lists (warlock-level prereqs mean most invocations are only available to warlocks themselves). Whenever you gain a level you can replace the invocation with another. Prereq: Spellcasting or Pact Magic feature.",
+    "prerequisite": {
+      "minimumAbilityScores": {},
+      "requiresSpellcasting": true
+    },
+    "sourceID": "tashas",
+    "parameterKind": { "invocationPick": {} }
+  },
+  {
+    "id": "metamagic-adept",
+    "name": "Metamagic Adept",
+    "description": "You learn two metamagic options of your choice from the sorcerer class. You gain 2 sorcery points to spend on them (sorcery-point pool not yet tracked — narrative). Whenever you reach an ASI in any class, you can replace one of these metamagic options with another. Prereq: Spellcasting or Pact Magic feature.",
+    "prerequisite": {
+      "minimumAbilityScores": {},
+      "requiresSpellcasting": true
+    },
+    "sourceID": "tashas",
+    "parameterKind": { "metamagicPicks": { "count": 2 } }
+  },
+  {
+    "id": "inspiring-leader",
+    "name": "Inspiring Leader",
+    "description": "You can spend 10 minutes inspiring your companions, shoring up their resolve to fight. Choose up to six friendly creatures (which can include yourself) within 30 feet who can see, hear, and understand you. Each creature gains temporary hit points equal to your level + your Charisma modifier. A creature can't gain temp HP from this feat again until it has finished a short or long rest. Prereq: CHA 13+.",
+    "prerequisite": {
+      "minimumAbilityScores": { "charisma": 13 },
+      "requiresSpellcasting": false
+    }
+  },
+  {
+    "id": "observant",
+    "name": "Observant",
+    "description": "+1 to Intelligence or Wisdom (max 20). If you can see a creature's mouth while it is speaking a language you understand, you can interpret what it's saying by reading its lips. You have a +5 bonus to passive Perception and passive Investigation. (Passive bonus not yet auto-applied — narrative.)",
+    "prerequisite": null,
+    "parameterKind": { "abilityChoice": { "from": ["intelligence", "wisdom"] } }
+  },
+  {
+    "id": "tavern-brawler",
+    "name": "Tavern Brawler",
+    "description": "+1 to Strength or Constitution (max 20). You are proficient with improvised weapons. Your unarmed strike uses a d4 for damage. When you hit a creature with an unarmed strike or improvised weapon on your turn, you can use a bonus action to attempt to grapple the target.",
+    "prerequisite": null,
+    "parameterKind": { "abilityChoice": { "from": ["strength", "constitution"] } }
+  },
+  {
+    "id": "dungeon-delver",
+    "name": "Dungeon Delver",
+    "description": "You have advantage on Perception and Investigation checks made to detect the presence of secret doors. You have advantage on saving throws made to avoid or resist traps. You have resistance to damage dealt by traps. Traveling at a fast pace doesn't impose the normal −5 penalty on your passive Perception. (Reminders surfaced narratively — no automated trap gating today.)",
+    "prerequisite": null
+  },
+  {
+    "id": "dual-wielder",
+    "name": "Dual Wielder",
+    "description": "You gain a +1 bonus to AC while you are wielding a separate melee weapon in each hand. You can use two-weapon fighting even when the one-handed melee weapons you are wielding aren't light. You can draw or stow two one-handed weapons when you would normally only be able to draw or stow one. (AC bonus not yet auto-applied — narrative.)",
+    "prerequisite": null
+  },
+  {
+    "id": "defensive-duelist",
+    "name": "Defensive Duelist",
+    "description": "When you are wielding a finesse weapon with which you are proficient and another creature hits you with a melee attack, you can use your reaction to add your proficiency bonus to your AC for that attack, potentially causing the attack to miss you. Prereq: DEX 13+.",
+    "prerequisite": {
+      "minimumAbilityScores": { "dexterity": 13 },
+      "requiresSpellcasting": false
+    }
+  },
+  {
+    "id": "heavily-armored",
+    "name": "Heavily Armored",
+    "description": "+1 to Strength (max 20). You gain proficiency with heavy armor. Prereq: proficiency with medium armor.",
+    "prerequisite": {
+      "minimumAbilityScores": {},
+      "requiresSpellcasting": false,
+      "requiresArmorProficiency": "medium"
+    },
+    "parameterKind": {
+      "abilityChoice": {
+        "from": ["strength"]
+      }
+    }
+  },
+  {
+    "id": "heavy-armor-master",
+    "name": "Heavy Armor Master",
+    "description": "+1 to Strength (max 20). While you're wearing heavy armor, bludgeoning, piercing, and slashing damage from nonmagical weapons is reduced by 3. Prereq: proficiency with heavy armor.",
+    "prerequisite": {
+      "minimumAbilityScores": {},
+      "requiresSpellcasting": false,
+      "requiresArmorProficiency": "heavy"
+    },
+    "parameterKind": {
+      "abilityChoice": {
+        "from": ["strength"]
+      }
+    }
+  }
+]

@@ -1,0 +1,134 @@
+[
+  {
+    "id": "padded",
+    "name": "Padded",
+    "kind": "light",
+    "baseAC": 11,
+    "dexCap": null,
+    "stealthDisadvantage": true,
+    "strengthRequirement": null,
+    "weight": 8,
+    "cost": "5 gp"
+  },
+  {
+    "id": "leather",
+    "name": "Leather",
+    "kind": "light",
+    "baseAC": 11,
+    "dexCap": null,
+    "stealthDisadvantage": false,
+    "strengthRequirement": null,
+    "weight": 10,
+    "cost": "10 gp"
+  },
+  {
+    "id": "studded-leather",
+    "name": "Studded Leather",
+    "kind": "light",
+    "baseAC": 12,
+    "dexCap": null,
+    "stealthDisadvantage": false,
+    "strengthRequirement": null,
+    "weight": 13,
+    "cost": "45 gp"
+  },
+  {
+    "id": "hide",
+    "name": "Hide",
+    "kind": "medium",
+    "baseAC": 12,
+    "dexCap": 2,
+    "stealthDisadvantage": false,
+    "strengthRequirement": null,
+    "weight": 12,
+    "cost": "10 gp"
+  },
+  {
+    "id": "chain-shirt",
+    "name": "Chain Shirt",
+    "kind": "medium",
+    "baseAC": 13,
+    "dexCap": 2,
+    "stealthDisadvantage": false,
+    "strengthRequirement": null,
+    "weight": 20,
+    "cost": "50 gp"
+  },
+  {
+    "id": "scale-mail",
+    "name": "Scale Mail",
+    "kind": "medium",
+    "baseAC": 14,
+    "dexCap": 2,
+    "stealthDisadvantage": true,
+    "strengthRequirement": null,
+    "weight": 45,
+    "cost": "50 gp"
+  },
+  {
+    "id": "breastplate",
+    "name": "Breastplate",
+    "kind": "medium",
+    "baseAC": 14,
+    "dexCap": 2,
+    "stealthDisadvantage": false,
+    "strengthRequirement": null,
+    "weight": 20,
+    "cost": "400 gp"
+  },
+  {
+    "id": "half-plate",
+    "name": "Half Plate",
+    "kind": "medium",
+    "baseAC": 15,
+    "dexCap": 2,
+    "stealthDisadvantage": true,
+    "strengthRequirement": null,
+    "weight": 40,
+    "cost": "750 gp"
+  },
+  {
+    "id": "ring-mail",
+    "name": "Ring Mail",
+    "kind": "heavy",
+    "baseAC": 14,
+    "dexCap": 0,
+    "stealthDisadvantage": true,
+    "strengthRequirement": null,
+    "weight": 40,
+    "cost": "30 gp"
+  },
+  {
+    "id": "chain-mail",
+    "name": "Chain Mail",
+    "kind": "heavy",
+    "baseAC": 16,
+    "dexCap": 0,
+    "stealthDisadvantage": true,
+    "strengthRequirement": 13,
+    "weight": 55,
+    "cost": "75 gp"
+  },
+  {
+    "id": "splint",
+    "name": "Splint",
+    "kind": "heavy",
+    "baseAC": 17,
+    "dexCap": 0,
+    "stealthDisadvantage": true,
+    "strengthRequirement": 15,
+    "weight": 60,
+    "cost": "200 gp"
+  },
+  {
+    "id": "plate",
+    "name": "Plate",
+    "kind": "heavy",
+    "baseAC": 18,
+    "dexCap": 0,
+    "stealthDisadvantage": true,
+    "strengthRequirement": 15,
+    "weight": 65,
+    "cost": "1500 gp"
+  }
+]

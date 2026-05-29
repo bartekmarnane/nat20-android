@@ -1,0 +1,23 @@
+[
+  {
+    "id": "pact-of-the-blade",
+    "name": "Pact of the Blade",
+    "description": "As an action, create a pact weapon in your empty hand. You're proficient with it, and you can use your Charisma modifier in place of Strength or Dexterity for attack and damage rolls. The weapon disappears if it's more than 5 feet away from you for 1 minute or more, or if you use this feature again."
+  },
+  {
+    "id": "pact-of-the-chain",
+    "name": "Pact of the Chain",
+    "description": "Learn the find familiar spell and can cast it as a ritual. You can choose imp, pseudodragon, quasit, or sprite for your familiar. When you take the Attack action, you can forgo one of your own attacks to let your familiar use its reaction to make an attack."
+  },
+  {
+    "id": "pact-of-the-tome",
+    "name": "Pact of the Tome",
+    "description": "Your patron gives you a Book of Shadows containing three cantrips of your choice from any class's spell list. You can cast those cantrips at will; they don't count against your number of cantrips known. If lost, you can perform a 1-hour ceremony to receive a replacement."
+  },
+  {
+    "id": "pact-of-the-talisman",
+    "name": "Pact of the Talisman",
+    "description": "Your patron grants a talisman that you (or another creature you choose) can wear. When the wearer fails an ability check, they can add a d4 to the roll, potentially turning the failure into a success. This benefit can be used a number of times equal to your proficiency bonus, and recharges on a long rest.",
+    "sourceID": "tashas"
+  }
+]

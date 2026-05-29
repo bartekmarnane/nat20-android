@@ -1,0 +1,42 @@
+[
+  {
+    "id": "careful-spell",
+    "name": "Careful Spell",
+    "description": "Spend 1 sorcery point to protect up to CHA-mod creatures from one of your spells. They automatically succeed on its saving throw and take no damage if they would normally take half on a success."
+  },
+  {
+    "id": "distant-spell",
+    "name": "Distant Spell",
+    "description": "Spend 1 sorcery point to double the range of a spell with a range of 5 feet or greater, or to make a touch spell's range 30 feet."
+  },
+  {
+    "id": "empowered-spell",
+    "name": "Empowered Spell",
+    "description": "Spend 1 sorcery point to reroll up to CHA-mod damage dice on a spell (minimum 1). You can use Empowered Spell even if you've already used another Metamagic on the same spell."
+  },
+  {
+    "id": "extended-spell",
+    "name": "Extended Spell",
+    "description": "Spend 1 sorcery point to double the duration of a spell, up to a maximum of 24 hours. Affects spells with a duration of 1 minute or longer."
+  },
+  {
+    "id": "heightened-spell",
+    "name": "Heightened Spell",
+    "description": "Spend 3 sorcery points when you cast a spell that forces a creature to make a saving throw to give one target disadvantage on its first save against the spell."
+  },
+  {
+    "id": "quickened-spell",
+    "name": "Quickened Spell",
+    "description": "Spend 2 sorcery points to cast a spell with a casting time of 1 action as a bonus action instead."
+  },
+  {
+    "id": "subtle-spell",
+    "name": "Subtle Spell",
+    "description": "Spend 1 sorcery point to cast a spell without any somatic or verbal components."
+  },
+  {
+    "id": "twinned-spell",
+    "name": "Twinned Spell",
+    "description": "Spend sorcery points equal to the spell's level (1 for a cantrip) to target a second creature within range with a spell that targets only one creature and doesn't have a range of self."
+  }
+]

@@ -1,0 +1,277 @@
+[
+  {
+    "index": "mind-sliver",
+    "name": "Mind Sliver",
+    "level": 0,
+    "school": { "index": "enchantment", "name": "Enchantment" },
+    "casting_time": "1 action",
+    "range": "60 feet",
+    "duration": "Instantaneous",
+    "concentration": false,
+    "ritual": false,
+    "components": ["V"],
+    "desc": [
+      "You drive a disorienting spike of psychic energy into the mind of one creature you can see within range. The target must succeed on an Intelligence saving throw or take 1d6 psychic damage and subtract 1d4 from the next saving throw it makes before the end of your next turn.",
+      "The spell's damage increases by 1d6 when you reach 5th level (2d6), 11th level (3d6), and 17th level (4d6)."
+    ],
+    "classes": [
+      { "name": "Sorcerer" },
+      { "name": "Warlock" },
+      { "name": "Wizard" }
+    ],
+    "dc": {
+      "dc_type": { "index": "int", "name": "INT" },
+      "dc_success": "none"
+    },
+    "damage": {
+      "damage_type": { "index": "psychic", "name": "Psychic" },
+      "damage_at_character_level": {
+        "1": "1d6",
+        "5": "2d6",
+        "11": "3d6",
+        "17": "4d6"
+      }
+    },
+    "sourceID": "tashas"
+  },
+  {
+    "index": "mind-spike",
+    "name": "Mind Spike",
+    "level": 2,
+    "school": { "index": "divination", "name": "Divination" },
+    "casting_time": "1 action",
+    "range": "60 feet",
+    "duration": "Concentration, up to 1 hour",
+    "concentration": true,
+    "ritual": false,
+    "components": ["S"],
+    "desc": [
+      "You reach into the mind of one creature you can see within range. The target must make a Wisdom saving throw, taking 3d8 psychic damage on a failed save, or half as much on a successful one. On a failed save, you also always know the target's location until the spell ends, but only while the two of you are on the same plane of existence. While you have this knowledge, the target can't become hidden from you, and if it's invisible, it gains no benefit from that condition against you."
+    ],
+    "higher_level": [
+      "When you cast this spell using a spell slot of 3rd level or higher, the damage increases by 1d8 for each slot level above 2nd."
+    ],
+    "classes": [
+      { "name": "Sorcerer" },
+      { "name": "Warlock" },
+      { "name": "Wizard" }
+    ],
+    "dc": {
+      "dc_type": { "index": "wis", "name": "WIS" },
+      "dc_success": "half"
+    },
+    "damage": {
+      "damage_type": { "index": "psychic", "name": "Psychic" },
+      "damage_at_slot_level": {
+        "2": "3d8",
+        "3": "4d8",
+        "4": "5d8",
+        "5": "6d8",
+        "6": "7d8",
+        "7": "8d8",
+        "8": "9d8",
+        "9": "10d8"
+      }
+    },
+    "sourceID": "tashas"
+  },
+  {
+    "index": "intellect-fortress",
+    "name": "Intellect Fortress",
+    "level": 4,
+    "school": { "index": "abjuration", "name": "Abjuration" },
+    "casting_time": "1 action",
+    "range": "30 feet",
+    "duration": "Concentration, up to 1 hour",
+    "concentration": true,
+    "ritual": false,
+    "components": ["V", "S"],
+    "desc": [
+      "For the duration, you or one willing creature you can see within range has resistance to psychic damage, as well as advantage on Intelligence, Wisdom, and Charisma saving throws."
+    ],
+    "higher_level": [
+      "When you cast this spell using a spell slot of 5th level or higher, you can target one additional creature for each slot level above 4th. The creatures must be within 30 feet of each other when you target them."
+    ],
+    "classes": [
+      { "name": "Bard" },
+      { "name": "Sorcerer" },
+      { "name": "Warlock" },
+      { "name": "Wizard" }
+    ],
+    "sourceID": "tashas"
+  },
+  {
+    "index": "mind-whip",
+    "name": "Mind Whip",
+    "level": 2,
+    "school": { "index": "evocation", "name": "Evocation" },
+    "casting_time": "1 action",
+    "range": "90 feet",
+    "duration": "Instantaneous",
+    "concentration": false,
+    "ritual": false,
+    "components": ["V"],
+    "desc": [
+      "You psychically lash out at one creature you can see within range. The target must make an Intelligence saving throw. On a failed save, the target takes 3d6 psychic damage, and it can't take a reaction until the end of its next turn. Moreover, on its next turn, it must choose whether it gets a move, an action, or a bonus action; it gets only one of the three. On a successful save, the target takes half as much damage and suffers none of the spell's other effects."
+    ],
+    "higher_level": [
+      "When you cast this spell using a spell slot of 3rd level or higher, you can target one additional creature for each slot level above 2nd. The creatures must be within 30 feet of each other when you target them."
+    ],
+    "classes": [
+      { "name": "Sorcerer" },
+      { "name": "Warlock" },
+      { "name": "Wizard" }
+    ],
+    "dc": {
+      "dc_type": { "index": "int", "name": "INT" },
+      "dc_success": "half"
+    },
+    "damage": {
+      "damage_type": { "index": "psychic", "name": "Psychic" },
+      "damage_at_slot_level": {
+        "2": "3d6",
+        "3": "3d6",
+        "4": "3d6",
+        "5": "3d6",
+        "6": "3d6",
+        "7": "3d6",
+        "8": "3d6",
+        "9": "3d6"
+      }
+    },
+    "sourceID": "tashas"
+  },
+  {
+    "index": "wither-and-bloom",
+    "name": "Wither and Bloom",
+    "level": 2,
+    "school": { "index": "necromancy", "name": "Necromancy" },
+    "casting_time": "1 action",
+    "range": "60 feet",
+    "duration": "Instantaneous",
+    "concentration": false,
+    "ritual": false,
+    "components": ["V", "S", "M"],
+    "material": "A withered vine wrapped around a sprig of fresh herbs",
+    "desc": [
+      "You invoke both death and life upon a 10-foot-radius sphere centred on a point within range. Each creature of your choice in that area must make a Constitution saving throw, taking 2d6 necrotic damage on a failed save, or half as much on a successful one. Non-magical vegetation in that area withers. In addition, one creature of your choice in that area can spend and roll one of its unspent Hit Dice and regain a number of hit points equal to the roll plus your spellcasting ability modifier."
+    ],
+    "higher_level": [
+      "When you cast this spell using a spell slot of 3rd level or higher, the necrotic damage increases by 1d6 and the number of Hit Dice that can be spent and added to the healing roll increases by one for each slot level above 2nd."
+    ],
+    "classes": [
+      { "name": "Druid" },
+      { "name": "Sorcerer" },
+      { "name": "Wizard" }
+    ],
+    "dc": {
+      "dc_type": { "index": "con", "name": "CON" },
+      "dc_success": "half"
+    },
+    "damage": {
+      "damage_type": { "index": "necrotic", "name": "Necrotic" },
+      "damage_at_slot_level": {
+        "2": "2d6",
+        "3": "3d6",
+        "4": "4d6",
+        "5": "5d6",
+        "6": "6d6",
+        "7": "7d6",
+        "8": "8d6",
+        "9": "9d6"
+      }
+    },
+    "sourceID": "tashas"
+  },
+  {
+    "index": "spirit-shroud",
+    "name": "Spirit Shroud",
+    "level": 3,
+    "school": { "index": "necromancy", "name": "Necromancy" },
+    "casting_time": "1 bonus action",
+    "range": "Self",
+    "duration": "Concentration, up to 1 minute",
+    "concentration": true,
+    "ritual": false,
+    "components": ["V", "S"],
+    "desc": [
+      "You call forth spirits of the dead, which flit around you for the spell's duration. The spirits are intangible and invulnerable. Until the spell ends, any attack you make deals 1d8 extra damage when you hit a creature within 10 feet of you. This damage is radiant, necrotic, or cold (you choose when you cast the spell). Any creature that takes this damage can't regain hit points until the start of your next turn. In addition, any creature of your choice that you can see within 10 feet of you when you cast this spell has its speed reduced by 10 feet until the spell ends."
+    ],
+    "higher_level": [
+      "When you cast this spell using a spell slot of 5th level or higher, the extra damage increases by 1d8 for every two slot levels above 3rd."
+    ],
+    "classes": [
+      { "name": "Cleric" },
+      { "name": "Paladin" },
+      { "name": "Warlock" },
+      { "name": "Wizard" }
+    ],
+    "sourceID": "tashas"
+  },
+  {
+    "index": "tashas-caustic-brew",
+    "name": "Tasha's Caustic Brew",
+    "level": 1,
+    "school": { "index": "evocation", "name": "Evocation" },
+    "casting_time": "1 action",
+    "range": "Self (30-foot line)",
+    "duration": "Concentration, up to 1 minute",
+    "concentration": true,
+    "ritual": false,
+    "components": ["V", "S", "M"],
+    "material": "A drop of mineral water",
+    "desc": [
+      "A stream of acid emanates from you in a line 30 feet long and 5 feet wide in a direction you choose. Each creature in the line must succeed on a Dexterity saving throw or be covered in acid for the spell's duration or until a creature uses its action to scrape or wash the acid off itself or another creature. A creature covered in acid takes 2d4 acid damage at the start of each of its turns."
+    ],
+    "higher_level": [
+      "When you cast this spell using a spell slot of 2nd level or higher, the damage increases by 2d4 for each slot level above 1st."
+    ],
+    "classes": [
+      { "name": "Artificer" },
+      { "name": "Sorcerer" },
+      { "name": "Wizard" }
+    ],
+    "dc": {
+      "dc_type": { "index": "dex", "name": "DEX" },
+      "dc_success": "none"
+    },
+    "damage": {
+      "damage_type": { "index": "acid", "name": "Acid" },
+      "damage_at_slot_level": {
+        "1": "2d4",
+        "2": "4d4",
+        "3": "6d4",
+        "4": "8d4",
+        "5": "10d4",
+        "6": "12d4",
+        "7": "14d4",
+        "8": "16d4",
+        "9": "18d4"
+      }
+    },
+    "sourceID": "tashas"
+  },
+  {
+    "index": "borrowed-knowledge",
+    "name": "Borrowed Knowledge",
+    "level": 2,
+    "school": { "index": "divination", "name": "Divination" },
+    "casting_time": "1 action",
+    "range": "Self",
+    "duration": "1 hour",
+    "concentration": false,
+    "ritual": false,
+    "components": ["V", "S", "M"],
+    "material": "A book worth at least 25 gp",
+    "desc": [
+      "You draw on knowledge from spirits of the past. Choose one skill in which you lack proficiency. For the spell's duration, you have proficiency in the chosen skill. The spell ends early if you cast it again."
+    ],
+    "classes": [
+      { "name": "Bard" },
+      { "name": "Cleric" },
+      { "name": "Warlock" },
+      { "name": "Wizard" }
+    ],
+    "sourceID": "tashas"
+  }
+]

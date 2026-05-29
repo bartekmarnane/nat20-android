@@ -1,0 +1,414 @@
+[
+  {
+    "id": "mountain-dwarf",
+    "name": "Mountain Dwarf",
+    "description": "Stronger and hardier than other dwarves, mountain dwarves live in the high hills and mountainous regions. They tend to be taller and lighter-skinned than their hill cousins.",
+    "abilityScoreIncreases": {
+      "fixed": [
+        { "ability": "strength", "amount": 2 },
+        { "ability": "constitution", "amount": 2 }
+      ],
+      "choices": []
+    },
+    "size": "medium",
+    "speed": 25,
+    "darkvision": 60,
+    "languages": ["Common", "Dwarvish"],
+    "traits": [
+      { "name": "Dwarven Resilience", "body": "You have advantage on saving throws against poison, and resistance against poison damage.", "kind": "combat", "appliesTo": ["save"] },
+      { "name": "Dwarven Combat Training", "body": "You have proficiency with battleaxes, handaxes, light hammers, and warhammers." },
+      { "name": "Stonecunning", "body": "Whenever you make an Intelligence (History) check related to the origin of stonework, you are considered proficient in the History skill and add double your proficiency bonus to the check.", "appliesTo": ["skill"] },
+      { "name": "Dwarven Armor Training", "body": "You have proficiency with light and medium armor." }
+    ],
+    "typicalAge": 150,
+    "maxAge": 350
+  },
+  {
+    "id": "hill-dwarf",
+    "name": "Hill Dwarf",
+    "description": "Keen senses, deep intuition, and remarkable resilience define the hill dwarves. The Stout halflings of legend share their kinship and stout build.",
+    "abilityScoreIncreases": {
+      "fixed": [
+        { "ability": "constitution", "amount": 2 },
+        { "ability": "wisdom", "amount": 1 }
+      ],
+      "choices": []
+    },
+    "size": "medium",
+    "speed": 25,
+    "darkvision": 60,
+    "languages": ["Common", "Dwarvish"],
+    "traits": [
+      { "name": "Dwarven Resilience", "body": "You have advantage on saving throws against poison, and resistance against poison damage.", "kind": "combat", "appliesTo": ["save"] },
+      { "name": "Dwarven Combat Training", "body": "You have proficiency with battleaxes, handaxes, light hammers, and warhammers." },
+      { "name": "Stonecunning", "body": "Whenever you make an Intelligence (History) check related to the origin of stonework, you are considered proficient in the History skill and add double your proficiency bonus to the check.", "appliesTo": ["skill"] },
+      { "name": "Dwarven Toughness", "body": "Your hit point maximum increases by 1, and it increases by 1 every time you gain a level." }
+    ],
+    "typicalAge": 150,
+    "maxAge": 350
+  },
+  {
+    "id": "high-elf",
+    "name": "High Elf",
+    "description": "High elves have a keen mind and a mastery of at least the basics of magic. In many fantasy gaming worlds, there are two kinds of high elves. One type is haughty and reclusive, believing themselves to be superior to non-elves and even other elves. The other type is more common and more friendly, and often encountered among humans and other races.",
+    "abilityScoreIncreases": {
+      "fixed": [
+        { "ability": "dexterity", "amount": 2 },
+        { "ability": "intelligence", "amount": 1 }
+      ],
+      "choices": []
+    },
+    "size": "medium",
+    "speed": 30,
+    "darkvision": 60,
+    "languages": ["Common", "Elvish"],
+    "traits": [
+      { "name": "Keen Senses", "body": "You have proficiency in the Perception skill.", "appliesTo": ["skill"] },
+      { "name": "Fey Ancestry", "body": "You have advantage on saving throws against being charmed, and magic can't put you to sleep.", "kind": "combat", "appliesTo": ["save"] },
+      { "name": "Trance", "body": "Elves don't need to sleep. Instead, they meditate deeply, remaining semiconscious, for 4 hours a day." },
+      { "name": "Elf Weapon Training", "body": "You have proficiency with the longsword, shortsword, shortbow, and longbow." },
+      { "name": "Cantrip", "body": "You know one cantrip of your choice from the wizard spell list. Intelligence is your spellcasting ability for it." },
+      { "name": "Extra Language", "body": "You can speak, read, and write one extra language of your choice." }
+    ],
+    "typicalAge": 100,
+    "maxAge": 750
+  },
+  {
+    "id": "human",
+    "name": "Human",
+    "description": "In the reckonings of most worlds, humans are the youngest of the common races, late to arrive on the world scene and short-lived in comparison to dwarves, elves, and dragons. Perhaps it is because of their shorter lives that they strive to achieve as much as they can in the years they are given.",
+    "abilityScoreIncreases": {
+      "fixed": [
+        { "ability": "strength", "amount": 1 },
+        { "ability": "dexterity", "amount": 1 },
+        { "ability": "constitution", "amount": 1 },
+        { "ability": "intelligence", "amount": 1 },
+        { "ability": "wisdom", "amount": 1 },
+        { "ability": "charisma", "amount": 1 }
+      ],
+      "choices": []
+    },
+    "size": "medium",
+    "speed": 30,
+    "darkvision": 0,
+    "languages": ["Common"],
+    "traits": [
+      { "name": "Extra Language", "body": "You can speak, read, and write one extra language of your choice." }
+    ],
+    "typicalAge": 30,
+    "maxAge": 90
+  },
+  {
+    "id": "variant-human",
+    "name": "Variant Human",
+    "description": "An optional version of the human race in the PHB. Trades the +1 to every ability for a more pointed kit: +1 to two abilities of your choice, proficiency in one skill of your choice, and a bonus feat at 1st level — perfect when you want to lean hard into a specific build right out the gate.",
+    "abilityScoreIncreases": {
+      "fixed": [],
+      "choices": [
+        {
+          "count": 2,
+          "from": ["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"],
+          "amount": 1
+        }
+      ]
+    },
+    "size": "medium",
+    "speed": 30,
+    "darkvision": 0,
+    "languages": ["Common"],
+    "traits": [
+      { "name": "Skill Proficiency", "body": "You gain proficiency in one skill of your choice — picked on the Race step's Bonus Skills chip strip." },
+      { "name": "Extra Language", "body": "You can speak, read, and write one extra language of your choice." }
+    ],
+    "typicalAge": 30,
+    "maxAge": 90,
+    "grantsFreeFeatAtL1": true,
+    "bonusSkillPicks": 1
+  },
+  {
+    "id": "lightfoot-halfling",
+    "name": "Lightfoot Halfling",
+    "description": "As a lightfoot halfling, you can easily hide from notice, even using other people as cover. You're inclined to be affable and get along well with others. Lightfoots are more prone to wanderlust than other halflings, and often dwell alongside other races or take up a nomadic life.",
+    "abilityScoreIncreases": {
+      "fixed": [
+        { "ability": "dexterity", "amount": 2 },
+        { "ability": "charisma", "amount": 1 }
+      ],
+      "choices": []
+    },
+    "size": "small",
+    "speed": 25,
+    "darkvision": 0,
+    "languages": ["Common", "Halfling"],
+    "traits": [
+      { "name": "Lucky", "body": "When you roll a 1 on the d20 for an attack roll, ability check, or saving throw, you can reroll the die and must use the new roll.", "kind": "both", "appliesTo": ["attack", "save", "skill", "check"] },
+      { "name": "Brave", "body": "You have advantage on saving throws against being frightened.", "kind": "combat", "appliesTo": ["save"] },
+      { "name": "Halfling Nimbleness", "body": "You can move through the space of any creature that is of a size larger than yours.", "kind": "combat" },
+      { "name": "Naturally Stealthy", "body": "You can attempt to hide even when you are obscured only by a creature that is at least one size larger than you." }
+    ],
+    "typicalAge": 50,
+    "maxAge": 150
+  },
+  {
+    "id": "stout-halfling",
+    "name": "Stout Halfling",
+    "description": "As a stout halfling, you're hardier than average and have some resistance to poison. Some say that stouts have dwarven blood. They're brave but cautious, the kind to think twice before leaping.",
+    "abilityScoreIncreases": {
+      "fixed": [
+        { "ability": "dexterity", "amount": 2 },
+        { "ability": "constitution", "amount": 1 }
+      ],
+      "choices": []
+    },
+    "size": "small",
+    "speed": 25,
+    "darkvision": 0,
+    "languages": ["Common", "Halfling"],
+    "traits": [
+      { "name": "Lucky", "body": "When you roll a 1 on the d20 for an attack roll, ability check, or saving throw, you can reroll the die and must use the new roll.", "kind": "both", "appliesTo": ["attack", "save", "skill", "check"] },
+      { "name": "Brave", "body": "You have advantage on saving throws against being frightened.", "kind": "combat", "appliesTo": ["save"] },
+      { "name": "Halfling Nimbleness", "body": "You can move through the space of any creature that is of a size larger than yours.", "kind": "combat" },
+      { "name": "Stout Resilience", "body": "You have advantage on saving throws against poison, and you have resistance against poison damage.", "kind": "combat", "appliesTo": ["save"] }
+    ],
+    "typicalAge": 50,
+    "maxAge": 150
+  },
+  {
+    "id": "wood-elf",
+    "name": "Wood Elf",
+    "description": "As a wood elf, you have keen senses and intuition, and your fleet feet carry you quickly and stealthily through your native forests. Wood elves' skin tends to be copperish in hue, with traces of green.",
+    "abilityScoreIncreases": {
+      "fixed": [
+        { "ability": "dexterity", "amount": 2 },
+        { "ability": "wisdom", "amount": 1 }
+      ],
+      "choices": []
+    },
+    "size": "medium",
+    "speed": 35,
+    "darkvision": 60,
+    "languages": ["Common", "Elvish"],
+    "traits": [
+      { "name": "Keen Senses", "body": "You have proficiency in the Perception skill.", "appliesTo": ["skill"] },
+      { "name": "Fey Ancestry", "body": "You have advantage on saving throws against being charmed, and magic can't put you to sleep.", "kind": "combat", "appliesTo": ["save"] },
+      { "name": "Trance", "body": "Elves don't need to sleep. Instead, they meditate deeply for 4 hours a day." },
+      { "name": "Elf Weapon Training", "body": "You have proficiency with the longsword, shortsword, shortbow, and longbow." },
+      { "name": "Fleet of Foot", "body": "Your base walking speed increases to 35 feet." },
+      { "name": "Mask of the Wild", "body": "You can attempt to hide even when you are only lightly obscured by foliage, heavy rain, falling snow, mist, and other natural phenomena." }
+    ],
+    "typicalAge": 100,
+    "maxAge": 750
+  },
+  {
+    "id": "dragonborn",
+    "name": "Dragonborn",
+    "description": "Born of dragons, dragonborn walk proudly through a world that greets them with fearful incomprehension. Their personal standards of conduct shape their lives more than tribe or family.",
+    "abilityScoreIncreases": {
+      "fixed": [
+        { "ability": "strength", "amount": 2 },
+        { "ability": "charisma", "amount": 1 }
+      ],
+      "choices": []
+    },
+    "size": "medium",
+    "speed": 30,
+    "darkvision": 0,
+    "languages": ["Common", "Draconic"],
+    "traits": [
+      { "name": "Draconic Ancestry", "body": "You have draconic ancestry. Choose one type of dragon (Black/Blue/Brass/Bronze/Copper/Gold/Green/Red/Silver/White). Your breath weapon and damage resistance are determined by the dragon type." },
+      { "name": "Breath Weapon", "body": "You can use your action to exhale destructive energy. Your draconic ancestry determines the size, shape, and damage type. After you use it you can't use it again until you complete a short or long rest.", "kind": "combat" },
+      { "name": "Damage Resistance", "body": "You have resistance to the damage type associated with your draconic ancestry.", "kind": "combat" }
+    ],
+    "typicalAge": 15,
+    "maxAge": 80
+  },
+  {
+    "id": "forest-gnome",
+    "name": "Forest Gnome",
+    "description": "As a forest gnome, you have a natural knack for illusion and inherent quickness and stealth. You tend to be reclusive, preferring the company of woodland creatures to that of other people.",
+    "abilityScoreIncreases": {
+      "fixed": [
+        { "ability": "intelligence", "amount": 2 },
+        { "ability": "dexterity", "amount": 1 }
+      ],
+      "choices": []
+    },
+    "size": "small",
+    "speed": 25,
+    "darkvision": 60,
+    "languages": ["Common", "Gnomish"],
+    "traits": [
+      { "name": "Gnome Cunning", "body": "You have advantage on all Intelligence, Wisdom, and Charisma saving throws against magic.", "kind": "combat", "appliesTo": ["save"] },
+      { "name": "Natural Illusionist", "body": "You know the minor illusion cantrip. Intelligence is your spellcasting ability for it.", "appliesTo": ["cast"] },
+      { "name": "Speak with Small Beasts", "body": "Through sounds and gestures, you can communicate simple ideas with Small or smaller beasts." }
+    ],
+    "typicalAge": 100,
+    "maxAge": 500
+  },
+  {
+    "id": "rock-gnome",
+    "name": "Rock Gnome",
+    "description": "As a rock gnome, you have a natural inventiveness and hardiness beyond that of other gnomes. Most gnomes in the worlds of D&D are rock gnomes, including the tinker gnomes of the Dragonlance setting.",
+    "abilityScoreIncreases": {
+      "fixed": [
+        { "ability": "intelligence", "amount": 2 },
+        { "ability": "constitution", "amount": 1 }
+      ],
+      "choices": []
+    },
+    "size": "small",
+    "speed": 25,
+    "darkvision": 60,
+    "languages": ["Common", "Gnomish"],
+    "traits": [
+      { "name": "Gnome Cunning", "body": "You have advantage on all Intelligence, Wisdom, and Charisma saving throws against magic.", "kind": "combat", "appliesTo": ["save"] },
+      { "name": "Artificer's Lore", "body": "Whenever you make an Intelligence (History) check related to magic items, alchemical objects, or technological devices, you can add twice your proficiency bonus.", "appliesTo": ["skill"] },
+      { "name": "Tinker", "body": "You have proficiency with artisan's tools (tinker's tools). You can use them and 10 gp worth of materials to construct a Tiny clockwork device (1 hour) that lasts for 24 hours." }
+    ],
+    "typicalAge": 100,
+    "maxAge": 500
+  },
+  {
+    "id": "half-elf",
+    "name": "Half-Elf",
+    "description": "Walking in two worlds but truly belonging to neither, half-elves combine what some say are the best qualities of their elf and human parents: human curiosity, inventiveness, and ambition tempered by the refined senses, love of nature, and artistic tastes of the elves.",
+    "abilityScoreIncreases": {
+      "fixed": [
+        { "ability": "charisma", "amount": 2 }
+      ],
+      "choices": [
+        { "count": 2, "from": ["strength", "dexterity", "constitution", "intelligence", "wisdom"], "amount": 1 }
+      ]
+    },
+    "size": "medium",
+    "speed": 30,
+    "darkvision": 60,
+    "languages": ["Common", "Elvish"],
+    "traits": [
+      { "name": "Fey Ancestry", "body": "You have advantage on saving throws against being charmed, and magic can't put you to sleep.", "kind": "combat", "appliesTo": ["save"] },
+      { "name": "Skill Versatility", "body": "You gain proficiency in two skills of your choice — picked on the Race step's Bonus Skills chip strip.", "appliesTo": ["skill"] },
+      { "name": "Extra Language", "body": "You can speak, read, and write one extra language of your choice." }
+    ],
+    "typicalAge": 40,
+    "maxAge": 180,
+    "bonusSkillPicks": 2
+  },
+  {
+    "id": "half-orc",
+    "name": "Half-Orc",
+    "description": "Whether united under the leadership of a mighty warlock or struggling for survival in the wild, half-orcs share certain qualities with their orc parents: imposing, with greenish or grey-tinged skin and prominent teeth.",
+    "abilityScoreIncreases": {
+      "fixed": [
+        { "ability": "strength", "amount": 2 },
+        { "ability": "constitution", "amount": 1 }
+      ],
+      "choices": []
+    },
+    "size": "medium",
+    "speed": 30,
+    "darkvision": 60,
+    "languages": ["Common", "Orc"],
+    "traits": [
+      { "name": "Menacing", "body": "You gain proficiency in the Intimidation skill.", "appliesTo": ["skill"] },
+      { "name": "Relentless Endurance", "body": "When you are reduced to 0 hit points but not killed outright, you can drop to 1 hit point instead. You can't use this feature again until you finish a long rest.", "kind": "combat" },
+      { "name": "Savage Attacks", "body": "When you score a critical hit with a melee weapon attack, you can roll one of the weapon's damage dice one additional time and add it to the extra damage of the critical hit.", "kind": "combat", "appliesTo": ["attack"] }
+    ],
+    "typicalAge": 14,
+    "maxAge": 75
+  },
+  {
+    "id": "tiefling",
+    "name": "Tiefling",
+    "description": "To be greeted with stares and whispers, to suffer violence and insult on the street, to see mistrust and fear in every eye: this is the lot of the tiefling. Their infernal heritage shows in horns, a tail, sharp teeth, or solid-colored eyes.",
+    "abilityScoreIncreases": {
+      "fixed": [
+        { "ability": "intelligence", "amount": 1 },
+        { "ability": "charisma", "amount": 2 }
+      ],
+      "choices": []
+    },
+    "size": "medium",
+    "speed": 30,
+    "darkvision": 60,
+    "languages": ["Common", "Infernal"],
+    "traits": [
+      { "name": "Hellish Resistance", "body": "You have resistance to fire damage.", "kind": "combat", "appliesTo": ["save"] },
+      { "name": "Infernal Legacy", "body": "You know the thaumaturgy cantrip. At 3rd level you can cast hellish rebuke once per long rest as a 2nd-level spell. At 5th level you can cast darkness once per long rest. Charisma is your spellcasting ability.", "appliesTo": ["cast"] }
+    ],
+    "typicalAge": 25,
+    "maxAge": 105
+  },
+  {
+    "id": "custom-lineage",
+    "name": "Custom Lineage",
+    "description": "Tasha's flexible origin — build the race that fits your character concept. Pick any ability for the +2, your size, either Darkvision or proficiency in a skill of your choice, and a free L1 feat.",
+    "grantsFreeFeatAtL1": true,
+    "abilityScoreIncreases": {
+      "fixed": [],
+      "choices": [
+        { "count": 1, "from": ["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"], "amount": 2 }
+      ]
+    },
+    "size": "medium",
+    "speed": 30,
+    "darkvision": 0,
+    "languages": ["Common"],
+    "traits": [
+      { "name": "Custom Lineage", "body": "Your size is Small or Medium (chosen). Your variable trait is either Darkvision 60 ft or proficiency in one skill of your choice. You gain a feat of your choice at 1st level (picked via the Advancements step). Languages: Common + one other of your choice." },
+      { "name": "Lineage", "body": "Your creature type is humanoid. You can determine your appearance and identify with the heritage of your character's parents, or you can find yourself a stranger to your kin." }
+    ],
+    "sourceID": "tashas"
+  },
+  {
+    "id": "aasimar",
+    "name": "Aasimar",
+    "description": "Bearing a soul touched by the upper planes, an aasimar carries celestial radiance and the lingering weight of their patron's purpose. Most are guided by a guardian angel who whispers to them in dreams; come adulthood, they reveal a Celestial Revelation choice — Protector, Scourge, or Fallen — that defines their bearing.",
+    "abilityScoreIncreases": {
+      "fixed": [],
+      "choices": [
+        { "count": 1, "from": ["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"], "amount": 2 },
+        { "count": 1, "from": ["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"], "amount": 1 }
+      ]
+    },
+    "size": "medium",
+    "speed": 30,
+    "darkvision": 60,
+    "languages": ["Common", "Celestial"],
+    "traits": [
+      { "name": "Celestial Resistance", "body": "You have resistance to necrotic damage and radiant damage.", "kind": "combat", "appliesTo": ["save"] },
+      { "name": "Healing Hands", "body": "As an action, you can touch a creature and roll a number of d4s equal to your proficiency bonus. The target regains a number of hit points equal to the total rolled. Once used, this trait can't be used again until you finish a long rest." },
+      { "name": "Light Bearer", "body": "You know the Light cantrip. Charisma is your spellcasting ability for it.", "appliesTo": ["cast"] },
+      { "name": "Celestial Revelation", "body": "When you reach 3rd level, you can use a bonus action to unveil the celestial energy within yourself. Pick one mode at 3rd level (this picker is a follow-up — pick narratively for now). Necrotic Shroud: bony, skeletal wings spread and creatures within 10 feet of you that you can see must succeed on a Charisma saving throw or be frightened of you until the end of your next turn. Radiant Soul: incandescent wings sprout and you gain a flying speed equal to your walking speed. Radiant Consumption: searing light radiates from you in a 10-foot radius — at the end of each of your turns each creature within 10 feet takes radiant damage equal to your proficiency bonus." }
+    ],
+    "typicalAge": 30,
+    "maxAge": 160,
+    "sourceID": "mordenkainens",
+    "grantedSpells": ["light"]
+  },
+  {
+    "id": "tortle",
+    "name": "Tortle",
+    "description": "Tortles are walking fortresses — bipedal turtle-folk who can withdraw entirely into their shells for a turn of fortified rest. Slow, patient, and proverbially stubborn. Hardened plates of natural armor mean a tortle never needs to wear armor (though most can't, anyway).",
+    "abilityScoreIncreases": {
+      "fixed": [
+        { "ability": "strength", "amount": 2 },
+        { "ability": "wisdom", "amount": 1 }
+      ],
+      "choices": []
+    },
+    "size": "medium",
+    "speed": 30,
+    "darkvision": 0,
+    "languages": ["Common", "Aquan"],
+    "traits": [
+      { "name": "Claws", "body": "Your claws are natural weapons, which you can use to make unarmed strikes. If you hit with them, you deal slashing damage equal to 1d4 + your Strength modifier, instead of the bludgeoning damage normal for an unarmed strike." },
+      { "name": "Hold Breath", "body": "You can hold your breath for up to 1 hour at a time." },
+      { "name": "Natural Armor", "body": "Due to your shell and the shape of your body, you are ill-suited to wearing armor. Your shell provides ample protection, however; it gives you a base AC of 17 (your Dexterity modifier doesn't affect this number). You gain no benefit from wearing armor, but if you are using a shield, you can apply the shield's bonus as normal. (The mechanical AC override isn't auto-applied yet — note your AC manually until ArmorClassCalculator wires natural-armor races.)", "kind": "combat" },
+      { "name": "Shell Defense", "body": "You can withdraw into your shell as an action. Until you emerge, you gain a +4 bonus to AC, and you have advantage on Strength and Constitution saving throws. While in your shell, you are prone, your speed is 0 and can't increase, you have disadvantage on Dexterity saving throws, you can't take reactions, and the only action you can take is a bonus action to emerge from your shell.", "kind": "combat", "appliesTo": ["save"] },
+      { "name": "Survival Instinct", "body": "You gain proficiency in the Survival skill.", "appliesTo": ["skill"] }
+    ],
+    "typicalAge": 40,
+    "maxAge": 50,
+    "sourceID": "mordenkainens"
+  }
+]
