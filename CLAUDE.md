@@ -88,7 +88,7 @@ migrations are clean.)
 
 1. `./gradlew build` is green.
 2. `./gradlew test` passes (JVM unit tests for `:domain` + `:ruleset-dnd5e`).
-3. `./gradlew :app:assembleDebug` succeeds; app launches without crash.
+3. `./gradlew :app:assembleDebug` succeeds. *(Actual app-launch verification is local — the web sandbox has no emulator; see below.)*
 4. New logic has tests. Behaviour matches the iOS reference (cross-check the Swift).
 5. No Android imports leaked into `:domain` / `:ruleset-dnd5e`.
 
@@ -101,6 +101,21 @@ migrations are clean.)
 ./gradlew :app:assembleDebug    # build the debug APK
 ./gradlew lint                  # Android lint
 ```
+
+## Running on Claude Code on the web
+
+Each web session clones only this repo, so:
+
+- The **iOS reference** (`../nat20-ios`) is cloned as a sibling by `scripts/web-setup.sh` — set
+  that as the cloud environment's setup script (`bash scripts/web-setup.sh`). Then all the
+  `../nat20-ios` references above resolve.
+- **Pre-installed:** JDK 21 + Gradle. **A1–A3** (`:domain` + `:ruleset-dnd5e`, pure Kotlin)
+  build and test on the JDK alone — **no Android SDK needed**, so the port can start immediately.
+- **Android SDK** is installed by the same setup script (needed from **A4**, `:app`/`:data`).
+- **No emulator** in the sandbox (no nested virtualization). Instrumented/UI tests and actual
+  app-launch checks run **locally** (pull the branch or `claude --teleport <session-id>`).
+  In-sandbox "done" = build green + `:app:assembleDebug` compiles + JVM unit tests pass.
+- Use **Auto accept edits** mode; **one backlog step per session/PR**.
 
 ## Out of scope / explicitly deferred
 
