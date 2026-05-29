@@ -12,6 +12,12 @@ pluginManagement {
     }
 }
 
+// Lets Gradle auto-download a matching JDK when a module requests a toolchain
+// (e.g. the pure-Kotlin :domain / :ruleset-dnd5e modules ask for JDK 17).
+plugins {
+    id("org.gradle.toolchains.foojay-resolver-convention") version "0.8.0"
+}
+
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {

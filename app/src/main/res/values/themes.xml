@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Base app theme. Compose drives the real theming; this is just the
-         window/launch theme the manifest points at. Day/night handled by the
-         platform DayNight parent. Swap for the ink-on-parchment theme in step A7e. -->
-    <style name="Theme.Nat20" parent="android:Theme.DeviceDefault.DayNight.NoActionBar" />
+         window/launch theme the manifest points at (a bare platform style so we
+         pull no extra deps). Swap for the ink-on-parchment theme in step A7e. -->
+    <style name="Theme.Nat20" parent="android:Theme.Material.Light.NoActionBar" />
 </resources>
