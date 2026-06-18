@@ -7,6 +7,7 @@ import au.com.evonet.nat20.data.CampaignRepository
 import au.com.evonet.nat20.data.CharacterRepository
 import au.com.evonet.nat20.data.Nat20Data
 import au.com.evonet.nat20.domain.RulesetRegistry
+import au.com.evonet.nat20.settings.AppSettings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -21,6 +22,9 @@ class AppContainer(context: Context) {
     val applicationScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     val rulesetRegistry: RulesetRegistry = DefaultRulesetRegistry()
+
+    /** Persisted app preferences (appearance, …). */
+    val appSettings: AppSettings = AppSettings(context)
 
     private val repositories = Nat20Data.create(context, rulesetRegistry)
     val characterRepository: CharacterRepository = repositories.characters

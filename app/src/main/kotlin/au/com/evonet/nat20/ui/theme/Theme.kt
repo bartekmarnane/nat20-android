@@ -2,6 +2,7 @@ package au.com.evonet.nat20.ui.theme
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
@@ -37,6 +38,20 @@ private val InkOnParchment = lightColorScheme(
     outline = Color(0xFFB8A475),
 )
 
+/** The candlelit gold-on-black variant — the iOS dark codex (A7e deferred this). */
+private val CandlelitGold = darkColorScheme(
+    primary = Color(0xFFD9B873),
+    onPrimary = Color(0xFF2A2113),
+    secondary = Color(0xFFC8B894),
+    background = Color(0xFF17130E),
+    onBackground = Color(0xFFEDE3CF),
+    surface = Color(0xFF221C14),
+    onSurface = Color(0xFFEDE3CF),
+    surfaceVariant = Color(0xFF332B1F),
+    onSurfaceVariant = Color(0xFFC8B894),
+    outline = Color(0xFF6B5B3E),
+)
+
 private fun natTypography(): Typography {
     val base = Typography()
     return base.copy(
@@ -53,9 +68,9 @@ private fun natTypography(): Typography {
 }
 
 @Composable
-fun Nat20Theme(content: @Composable () -> Unit) {
+fun Nat20Theme(darkTheme: Boolean = false, content: @Composable () -> Unit) {
     MaterialTheme(
-        colorScheme = InkOnParchment,
+        colorScheme = if (darkTheme) CandlelitGold else InkOnParchment,
         typography = natTypography(),
         content = content,
     )

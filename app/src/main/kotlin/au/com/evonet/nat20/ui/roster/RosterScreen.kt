@@ -47,12 +47,18 @@ fun RosterScreen(
     onSelect: (Character) -> Unit,
     onNew: () -> Unit,
     onDelete: (Character) -> Unit,
+    onOpenSettings: () -> Unit,
 ) {
     var pendingDelete by remember { mutableStateOf<Character?>(null) }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        topBar = { TopAppBar(title = { Text("Nat20") }) },
+        topBar = {
+            TopAppBar(
+                title = { Text("Nat20") },
+                actions = { TextButton(onClick = onOpenSettings) { Text("Settings") } },
+            )
+        },
         floatingActionButton = {
             ExtendedFloatingActionButton(onClick = onNew) { Text("New Character") }
         },

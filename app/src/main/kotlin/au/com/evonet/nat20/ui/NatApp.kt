@@ -22,6 +22,8 @@ import au.com.evonet.nat20.ui.editor.DnD5eWizardScreen
 import au.com.evonet.nat20.ui.journal.JournalScreen
 import au.com.evonet.nat20.ui.past.PastAdventuresScreen
 import au.com.evonet.nat20.ui.roster.RosterScreen
+import au.com.evonet.nat20.ui.settings.CreditsScreen
+import au.com.evonet.nat20.ui.settings.SettingsScreen
 import au.com.evonet.nat20.ui.sheet.CharacterSheetScreen
 import java.util.UUID
 
@@ -39,6 +41,8 @@ private object Routes {
     const val EDIT = "editor/{id}"
     const val JOURNAL = "journal/{id}/{campaignId}"
     const val PAST = "past/{id}"
+    const val SETTINGS = "settings"
+    const val CREDITS = "credits"
     const val ARG_ID = "id"
     const val ARG_CAMPAIGN_ID = "campaignId"
     fun sheet(id: UUID) = "sheet/$id"
@@ -70,7 +74,20 @@ fun NatApp() {
                 onSelect = { nav.navigate(Routes.sheet(it.id)) },
                 onNew = { nav.navigate(Routes.CREATE) },
                 onDelete = { store.delete(it.id) },
+                onOpenSettings = { nav.navigate(Routes.SETTINGS) },
             )
+        }
+
+        composable(Routes.SETTINGS) {
+            SettingsScreen(
+                appSettings = container.appSettings,
+                onOpenCredits = { nav.navigate(Routes.CREDITS) },
+                onBack = { nav.popBackStack() },
+            )
+        }
+
+        composable(Routes.CREDITS) {
+            CreditsScreen(onBack = { nav.popBackStack() })
         }
 
         composable(
