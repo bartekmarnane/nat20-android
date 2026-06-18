@@ -15,6 +15,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -28,8 +29,11 @@ import au.com.evonet.nat20.dnd5e.ArmorClassCalculator
 import au.com.evonet.nat20.dnd5e.DnD5eCatalog
 import au.com.evonet.nat20.dnd5e.MarkDeathSave
 import au.com.evonet.nat20.dnd5e.RollDeathSave
+import au.com.evonet.nat20.dnd5e.SetInitiative
 import au.com.evonet.nat20.dnd5e.SetInspiration
 import au.com.evonet.nat20.dnd5e.SpendHitDie
+import au.com.evonet.nat20.dnd5e.equippedWeapons
+import au.com.evonet.nat20.dnd5e.initiativeBonus
 import au.com.evonet.nat20.dnd5e.core.DeathSaveOutcome
 import au.com.evonet.nat20.dnd5e.DnD5ePayload
 import au.com.evonet.nat20.dnd5e.core.Ability
@@ -147,6 +151,8 @@ internal fun CombatPage(character: Character, payload: DnD5ePayload, onApplyInte
     val dexMod = payload.abilityScores.modifier(Ability.DEXTERITY)
     val acBreakdown = ArmorClassCalculator.compute(payload)
     var spendHitDie by remember { mutableStateOf(false) }
+    var attacking by remember { mutableStateOf(false) }
+    var rollingInit by remember { mutableStateOf(false) }
     CodexPage {
         SectionCard("Hit Points") {
             StatLine("Current / Max", "${payload.currentHp} / ${payload.maxHp}")
@@ -163,8 +169,31 @@ internal fun CombatPage(character: Character, payload: DnD5ePayload, onApplyInte
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            StatLine("Initiative", dexMod.signed())
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    "Initiative",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f),
+                )
+                Text(
+                    payload.initiative?.toString() ?: dexMod.signed(),
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                    color = if (payload.initiative != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(end = 8.dp),
+                )
+                TextButton(onClick = { rollingInit = true }) { Text(if (payload.initiative != null) "Reroll" else "Roll") }
+                if (payload.initiative != null) {
+                    TextButton(onClick = { onApplyIntent(SetInitiative(null)) }) { Text("Clear") }
+                }
+            }
             StatLine("Speed", "30 ft")
+        }
+        SectionCard("Attack") {
+            Button(onClick = { attacking = true }, enabled = payload.equippedWeapons.isNotEmpty(), modifier = Modifier.fillMaxWidth()) {
+                Text(if (payload.equippedWeapons.isEmpty()) "Equip a weapon to attack" else "Make an attack")
+            }
         }
         SectionCard("Hit Dice") {
             StatLine("Available", "${payload.currentHitDice} / ${payload.maxHitDice}")
@@ -208,6 +237,18 @@ internal fun CombatPage(character: Character, payload: DnD5ePayload, onApplyInte
             allowAdvantageToggle = false,
             onSettled = { result -> onApplyIntent(SpendHitDie(maxOf(1, result.total))) },
             onDismiss = { spendHitDie = false },
+        )
+    }
+    if (attacking) {
+        AttackSheet(payload, onApplyIntent, onDismiss = { attacking = false })
+    }
+    if (rollingInit) {
+        RollDialog(
+            title = "Initiative",
+            spec = RollSpec.d(1, 20),
+            bonuses = listOf(RollBonus("DEX", payload.initiativeBonus)),
+            onSettled = { result -> onApplyIntent(SetInitiative(result.total)) },
+            onDismiss = { rollingInit = false },
         )
     }
 }

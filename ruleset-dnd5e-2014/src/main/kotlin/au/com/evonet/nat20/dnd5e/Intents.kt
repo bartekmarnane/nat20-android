@@ -1,6 +1,7 @@
 package au.com.evonet.nat20.dnd5e
 
 import au.com.evonet.nat20.dnd5e.core.AbilityScores
+import au.com.evonet.nat20.dnd5e.core.AttackOutcome
 import au.com.evonet.nat20.dnd5e.core.Coin
 import au.com.evonet.nat20.dnd5e.core.ClassResourceCatalog
 import au.com.evonet.nat20.dnd5e.core.DeathSaveOutcome
@@ -152,6 +153,49 @@ data class AddNote(
         val trimmed = text.trim()
         if (trimmed.isEmpty()) throw CharacterIntentError.Invalid("Note must not be empty")
         return IntentResult(character, NoteEvent(text = trimmed, kind = kind))
+    }
+}
+
+// ── Combat: attacks + initiative (A15) ────────────────────────────────────────
+
+/**
+ * Logs a weapon attack: the attack roll's total, the resolved [outcome], and
+ * (on a hit/crit) the rolled damage. Records to the journal without mutating the
+ * attacker — there's no target entity to damage yet (that's party/encounter
+ * scope). The roll itself happens in the UI via the A16 die primitive.
+ */
+data class MakeAttack(
+    val weaponName: String,
+    val attackTotal: Int,
+    val outcome: AttackOutcome,
+    val damage: Int? = null,
+    val damageType: String? = null,
+    val target: String? = null,
+) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        if (weaponName.isBlank()) throw CharacterIntentError.Invalid("Attack needs a weapon")
+        val event = AttackEvent(
+            weaponName = weaponName,
+            attackTotal = attackTotal,
+            outcome = outcome,
+            damage = damage?.takeIf { outcome != AttackOutcome.MISS },
+            damageType = damageType,
+            target = target?.trim()?.takeIf { it.isNotEmpty() },
+        )
+        return IntentResult(character, event)
+    }
+}
+
+/** Sets (or, with null, clears) this encounter's initiative; the d20 is rolled in the UI. */
+data class SetInitiative(
+    val value: Int?,
+) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        val payload = character.dnd5ePayload()
+        return IntentResult(
+            character.copy(payload = payload.copy(initiative = value)),
+            InitiativeEvent(value),
+        )
     }
 }
 

@@ -343,6 +343,41 @@ data class ExhaustionChangedEvent(
         }
 }
 
+// ── Combat: attacks + initiative (A15) ────────────────────────────────────────
+
+@Serializable
+data class AttackEvent(
+    val weaponName: String,
+    val attackTotal: Int,
+    val outcome: au.com.evonet.nat20.dnd5e.core.AttackOutcome,
+    val damage: Int? = null,
+    val damageType: String? = null,
+    val target: String? = null,
+) : CharacterEvent {
+    override val summary: String
+        get() {
+            val tgt = target?.takeIf { it.isNotBlank() }?.let { " $it" } ?: ""
+            val dmg = if (damage != null) {
+                val type = damageType?.takeIf { it.isNotBlank() }?.let { " ${it.lowercase()}" } ?: ""
+                " for $damage$type damage"
+            } else {
+                ""
+            }
+            return when (outcome) {
+                au.com.evonet.nat20.dnd5e.core.AttackOutcome.MISS -> "Attacked$tgt with $weaponName — missed (rolled $attackTotal)"
+                au.com.evonet.nat20.dnd5e.core.AttackOutcome.HIT -> "Hit$tgt with $weaponName$dmg (rolled $attackTotal)"
+                au.com.evonet.nat20.dnd5e.core.AttackOutcome.CRITICAL -> "Critical hit$tgt with $weaponName$dmg!"
+            }
+        }
+}
+
+@Serializable
+data class InitiativeEvent(
+    val value: Int?,
+) : CharacterEvent {
+    override val summary: String get() = if (value != null) "Rolled initiative: $value" else "Cleared initiative"
+}
+
 @Serializable
 data class DeathSaveRolledEvent(
     val d20: Int,

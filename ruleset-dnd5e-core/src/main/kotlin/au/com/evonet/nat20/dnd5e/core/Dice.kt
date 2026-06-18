@@ -56,10 +56,22 @@ data class RollSpec(
         }
     }
 
+    /** This spec with the dice count doubled — the 5e critical-hit damage rule. */
+    fun critDoubled(): RollSpec = copy(count = count * 2)
+
     companion object {
+        private val NOTATION = Regex("""\s*(\d+)\s*d\s*(\d+)\s*([+-]\s*\d+)?\s*""", RegexOption.IGNORE_CASE)
+
         /** `d(1, 20, mod = 3)` → 1d20+3 in dice-notation order. */
         fun d(count: Int, faces: Int, mod: Int = 0, keep: Keep = Keep.All): RollSpec =
             RollSpec(count, faces, mod, keep)
+
+        /** Parses dice notation like "1d8", "2d6", "1d10+2"; null if it doesn't match. */
+        fun parse(notation: String): RollSpec? {
+            val m = NOTATION.matchEntire(notation) ?: return null
+            val mod = m.groupValues[3].replace(" ", "").toIntOrNull() ?: 0
+            return RollSpec(m.groupValues[1].toInt(), m.groupValues[2].toInt(), mod)
+        }
 
         /** 2d[faces] keep highest 1. */
         fun advantage(faces: Int = 20, mod: Int = 0): RollSpec = RollSpec(2, faces, mod, Keep.Highest(1))

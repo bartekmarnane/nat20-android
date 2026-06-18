@@ -77,6 +77,8 @@ data class DnD5ePayload(
     val activeConditions: List<String> = emptyList(),
     /** Exhaustion track 0–6 (level 6 = death); a long rest sheds one level. */
     val exhaustionLevel: Int = 0,
+    /** This encounter's rolled initiative; null when not in an encounter. */
+    val initiative: Int? = null,
 ) : CharacterPayload {
 
     /** Total character level = sum of all class entry levels, floored at 1. */
