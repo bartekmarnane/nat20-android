@@ -120,6 +120,7 @@ fun NatApp() {
                     onOpenPastAdventures = { nav.navigate(Routes.past(character.id)) },
                     onBrowseSpells = { nav.navigate(Routes.SPELL_LIBRARY) },
                     onApplyIntent = { intent -> active?.let { c -> store.applyIntent(intent, character, c) } },
+                    onSave = { store.save(it) },
                 )
             }
         }

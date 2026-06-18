@@ -49,6 +49,7 @@ import au.com.evonet.nat20.dnd5e.DnD5eCatalog
 import au.com.evonet.nat20.dnd5e.DnD5ePayload
 import au.com.evonet.nat20.dnd5e.DnD5eRuleset
 import au.com.evonet.nat20.dnd5e.Race
+import au.com.evonet.nat20.dnd5e.withFullSpellSlots
 import au.com.evonet.nat20.dnd5e.core.Ability
 import au.com.evonet.nat20.dnd5e.core.AbilityScores
 import au.com.evonet.nat20.dnd5e.core.LevelUpMath
@@ -114,7 +115,7 @@ fun DnD5eWizardScreen(existing: Character?, onSave: (Character) -> Unit, onCance
             currentHp = maxHp,
             background = backgroundId.orEmpty(),
             selectedSkills = (backgroundSkills + chosenSkills).distinct(),
-        )
+        ).withFullSpellSlots() // casters start the day with all slots (spell picks land with A11)
         return if (existing == null) {
             Character.new(name.trim(), DnD5eRuleset(), payload, Instant.now())
         } else {

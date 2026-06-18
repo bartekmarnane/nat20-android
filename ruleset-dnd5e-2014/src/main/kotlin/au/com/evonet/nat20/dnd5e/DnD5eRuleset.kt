@@ -34,6 +34,19 @@ class DnD5eRuleset : Ruleset {
         is TempHpGainedEvent -> "dnd5e.tempHP"
         is LeveledUpEvent -> "dnd5e.level"
         is NoteEvent -> "dnd5e.note"
+        is ItemAcquiredEvent -> "dnd5e.itemAcquired"
+        is ItemDroppedEvent -> "dnd5e.itemDropped"
+        is ItemUsedEvent -> "dnd5e.itemUsed"
+        is CoinAdjustedEvent -> "dnd5e.coin"
+        is CastSpellEvent -> "dnd5e.castSpell"
+        is SpellPreparedEvent -> "dnd5e.prepareSpell"
+        is SpellUnpreparedEvent -> "dnd5e.unprepareSpell"
+        is SpellSlotExpendedEvent -> "dnd5e.expendSlot"
+        is ShortRestEvent -> "dnd5e.shortRest"
+        is LongRestEvent -> "dnd5e.longRest"
+        is HitDieSpentEvent -> "dnd5e.hitDie"
+        is ResourceSpentEvent -> "dnd5e.resource"
+        is ClassFeatureUsedEvent -> "dnd5e.feature"
         else -> "dnd5e.unknown"
     }
 
@@ -43,6 +56,19 @@ class DnD5eRuleset : Ruleset {
         is TempHpGainedEvent -> json.encodeToString(TempHpGainedEvent.serializer(), event)
         is LeveledUpEvent -> json.encodeToString(LeveledUpEvent.serializer(), event)
         is NoteEvent -> json.encodeToString(NoteEvent.serializer(), event)
+        is ItemAcquiredEvent -> json.encodeToString(ItemAcquiredEvent.serializer(), event)
+        is ItemDroppedEvent -> json.encodeToString(ItemDroppedEvent.serializer(), event)
+        is ItemUsedEvent -> json.encodeToString(ItemUsedEvent.serializer(), event)
+        is CoinAdjustedEvent -> json.encodeToString(CoinAdjustedEvent.serializer(), event)
+        is CastSpellEvent -> json.encodeToString(CastSpellEvent.serializer(), event)
+        is SpellPreparedEvent -> json.encodeToString(SpellPreparedEvent.serializer(), event)
+        is SpellUnpreparedEvent -> json.encodeToString(SpellUnpreparedEvent.serializer(), event)
+        is SpellSlotExpendedEvent -> json.encodeToString(SpellSlotExpendedEvent.serializer(), event)
+        is ShortRestEvent -> json.encodeToString(ShortRestEvent.serializer(), event)
+        is LongRestEvent -> json.encodeToString(LongRestEvent.serializer(), event)
+        is HitDieSpentEvent -> json.encodeToString(HitDieSpentEvent.serializer(), event)
+        is ResourceSpentEvent -> json.encodeToString(ResourceSpentEvent.serializer(), event)
+        is ClassFeatureUsedEvent -> json.encodeToString(ClassFeatureUsedEvent.serializer(), event)
         else -> throw CharacterCodecError.UnknownEventType(event::class.simpleName ?: "unknown")
     }
 
@@ -52,6 +78,19 @@ class DnD5eRuleset : Ruleset {
         "dnd5e.tempHP" -> this.json.decodeFromString(TempHpGainedEvent.serializer(), json)
         "dnd5e.level" -> this.json.decodeFromString(LeveledUpEvent.serializer(), json)
         "dnd5e.note" -> this.json.decodeFromString(NoteEvent.serializer(), json)
+        "dnd5e.itemAcquired" -> this.json.decodeFromString(ItemAcquiredEvent.serializer(), json)
+        "dnd5e.itemDropped" -> this.json.decodeFromString(ItemDroppedEvent.serializer(), json)
+        "dnd5e.itemUsed" -> this.json.decodeFromString(ItemUsedEvent.serializer(), json)
+        "dnd5e.coin" -> this.json.decodeFromString(CoinAdjustedEvent.serializer(), json)
+        "dnd5e.castSpell" -> this.json.decodeFromString(CastSpellEvent.serializer(), json)
+        "dnd5e.prepareSpell" -> this.json.decodeFromString(SpellPreparedEvent.serializer(), json)
+        "dnd5e.unprepareSpell" -> this.json.decodeFromString(SpellUnpreparedEvent.serializer(), json)
+        "dnd5e.expendSlot" -> this.json.decodeFromString(SpellSlotExpendedEvent.serializer(), json)
+        "dnd5e.shortRest" -> this.json.decodeFromString(ShortRestEvent.serializer(), json)
+        "dnd5e.longRest" -> this.json.decodeFromString(LongRestEvent.serializer(), json)
+        "dnd5e.hitDie" -> this.json.decodeFromString(HitDieSpentEvent.serializer(), json)
+        "dnd5e.resource" -> this.json.decodeFromString(ResourceSpentEvent.serializer(), json)
+        "dnd5e.feature" -> this.json.decodeFromString(ClassFeatureUsedEvent.serializer(), json)
         else -> throw CharacterCodecError.UnknownEventType(typeId)
     }
 

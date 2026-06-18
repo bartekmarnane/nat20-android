@@ -25,10 +25,28 @@ object DnD5eCatalog {
         load("Spells/5e-SRD-Spells.json", Spell.serializer()).sortedWith(compareBy({ it.level }, { it.name }))
     }
 
+    /** SRD weapons, name-sorted (A10 inventory). */
+    val weapons: List<WeaponCatalogueEntry> by lazy {
+        load("Inventory/5e-SRD-Weapons.json", WeaponCatalogueEntry.serializer()).sortedBy { it.name }
+    }
+
+    /** SRD armor, name-sorted. */
+    val armor: List<ArmorCatalogueEntry> by lazy {
+        load("Inventory/5e-SRD-Armor.json", ArmorCatalogueEntry.serializer()).sortedBy { it.name }
+    }
+
+    /** SRD shields / ammunition / potions / tools / mundane gear, name-sorted. */
+    val gear: List<GearCatalogueEntry> by lazy {
+        load("Inventory/5e-SRD-Gear.json", GearCatalogueEntry.serializer()).sortedBy { it.name }
+    }
+
     fun race(id: String): Race? = races.firstOrNull { it.id == id }
     fun characterClass(id: String): CharacterClass? = classes.firstOrNull { it.id == id }
     fun background(id: String): Background? = backgrounds.firstOrNull { it.id == id }
     fun skill(id: String): Skill? = SkillCatalog.byId(id)
+    fun weapon(id: String): WeaponCatalogueEntry? = weapons.firstOrNull { it.id == id }
+    fun armorPiece(id: String): ArmorCatalogueEntry? = armor.firstOrNull { it.id == id }
+    fun gearPiece(id: String): GearCatalogueEntry? = gear.firstOrNull { it.id == id }
 
     private fun <T> load(path: String, element: kotlinx.serialization.KSerializer<T>): List<T> {
         val text = javaClass.getResourceAsStream("/catalogues/$path")

@@ -51,6 +51,7 @@ fun CharacterSheetScreen(
     onOpenPastAdventures: () -> Unit,
     onBrowseSpells: () -> Unit,
     onApplyIntent: (CharacterIntent) -> Unit,
+    onSave: (Character) -> Unit,
 ) {
     val inCampaign = character.phase is CharacterPhase.InCampaign
     var showStart by remember { mutableStateOf(false) }
@@ -83,7 +84,7 @@ fun CharacterSheetScreen(
                 ActiveCampaignBanner(activeCampaign.name, onEnd = { showEnd = true })
             }
             when (character.rulesetId) {
-                DnD5eRuleset.RULESET_ID -> CodexShellView(character, onBrowseSpells, Modifier.fillMaxSize())
+                DnD5eRuleset.RULESET_ID -> CodexShellView(character, onBrowseSpells, onSave, Modifier.fillMaxSize())
                 else -> UnsupportedRuleset(character.rulesetId)
             }
         }

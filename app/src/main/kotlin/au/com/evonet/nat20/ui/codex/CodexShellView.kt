@@ -23,7 +23,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import au.com.evonet.nat20.dnd5e.DnD5ePayload
@@ -45,7 +44,12 @@ private enum class CodexTab(val title: String) {
 }
 
 @Composable
-fun CodexShellView(character: Character, onBrowseSpells: () -> Unit, modifier: Modifier = Modifier) {
+fun CodexShellView(
+    character: Character,
+    onBrowseSpells: () -> Unit,
+    onSave: (Character) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val payload = character.payload as? DnD5ePayload ?: return
     val tabs = CodexTab.entries
     val pagerState = rememberPagerState(pageCount = { tabs.size })
@@ -62,9 +66,9 @@ fun CodexShellView(character: Character, onBrowseSpells: () -> Unit, modifier: M
             when (tabs[page]) {
                 CodexTab.STATS -> StatsPage(payload)
                 CodexTab.SKILLS -> SkillsPage(payload)
-                CodexTab.COMBAT -> CombatPage(payload)
-                CodexTab.SPELLS -> SpellsPage(payload, onBrowseSpells)
-                CodexTab.ITEMS -> EmptyPage("No equipment yet", "Inventory arrives with the content step.")
+                CodexTab.COMBAT -> CombatPage(character, payload, onSave)
+                CodexTab.SPELLS -> SpellsPage(character, payload, onBrowseSpells, onSave)
+                CodexTab.ITEMS -> ItemsPage(character, payload, onSave)
                 CodexTab.LORE -> LorePage(character, payload)
             }
         }
@@ -141,21 +145,6 @@ private fun CodexTabBar(tabs: List<CodexTab>, selected: Int, onSelect: (Int) -> 
                     maxLines = 1,
                 )
             }
-        }
-    }
-}
-
-@Composable
-private fun EmptyPage(title: String, subtitle: String) {
-    Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(title, style = MaterialTheme.typography.titleMedium)
-            Text(
-                subtitle,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-            )
         }
     }
 }

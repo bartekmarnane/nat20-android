@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -18,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import au.com.evonet.nat20.dnd5e.ArmorClassCalculator
 import au.com.evonet.nat20.dnd5e.DnD5eCatalog
 import au.com.evonet.nat20.dnd5e.DnD5ePayload
 import au.com.evonet.nat20.dnd5e.core.Ability
@@ -85,20 +85,27 @@ internal fun SkillsPage(payload: DnD5ePayload) {
 }
 
 @Composable
-internal fun CombatPage(payload: DnD5ePayload) {
+internal fun CombatPage(character: Character, payload: DnD5ePayload, onSave: (Character) -> Unit) {
     val dexMod = payload.abilityScores.modifier(Ability.DEXTERITY)
+    val acBreakdown = ArmorClassCalculator.compute(payload)
     CodexPage {
         SectionCard("Hit Points") {
             StatLine("Current / Max", "${payload.currentHp} / ${payload.maxHp}")
             if (payload.temporaryHp > 0) StatLine("Temporary", "+${payload.temporaryHp}")
         }
         SectionCard("Defense & Movement") {
-            // No armor modelled yet → unarmored AC = 10 + DEX; speed defaults to 30.
-            StatLine("Armor Class", (10 + dexMod).toString())
+            StatLine("Armor Class", acBreakdown.total.toString())
+            // Spell-out the AC sources so the number is legible (speed defaults to 30).
+            Text(
+                acBreakdown.rows.joinToString(" + ") { "${it.label} ${it.value.signed()}" },
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
             StatLine("Initiative", dexMod.signed())
             StatLine("Speed", "30 ft")
         }
         SectionCard("Hit Dice") {
+            StatLine("Available", "${payload.currentHitDice} / ${payload.maxHitDice}")
             payload.classes.forEach { entry ->
                 StatLine(entry.classId.slugToTitle(), "${entry.level}d${DnD5eClasses.hitDie(entry.classId)}")
             }
@@ -106,32 +113,8 @@ internal fun CombatPage(payload: DnD5ePayload) {
                 Text("—", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
-    }
-}
-
-@Composable
-internal fun SpellsPage(payload: DnD5ePayload, onBrowseSpells: () -> Unit) {
-    val caster = payload.primaryClass()?.isCaster == true
-    CodexPage {
-        if (caster) {
-            SectionCard("Spellcasting") {
-                Text(
-                    "Known and prepared spells arrive with a later step. For now, browse the full spell list.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Button(onClick = onBrowseSpells) { Text("Browse Spell Library") }
-            }
-        } else {
-            SectionCard("Spellcasting") {
-                Text(
-                    "${payload.primaryClass()?.name ?: "This class"} isn't a spellcaster.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Button(onClick = onBrowseSpells) { Text("Browse Spell Library") }
-            }
-        }
+        ClassResourcesSection(character, payload, onSave)
+        RestSection(character, onSave)
     }
 }
 
@@ -163,7 +146,7 @@ internal fun LorePage(character: Character, payload: DnD5ePayload) {
 // ── Shared atoms ─────────────────────────────────────────────────────────────
 
 @Composable
-private fun CodexPage(content: @Composable () -> Unit) {
+internal fun CodexPage(content: @Composable () -> Unit) {
     Column(
         Modifier
             .fillMaxSize()
@@ -176,7 +159,7 @@ private fun CodexPage(content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun SectionCard(title: String, content: @Composable () -> Unit) {
+internal fun SectionCard(title: String, content: @Composable () -> Unit) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
@@ -214,7 +197,7 @@ private fun AbilityMedallion(ability: Ability, scores: AbilityScores, modifier: 
 }
 
 @Composable
-private fun StatLine(label: String, value: String) {
+internal fun StatLine(label: String, value: String) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text(
             label,

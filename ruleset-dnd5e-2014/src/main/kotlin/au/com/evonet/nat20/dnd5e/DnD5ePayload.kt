@@ -1,6 +1,8 @@
 package au.com.evonet.nat20.dnd5e
 
 import au.com.evonet.nat20.dnd5e.core.AbilityScores
+import au.com.evonet.nat20.dnd5e.core.Coin
+import au.com.evonet.nat20.dnd5e.core.FeatureUseEntry
 import au.com.evonet.nat20.domain.CharacterPayload
 import kotlinx.serialization.Serializable
 
@@ -33,6 +35,38 @@ data class DnD5ePayload(
     val selectedSkills: List<String> = emptyList(),
     /** Alignment label, e.g. "Lawful Good"; null until chosen. */
     val alignment: String? = null,
+    /** Carried items (weapons, armor, gear, potions); equipped ones drive AC (A10). */
+    val inventory: List<InventoryItem> = emptyList(),
+    /** Purse keyed by denomination; a missing key means zero of that coin. */
+    val coins: Map<Coin, Int> = emptyMap(),
+    /** Cantrip ids known (flat across all classes — cantrips never consume slots). */
+    val cantripsKnown: List<String> = emptyList(),
+    /** Known spell ids per class id (known casters: Bard/Sorcerer/Warlock/Ranger + Wizard's spellbook). */
+    val spellsKnown: Map<String, List<String>> = emptyMap(),
+    /** Prepared spell ids per class id (prepared casters: Wizard/Cleric/Druid/Paladin). */
+    val preparedSpells: Map<String, List<String>> = emptyMap(),
+    /** Remaining regular spell slots by level; a missing/zero level means none left. */
+    val currentSpellSlots: Map<Int, Int> = emptyMap(),
+    /** Remaining warlock pact slots (refresh on a short rest). */
+    val currentPactSlots: Int = 0,
+    /**
+     * Hit dice already spent (0 = a fresh, fully-rested pool). Stored as "spent"
+     * rather than "remaining" so the default needs no reference to [level], which
+     * is itself derived. [currentHitDice] / [maxHitDice] expose the usable view.
+     */
+    val hitDiceSpent: Int = 0,
+    /**
+     * Point-pool resources (Ki, Sorcery Points, Lay on Hands) keyed by pool id →
+     * remaining value. A missing key means "full" (max comes from the catalogue
+     * at the character's class level), so a fresh/just-rested character stores
+     * nothing and reads as full.
+     */
+    val resourcePools: Map<String, Int> = emptyMap(),
+    /**
+     * Use-counter class features (Rage, Action Surge, …) keyed by feature id →
+     * remaining + recovery recorded at use time. A missing key means "full".
+     */
+    val classFeatureUses: Map<String, FeatureUseEntry> = emptyMap(),
 ) : CharacterPayload {
 
     /** Total character level = sum of all class entry levels, floored at 1. */
@@ -42,6 +76,18 @@ data class DnD5ePayload(
     /** Primary class id (the first entry), or "" if no class chosen yet. */
     val characterClass: String
         get() = classes.firstOrNull()?.classId ?: ""
+
+    /** Armor Class from equipped inventory (10 + DEX when unarmored). */
+    val armorClass: Int
+        get() = ArmorClassCalculator.armorClass(this)
+
+    /** Total hit dice = character level (one die per level). */
+    val maxHitDice: Int
+        get() = level
+
+    /** Hit dice still available to spend (max minus spent, floored at 0). */
+    val currentHitDice: Int
+        get() = maxOf(0, maxHitDice - hitDiceSpent)
 
     companion object {
         const val MIN_LEVEL: Int = 1
