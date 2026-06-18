@@ -36,6 +36,8 @@ object DemoCharacters {
             ),
             maxHp = 31,
             currentHp = 24,
+            background = "soldier",
+            selectedSkills = listOf("athletics", "intimidation", "perception", "survival"),
         ),
     )
 
@@ -52,6 +54,8 @@ object DemoCharacters {
             maxHp = 14,
             currentHp = 14,
             temporaryHp = 4,
+            background = "sage",
+            selectedSkills = listOf("arcana", "history", "investigation", "insight"),
         ),
     )
 
@@ -67,6 +71,8 @@ object DemoCharacters {
             ),
             maxHp = 10,
             currentHp = 10,
+            background = "acolyte",
+            selectedSkills = listOf("insight", "religion", "medicine", "persuasion"),
         ),
     )
 }

@@ -18,7 +18,7 @@ import au.com.evonet.nat20.domain.Campaign
 import au.com.evonet.nat20.domain.Character
 import au.com.evonet.nat20.domain.CharacterPhase
 import au.com.evonet.nat20.store.CharacterStore
-import au.com.evonet.nat20.ui.editor.DnD5eEditorScreen
+import au.com.evonet.nat20.ui.editor.DnD5eWizardScreen
 import au.com.evonet.nat20.ui.journal.JournalScreen
 import au.com.evonet.nat20.ui.past.PastAdventuresScreen
 import au.com.evonet.nat20.ui.roster.RosterScreen
@@ -147,7 +147,7 @@ fun NatApp() {
         }
 
         composable(Routes.CREATE) {
-            DnD5eEditorScreen(
+            DnD5eWizardScreen(
                 existing = null,
                 onSave = { store.save(it); nav.popBackStack() },
                 onCancel = { nav.popBackStack() },
@@ -162,7 +162,7 @@ fun NatApp() {
             if (character == null) {
                 nav.popBackStack()
             } else {
-                DnD5eEditorScreen(
+                DnD5eWizardScreen(
                     existing = character,
                     onSave = { store.save(it); nav.popBackStack() },
                     onCancel = { nav.popBackStack() },

@@ -17,10 +17,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import au.com.evonet.nat20.dnd5e.DnD5eCatalog
 import au.com.evonet.nat20.dnd5e.DnD5ePayload
 import au.com.evonet.nat20.dnd5e.core.Ability
 import au.com.evonet.nat20.dnd5e.core.AbilityScores
 import au.com.evonet.nat20.dnd5e.core.DnD5eClasses
+import au.com.evonet.nat20.dnd5e.core.Proficiency
 import au.com.evonet.nat20.domain.Character
 import au.com.evonet.nat20.ui.slugToTitle
 
@@ -28,6 +30,9 @@ import au.com.evonet.nat20.ui.slugToTitle
 
 @Composable
 internal fun StatsPage(payload: DnD5ePayload) {
+    val prof = Proficiency.bonus(payload.level)
+    val proficientSaves = payload.primaryClass()?.savingThrowAbilities()?.toSet().orEmpty()
+    val perceptionProficient = "perception" in payload.selectedSkills
     CodexPage {
         SectionCard("Abilities") {
             Ability.entries.chunked(3).forEach { row ->
@@ -39,14 +44,15 @@ internal fun StatsPage(payload: DnD5ePayload) {
             }
         }
         SectionCard("Proficiency & Senses") {
-            StatLine("Proficiency Bonus", payload.proficiency().signed())
-            StatLine("Passive Perception", (10 + payload.abilityScores.modifier(Ability.WISDOM)).toString())
+            StatLine("Proficiency Bonus", prof.signed())
+            val passive = 10 + payload.abilityScores.modifier(Ability.WISDOM) + if (perceptionProficient) prof else 0
+            StatLine("Passive Perception", passive.toString())
         }
         SectionCard("Saving Throws") {
-            // Proficient saves are class-driven (not modelled yet) — show the raw
-            // ability modifier for each; proficiency dots arrive with creation (A8).
             Ability.entries.forEach { ability ->
-                StatLine(ability.abbreviation, payload.abilityScores.modifier(ability).signed())
+                val proficient = ability in proficientSaves
+                val mod = payload.abilityScores.modifier(ability) + if (proficient) prof else 0
+                ProficiencyLine(ability.abbreviation, mod.signed(), proficient)
             }
         }
     }
@@ -54,28 +60,23 @@ internal fun StatsPage(payload: DnD5ePayload) {
 
 @Composable
 internal fun SkillsPage(payload: DnD5ePayload) {
+    val prof = Proficiency.bonus(payload.level)
     CodexPage {
         SectionCard("Skills") {
-            Text(
-                "Skill proficiencies aren't chosen yet — values are the base ability modifier. Proficiency lands with character creation.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Skills5e.forEachIndexed { index, skill ->
+            DnD5eCatalog.skills.forEachIndexed { index, skill ->
                 if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                val proficient = skill.id in payload.selectedSkills
+                val mod = payload.abilityScores.modifier(skill.ability) + if (proficient) prof else 0
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text(skill.label, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                    ProficiencyDot(proficient)
+                    Text(skill.name, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f).padding(start = 8.dp))
                     Text(
                         skill.ability.abbreviation,
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(end = 12.dp),
                     )
-                    Text(
-                        payload.abilityScores.modifier(skill.ability).signed(),
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Bold,
-                    )
+                    Text(mod.signed(), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -119,11 +120,12 @@ internal fun LorePage(character: Character, payload: DnD5ePayload) {
                     ?.joinToString(" / ") { "${it.classId.slugToTitle()} ${it.level}" }
                     ?: "—",
             )
+            StatLine("Background", payload.background.takeIf { it.isNotEmpty() }?.let { DnD5eCatalog.background(it)?.name ?: it.slugToTitle() } ?: "—")
             StatLine("Level", payload.level.toString())
         }
         SectionCard("Backstory") {
             Text(
-                "Background, alignment, and backstory arrive with the character-creation wizard.",
+                "Alignment and backstory prose arrive with a later content step.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -200,27 +202,29 @@ private fun StatLine(label: String, value: String) {
 /** "+3" / "-1" / "+0" — 5e always shows the sign on a modifier. */
 internal fun Int.signed(): String = if (this >= 0) "+$this" else "$this"
 
-/** The 18 SRD skills and their governing ability — a display stopgap until the
- *  skill catalogue + per-character proficiencies are modelled (A8/A10). */
-private data class Skill5e(val label: String, val ability: Ability)
+/** The character's primary (first) class, resolved through the catalogue. */
+private fun DnD5ePayload.primaryClass() =
+    classes.firstOrNull()?.classId?.let(DnD5eCatalog::characterClass)
 
-private val Skills5e: List<Skill5e> = listOf(
-    Skill5e("Acrobatics", Ability.DEXTERITY),
-    Skill5e("Animal Handling", Ability.WISDOM),
-    Skill5e("Arcana", Ability.INTELLIGENCE),
-    Skill5e("Athletics", Ability.STRENGTH),
-    Skill5e("Deception", Ability.CHARISMA),
-    Skill5e("History", Ability.INTELLIGENCE),
-    Skill5e("Insight", Ability.WISDOM),
-    Skill5e("Intimidation", Ability.CHARISMA),
-    Skill5e("Investigation", Ability.INTELLIGENCE),
-    Skill5e("Medicine", Ability.WISDOM),
-    Skill5e("Nature", Ability.INTELLIGENCE),
-    Skill5e("Perception", Ability.WISDOM),
-    Skill5e("Performance", Ability.CHARISMA),
-    Skill5e("Persuasion", Ability.CHARISMA),
-    Skill5e("Religion", Ability.INTELLIGENCE),
-    Skill5e("Sleight of Hand", Ability.DEXTERITY),
-    Skill5e("Stealth", Ability.DEXTERITY),
-    Skill5e("Survival", Ability.WISDOM),
-)
+@Composable
+private fun ProficiencyLine(label: String, value: String, proficient: Boolean) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        ProficiencyDot(proficient)
+        Text(
+            label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f).padding(start = 8.dp),
+        )
+        Text(value, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+    }
+}
+
+@Composable
+private fun ProficiencyDot(proficient: Boolean) {
+    Text(
+        if (proficient) "●" else "○",
+        style = MaterialTheme.typography.bodySmall,
+        color = if (proficient) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+    )
+}
