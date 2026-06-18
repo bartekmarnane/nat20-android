@@ -1,5 +1,6 @@
 package au.com.evonet.nat20.ui.codex
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,12 +9,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -21,15 +27,20 @@ import androidx.compose.ui.unit.dp
 import au.com.evonet.nat20.dnd5e.ArmorClassCalculator
 import au.com.evonet.nat20.dnd5e.DnD5eCatalog
 import au.com.evonet.nat20.dnd5e.MarkDeathSave
+import au.com.evonet.nat20.dnd5e.RollDeathSave
 import au.com.evonet.nat20.dnd5e.SetInspiration
+import au.com.evonet.nat20.dnd5e.SpendHitDie
 import au.com.evonet.nat20.dnd5e.core.DeathSaveOutcome
 import au.com.evonet.nat20.dnd5e.DnD5ePayload
 import au.com.evonet.nat20.dnd5e.core.Ability
 import au.com.evonet.nat20.dnd5e.core.AbilityScores
 import au.com.evonet.nat20.dnd5e.core.DnD5eClasses
 import au.com.evonet.nat20.dnd5e.core.Proficiency
+import au.com.evonet.nat20.dnd5e.core.RollBonus
+import au.com.evonet.nat20.dnd5e.core.RollSpec
 import au.com.evonet.nat20.domain.Character
 import au.com.evonet.nat20.domain.CharacterIntent
+import au.com.evonet.nat20.ui.roll.RollDialog
 import au.com.evonet.nat20.ui.slugToTitle
 
 // ── Pages ────────────────────────────────────────────────────────────────────
@@ -39,12 +50,19 @@ internal fun StatsPage(payload: DnD5ePayload) {
     val prof = Proficiency.bonus(payload.level)
     val proficientSaves = payload.primaryClass()?.savingThrowAbilities()?.toSet().orEmpty()
     val perceptionProficient = "perception" in payload.selectedSkills
+    var check by remember { mutableStateOf<CheckRoll?>(null) }
     CodexPage {
         SectionCard("Abilities") {
             Ability.entries.chunked(3).forEach { row ->
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     row.forEach { ability ->
-                        AbilityMedallion(ability, payload.abilityScores, Modifier.weight(1f))
+                        val mod = payload.abilityScores.modifier(ability)
+                        AbilityMedallion(
+                            ability, payload.abilityScores,
+                            Modifier
+                                .weight(1f)
+                                .clickable { check = CheckRoll("${ability.abbreviation} check", listOf(RollBonus(ability.abbreviation, mod))) },
+                        )
                     }
                 }
             }
@@ -57,23 +75,36 @@ internal fun StatsPage(payload: DnD5ePayload) {
         SectionCard("Saving Throws") {
             Ability.entries.forEach { ability ->
                 val proficient = ability in proficientSaves
-                val mod = payload.abilityScores.modifier(ability) + if (proficient) prof else 0
-                ProficiencyLine(ability.abbreviation, mod.signed(), proficient)
+                val abilityMod = payload.abilityScores.modifier(ability)
+                val mod = abilityMod + if (proficient) prof else 0
+                ProficiencyLine(
+                    ability.abbreviation, mod.signed(), proficient,
+                    onClick = { check = CheckRoll("${ability.abbreviation} save", checkBonuses(ability.abbreviation, abilityMod, proficient, prof)) },
+                )
             }
         }
     }
+    check?.let { CheckRollDialog(it) { check = null } }
 }
 
 @Composable
 internal fun SkillsPage(payload: DnD5ePayload) {
     val prof = Proficiency.bonus(payload.level)
+    var check by remember { mutableStateOf<CheckRoll?>(null) }
     CodexPage {
         SectionCard("Skills") {
             DnD5eCatalog.skills.forEachIndexed { index, skill ->
                 if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
                 val proficient = skill.id in payload.selectedSkills
-                val mod = payload.abilityScores.modifier(skill.ability) + if (proficient) prof else 0
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                val abilityMod = payload.abilityScores.modifier(skill.ability)
+                val mod = abilityMod + if (proficient) prof else 0
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { check = CheckRoll("${skill.name} check", checkBonuses(skill.ability.abbreviation, abilityMod, proficient, prof)) }
+                        .padding(vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     ProficiencyDot(proficient)
                     Text(skill.name, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f).padding(start = 8.dp))
                     Text(
@@ -87,12 +118,35 @@ internal fun SkillsPage(payload: DnD5ePayload) {
             }
         }
     }
+    check?.let { CheckRollDialog(it) { check = null } }
+}
+
+/** A pending d20 check the roll dialog will present (transient — not journaled). */
+internal data class CheckRoll(val title: String, val bonuses: List<RollBonus>)
+
+/** Builds the bonus chips for a d20 check: ability mod + proficiency when proficient. */
+private fun checkBonuses(ability: String, abilityMod: Int, proficient: Boolean, prof: Int): List<RollBonus> =
+    buildList {
+        add(RollBonus(ability, abilityMod))
+        if (proficient) add(RollBonus("Proficiency", prof))
+    }
+
+@Composable
+private fun CheckRollDialog(check: CheckRoll, onDismiss: () -> Unit) {
+    RollDialog(
+        title = check.title,
+        spec = RollSpec.d(1, 20),
+        bonuses = check.bonuses,
+        allowAdvantageToggle = true,
+        onDismiss = onDismiss,
+    )
 }
 
 @Composable
 internal fun CombatPage(character: Character, payload: DnD5ePayload, onApplyIntent: (CharacterIntent) -> Unit) {
     val dexMod = payload.abilityScores.modifier(Ability.DEXTERITY)
     val acBreakdown = ArmorClassCalculator.compute(payload)
+    var spendHitDie by remember { mutableStateOf(false) }
     CodexPage {
         SectionCard("Hit Points") {
             StatLine("Current / Max", "${payload.currentHp} / ${payload.maxHp}")
@@ -119,6 +173,10 @@ internal fun CombatPage(character: Character, payload: DnD5ePayload, onApplyInte
             }
             if (payload.classes.isEmpty()) {
                 Text("—", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            } else {
+                OutlinedButton(enabled = payload.currentHitDice > 0, onClick = { spendHitDie = true }) {
+                    Text("Spend a hit die")
+                }
             }
         }
         SectionCard("Inspiration") {
@@ -140,11 +198,24 @@ internal fun CombatPage(character: Character, payload: DnD5ePayload, onApplyInte
         ClassResourcesSection(payload, onApplyIntent)
         RestSection(onApplyIntent)
     }
+    if (spendHitDie) {
+        val hitDie = DnD5eClasses.hitDie(payload.classes.first().classId)
+        val conMod = payload.abilityScores.modifier(Ability.CONSTITUTION)
+        RollDialog(
+            title = "Spend a hit die",
+            spec = RollSpec.d(1, hitDie),
+            bonuses = if (conMod != 0) listOf(au.com.evonet.nat20.dnd5e.core.RollBonus("CON", conMod)) else emptyList(),
+            allowAdvantageToggle = false,
+            onSettled = { result -> onApplyIntent(SpendHitDie(maxOf(1, result.total))) },
+            onDismiss = { spendHitDie = false },
+        )
+    }
 }
 
 @Composable
 private fun DeathSavesCard(payload: DnD5ePayload, onApplyIntent: (CharacterIntent) -> Unit) {
     val ds = payload.deathSaves
+    var rolling by remember { mutableStateOf(false) }
     SectionCard("Death Saves") {
         val status = when {
             ds.isDead -> "Dead — three failures"
@@ -173,15 +244,27 @@ private fun DeathSavesCard(payload: DnD5ePayload, onApplyIntent: (CharacterInten
             )
         }
         val resolved = ds.isStable || ds.isDead
+        if (!resolved) {
+            Button(onClick = { rolling = true }, modifier = Modifier.fillMaxWidth()) { Text("Roll a death save") }
+        }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedButton(enabled = !resolved, onClick = { onApplyIntent(MarkDeathSave(DeathSaveOutcome.SUCCESS)) }) { Text("Success") }
             OutlinedButton(enabled = !resolved, onClick = { onApplyIntent(MarkDeathSave(DeathSaveOutcome.FAILURE)) }) { Text("Failure") }
             OutlinedButton(enabled = !ds.isCleared, onClick = { onApplyIntent(MarkDeathSave(DeathSaveOutcome.CLEAR)) }) { Text("Clear") }
         }
         Text(
-            "Nat 20 → tap Clear, then heal 1. Nat 1 → tap Failure twice.",
+            "Roll auto-applies the result; the manual buttons are for physical dice.",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+    if (rolling) {
+        RollDialog(
+            title = "Death save",
+            spec = RollSpec.d(1, 20),
+            allowAdvantageToggle = false,
+            onSettled = { result -> result.naturalD20?.let { onApplyIntent(RollDeathSave(it)) } },
+            onDismiss = { rolling = false },
         )
     }
 }
@@ -285,8 +368,14 @@ private fun DnD5ePayload.primaryClass() =
     classes.firstOrNull()?.classId?.let(DnD5eCatalog::characterClass)
 
 @Composable
-private fun ProficiencyLine(label: String, value: String, proficient: Boolean) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+private fun ProficiencyLine(label: String, value: String, proficient: Boolean, onClick: (() -> Unit)? = null) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
+            .padding(vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         ProficiencyDot(proficient)
         Text(
             label,

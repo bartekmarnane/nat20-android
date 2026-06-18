@@ -563,6 +563,41 @@ data class SpendHitDie(
 }
 
 /**
+ * Resolves a death save from a rolled d20, applying the RAW outcome atomically
+ * (so the nat-1 "two failures" can't race two separate marks): 20 = revive at
+ * 1 HP + clear; 1 = two failures; 10+ = one success; else one failure.
+ */
+data class RollDeathSave(
+    val d20: Int,
+) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        if (d20 !in 1..20) throw CharacterIntentError.Invalid("A d20 roll is 1–20")
+        val payload = character.dnd5ePayload()
+        val previous = payload.deathSaves
+
+        var revivedHp: Int? = null
+        val next: DeathSaves = when {
+            d20 == 20 -> {
+                revivedHp = if (payload.currentHp == 0) 1 else payload.currentHp
+                DeathSaves.cleared
+            }
+            d20 == 1 -> DeathSaves.clamped(previous.successes, previous.failures + 2)
+            d20 >= 10 -> previous.copy(successes = minOf(3, previous.successes + 1))
+            else -> previous.copy(failures = minOf(3, previous.failures + 1))
+        }
+
+        val updated = payload.copy(
+            deathSaves = next,
+            currentHp = revivedHp ?: payload.currentHp,
+        )
+        return IntentResult(
+            character.copy(payload = updated),
+            DeathSaveRolledEvent(d20 = d20, previous = previous, newState = next, revivedAt = revivedHp),
+        )
+    }
+}
+
+/**
  * A short rest: restores warlock pact slots, short-rest class-feature counters
  * (Action Surge, Second Wind, Channel Divinity, Bardic Inspiration ≥ L5), and
  * short-rest point pools (Ki). Long-rest resources stay spent.

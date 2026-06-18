@@ -104,6 +104,42 @@ class MarkDeathSaveTests {
     }
 }
 
+class RollDeathSaveTests {
+    @Test
+    fun `a natural 20 revives at 1 HP and clears the tracker`() {
+        val result = RollDeathSave(20).applyTo(downed(successes = 1, failures = 2), ruleset)
+        val p = result.character.payload()
+        assertEquals(1, p.currentHp)
+        assertTrue(p.deathSaves.isCleared)
+        assertEquals("Rolled a natural 20 — back at 1 HP", result.event.summary)
+    }
+
+    @Test
+    fun `a natural 1 records two failures`() {
+        val result = RollDeathSave(1).applyTo(downed(failures = 0), ruleset)
+        assertEquals(2, result.character.payload().deathSaves.failures)
+    }
+
+    @Test
+    fun `ten or higher is a success, under ten a failure`() {
+        assertEquals(1, RollDeathSave(10).applyTo(downed(), ruleset).character.payload().deathSaves.successes)
+        assertEquals(1, RollDeathSave(9).applyTo(downed(), ruleset).character.payload().deathSaves.failures)
+    }
+
+    @Test
+    fun `an out-of-range roll is rejected`() {
+        assertThrows(CharacterIntentError.Invalid::class.java) { RollDeathSave(21).applyTo(downed(), ruleset) }
+    }
+
+    @Test
+    fun `roll event round-trips through the codec`() {
+        val event = DeathSaveRolledEvent(9, previous = DeathSaves(), newState = DeathSaves(failures = 1))
+        val typeId = ruleset.eventTypeId(event)
+        assertFalse(typeId == "dnd5e.unknown")
+        assertEquals(event, ruleset.decodeEvent(ruleset.encodeEvent(event), typeId))
+    }
+}
+
 class DeathSaveRecoveryTests {
     @Test
     fun `healing off zero clears death saves and flags the revive`() {

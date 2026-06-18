@@ -344,6 +344,24 @@ data class ExhaustionChangedEvent(
 }
 
 @Serializable
+data class DeathSaveRolledEvent(
+    val d20: Int,
+    val previous: au.com.evonet.nat20.dnd5e.core.DeathSaves,
+    val newState: au.com.evonet.nat20.dnd5e.core.DeathSaves,
+    val revivedAt: Int? = null,
+) : CharacterEvent {
+    override val summary: String
+        get() = when {
+            revivedAt != null -> "Rolled a natural 20 — back at $revivedAt HP"
+            d20 == 1 -> "Rolled a 1 — two death-save failures (${newState.failures}/3)"
+            newState.isStable -> "Rolled $d20 — stabilized (three successes)"
+            newState.isDead -> "Rolled $d20 — fell (three failures)"
+            d20 >= 10 -> "Rolled $d20 — death save success (${newState.successes}/3)"
+            else -> "Rolled $d20 — death save failure (${newState.failures}/3)"
+        }
+}
+
+@Serializable
 data class InspirationChangedEvent(
     val hasInspiration: Boolean,
 ) : CharacterEvent {
