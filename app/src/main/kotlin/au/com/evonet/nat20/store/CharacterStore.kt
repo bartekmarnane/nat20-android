@@ -1,25 +1,38 @@
 package au.com.evonet.nat20.store
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import au.com.evonet.nat20.data.CharacterRepository
 import au.com.evonet.nat20.domain.Character
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import java.util.UUID
 
 /**
  * The roster's single source of truth for the UI. Port of the iOS
- * `CharacterStore` (`@Observable @MainActor`); here it's a `ViewModel` exposing
- * a `StateFlow` the composables collect.
+ * `CharacterStore` (`@Observable @MainActor`); a `ViewModel` projecting the
+ * repository's `Flow` into a `StateFlow` the composables collect.
  *
- * **A4 scope:** read-only, seeded in memory. Create/edit/delete (A6) and the
- * Room-backed `CharacterRepository` (A5) replace the in-memory list without the
- * UI changing — it already talks to this store, not the data layer.
+ * As of A5 it's Room-backed through [CharacterRepository] — the UI is unchanged
+ * from A4 because it always talked to this store, not the data layer. Create /
+ * edit / delete (A6) add write methods here that delegate to the repository.
  */
-class CharacterStore : ViewModel() {
-    private val _characters = MutableStateFlow(DemoCharacters.seed())
-    val characters: StateFlow<List<Character>> = _characters.asStateFlow()
+class CharacterStore(private val repository: CharacterRepository) : ViewModel() {
+    val characters: StateFlow<List<Character>> = repository.characters
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     /** Look a character up by id (the sheet/journal routes carry the id). */
-    fun character(id: UUID): Character? = _characters.value.firstOrNull { it.id == id }
+    fun character(id: UUID): Character? = characters.value.firstOrNull { it.id == id }
+
+    companion object {
+        /** Factory that injects the repository from the app's container. */
+        fun factory(repository: CharacterRepository): ViewModelProvider.Factory =
+            viewModelFactory {
+                initializer { CharacterStore(repository) }
+            }
+    }
 }
