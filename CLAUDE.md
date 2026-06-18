@@ -6,8 +6,9 @@ Claude-on-web) building this port. Read it before each task.
 
 ## Sources of truth (in priority order)
 
-1. **`../nat20-ios/README.md`** — the canonical feature spec. 22 shipped build-steps + a
-   detailed "5e rules — coverage gaps" list. When unsure *what a mechanic should do*, this wins.
+1. **`../nat20-ios/README.md`** — the canonical feature spec. **26 shipped build-steps across
+   three rulesets** (D&D 5e 2014, D&D 5e 2024, Pathfinder 2e Remaster) + a detailed "5e rules —
+   coverage gaps" list. When unsure *what a mechanic should do*, this wins.
 2. **`../nat20-ios` source** — the behavioural spec. The Swift `Packages/Domain` and
    `Packages/DnD5e` are the reference implementation. Read the actual Swift when porting logic.
 3. **`README.md` (this repo)** — the execution backlog. Steps **A1–A17** with build order and
@@ -18,16 +19,28 @@ stays Swift; Android reimplements the same domain + 5e engine idiomatically in K
 
 ## Module layout & dependency rules
 
+iOS uses a **shared-core + thin-version-package** split for its rulesets (`DnD5eCore` /
+`DnD5e` / `DnD5e2024`; `PathfinderCore` / `Pathfinder`). **We mirror that seam from the start**
+(decided up front — see README "Module layout"):
+
 ```
-:domain          pure Kotlin/JVM, NO Android deps   — Ruleset/Character/Payload/Intent/Event + Campaign.apply
-:ruleset-dnd5e   pure Kotlin/JVM, depends on :domain — the 5e engine, catalogues, intents, level-up math
-:data            Android library                    — Room entities + DAOs + CharacterRepository (the sync seam)
-:app             Android app (Compose)              — UI, ViewModels, navigation, entry point
+:domain               pure Kotlin/JVM, NO Android deps  — Ruleset/Character/Payload/Intent/Event + Campaign.apply
+:ruleset-dnd5e-core   pure Kotlin/JVM, deps :domain     — edition-agnostic 5e machinery (abilities, modifier math,
+                                                          proficiency-by-level, slot tables, effects)   (= DnD5eCore)
+:ruleset-dnd5e-2014   pure Kotlin/JVM, deps core        — 2014 payload, catalogues, intents, level-up   (= DnD5e)
+:ruleset-dnd5e-2024   pure Kotlin/JVM, deps core        — 2024 edition         (= DnD5e2024)   [created at its step]
+:ruleset-pf2e-core    pure Kotlin/JVM, deps :domain     — PF2e maths (proficiency ladder, degrees)  [created at its step]
+:ruleset-pf2e         pure Kotlin/JVM, deps pf2e-core   — PF2e payload/catalogues/flows             [created at its step]
+:data                 Android library                   — Room entities + DAOs + CharacterRepository (the sync seam)
+:app                  Android app (Compose)             — UI, ViewModels, navigation, entry point
 ```
 
-Keep `:domain` and `:ruleset-dnd5e` free of Android imports so they stay JVM-unit-testable
-(mirrors iOS, where the packages run `swift test` on the host). UI lives **only** in `:app`.
-Package root is `au.com.evonet.nat20.*`.
+Keep `:domain` and every `:ruleset-*` module free of Android imports so they stay
+JVM-unit-testable (mirrors iOS, where the packages run `swift test` on the host). UI lives
+**only** in `:app` (shared parchment chrome — iOS's `DnD5eUICore` — lives under an `:app`
+`theme`/`codex` package; extract a `:ui-core` library only when a second ruleset's UI justifies
+it). Package root is `au.com.evonet.nat20.*`. **Only `-core` + `-2014` exist now** — the 2024 /
+PF2e modules are scaffolded when their steps land, not as empty modules ahead of content.
 
 ## Stack (decided — do not re-litigate)
 
@@ -58,7 +71,7 @@ Package root is `au.com.evonet.nat20.*`.
 
 ## Where the reused assets live
 
-- **SRD JSON catalogues** → `ruleset-dnd5e/src/main/resources/catalogues/` (subdir structure
+- **SRD JSON catalogues** → `ruleset-dnd5e-2014/src/main/resources/catalogues/` (subdir structure
   preserved from iOS: `Spells/`, `Classes/`, `Races/`, `Monsters/`, `Inventory/`, etc.). Load via
   classloader resource streams so the same code works in JVM tests and on Android.
 - **Fonts** → `app/src/main/res/font/`, renamed to Android-safe names:

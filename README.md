@@ -8,76 +8,138 @@ Each character has a change log so you can see what shifted over time — level-
 
 | | |
 |---|---|
-| **Platform** | Android (phone + tablet), min SDK TBD (target a modern baseline — Android 13 / API 33+) |
-| **Language / UI** | Kotlin + Jetpack Compose |
+| **Platform** | Android (phone + tablet), `minSdk = 26`, `target/compileSdk = 35` |
+| **Language / UI** | Kotlin 2.0 + Jetpack Compose (Material3) |
 | **Persistence** | Room (SQLite), local-only to start — behind a repository interface so sync can slot in later |
-| **First ruleset** | D&D 5e (2014) |
+| **Serialization** | `kotlinx.serialization` for the payload/event JSON blobs |
+| **State** | ViewModel + `StateFlow` (iOS's `@Observable` store has no direct equivalent) |
+| **Rulesets** | D&D 5e (2014) first; D&D 5e (2024) and Pathfinder 2e (Remaster) planned — see Build order |
 | **On-device AI** | Gemini Nano (AICore / ML Kit GenAI) where supported, availability-gated like iOS gates FoundationModels |
-| **Application ID** | `au.com.evonet.nat20` (proposed — mirrors the iOS bundle ID) |
+| **Billing** | Google Play Billing (one free character + one-time IAP unlock) |
+| **Application ID** | `au.com.evonet.nat20` (mirrors the iOS bundle ID) |
 
 ## Relationship to the iOS app
 
-This is a **parallel native Kotlin port**, not a shared binary. iOS keeps its Swift `Domain` / `DnD5e` / `Persistence` packages; Android reimplements the same domain model and 5e engine idiomatically in Kotlin. Two codebases, each native to its platform.
+This is a **parallel native Kotlin port**, not a shared binary. iOS keeps its Swift packages; Android reimplements the same domain model and rules engines idiomatically in Kotlin. Two codebases, each native to its platform. (Kotlin Multiplatform for the shared domain was considered and deferred — see Open decisions.)
+
+> **iOS has moved well past where this plan started.** When this backlog was first written the iOS app was **22 steps and a single ruleset**. It is now **26 steps across three rulesets** (D&D 5e 2014, D&D 5e 2024, Pathfinder 2e Remaster) plus onboarding and editable journals. The build order below has been reconciled to that reality. The reassuring part: iOS confirms that adding the two new rulesets needed **zero changes** to `Ruleset` / `Character` / persistence — `rulesetID` isolation held — so the Android **`:domain` abstraction (A1–A2) is already validated**; the entire multi-ruleset story lives *above* the domain, in the ruleset modules.
 
 **What we reuse directly from `../nat20-ios`:**
 
-- **SRD 5.1 JSON catalogues** — `Packages/DnD5e/Sources/DnD5e/Resources/` (spells, races, classes, backgrounds, feats, fighting styles, metamagic, invocations, pact boons, armor/weapons/gear, monsters, plus Tasha's/Xanathar's spells). These are platform-agnostic JSON; copy them into Android assets/resources verbatim. **Licensing:** SRD 5.1 + 5e-bits/5e-database are CC BY 4.0 — carry the same attribution (see the iOS Credits screen). Tasha's/Xanathar's spell content is **not** openly licensed; mirror the iOS stance on it.
-- **Domain shape** — `Ruleset` / `Character` / `CharacterPayload` / `CharacterEvent` / `CharacterIntent` and the intent-logged-mutation pattern (`Campaign.apply`). The iOS source under `Packages/Domain` and `Packages/DnD5e` is the spec.
-- **The full roadmap + rules-coverage notes** — `../nat20-ios/README.md` is the canonical feature definition. When in doubt about how a mechanic should behave, that's the source of truth.
+- **SRD / open-licensed catalogues** — the platform-agnostic JSON under each iOS ruleset package's `Resources/`. Copy verbatim into Android resources. Coverage now spans:
+  - **5e 2014** — SRD 5.1 (CC BY 4.0, `5e-bits/5e-database`): 319 SRD spells (+ Tasha's/Xanathar's supplement spells), 17 races, 12 classes (all subclasses L1–L20), 15 backgrounds, feats/fighting-styles/metamagic/invocations/pact-boons, armor/weapons/gear, **334 SRD monsters**.
+  - **5e 2024** — SRD 5.2 (CC BY 4.0): 339 spells with rules text, weapons/armor/gear, **330 monsters** (Open5e `srd-2024`).
+  - **PF2e Remaster** — **ORC License** (Archives of Nethys), the *complete* ruleset is legally sourceable: spells, items/runes, and the **445-creature Monster Core**.
+  - **Licensing:** carry attribution verbatim (Credits screen, A9). SRD 5.1/5.2 + 5e-bits + Open5e are CC BY 4.0; PF2e Monster Core / AoN is ORC; the five typefaces are SIL OFL 1.1. **Tasha's/Xanathar's spell content is *not* openly licensed** — mirror the iOS stance (no broad reuse).
+- **Domain shape** — `Ruleset` / `Character` / `CharacterPayload` / `CharacterEvent` / `CharacterIntent` and the intent-logged-mutation pattern (`Campaign.apply`). The iOS `Packages/Domain` + the per-ruleset packages are the spec.
+- **The full roadmap + rules-coverage notes** — [`../nat20-ios/README.md`](../nat20-ios/README.md) is the canonical feature definition (26 steps + a long "5e rules — coverage gaps" list). When in doubt about how a mechanic should behave, that's the source of truth.
 - **Visual design language** — the ink-on-parchment look (Cinzel / Cormorant Garamond / EB Garamond / IM Fell English typefaces under SIL OFL 1.1; parchment ground; gold accents; codex-shell tab layout; the d20 app icon). Match it on Android with Compose theming.
 
-**Risk to manage:** parallel codebases can drift. When a 5e rule is fixed or refined on one platform, mirror it on the other. (Kotlin Multiplatform for the shared domain was considered and deferred — see Open decisions.)
+**Risk to manage:** parallel codebases can drift. When a rule is fixed or refined on one platform, mirror it on the other.
+
+## Module layout (multi-ruleset, anticipated up front)
+
+iOS refactored at its step 23 into a **shared-core + thin-version-package** shape: edition-agnostic 5e machinery in `DnD5eCore`, shared parchment chrome in `DnD5eUICore`, then `DnD5e` (2014) / `DnD5e2024` as thin packages on top; PF2e gets its own `PathfinderCore` + `Pathfinder`. **We mirror that seam on Android from the start** rather than extracting it later, so the 2014 engine grows in the right module and the second/third rulesets slot in without a reshuffle.
+
+```
+:domain                 pure Kotlin/JVM, NO Android deps  — Ruleset/Character/Payload/Intent/Event + Campaign.apply        [A1–A2 ✅]
+:ruleset-dnd5e-core     pure Kotlin/JVM, deps :domain     — edition-agnostic 5e machinery: Ability + modifier math,
+                                                            proficiency-by-level, slot tables, effects model              (mirrors DnD5eCore)
+:ruleset-dnd5e-2014     pure Kotlin/JVM, deps core        — 2014 payload, catalogues, intents, level-up                  (mirrors DnD5e)
+:ruleset-dnd5e-2024     pure Kotlin/JVM, deps core        — 2024 edition                          (mirrors DnD5e2024)    [created at A18]
+:ruleset-pf2e-core      pure Kotlin/JVM, deps :domain     — PF2e maths: proficiency ladder, degrees of success           (mirrors PathfinderCore) [A19]
+:ruleset-pf2e           pure Kotlin/JVM, deps pf2e-core   — PF2e payload, catalogues, flows       (mirrors Pathfinder)   [A19]
+:data                   Android library                   — Room entities + DAOs + CharacterRepository (the sync seam)
+:app                    Android app (Compose)             — UI, ViewModels, navigation, entry point
+```
+
+- **`:domain` and every `:ruleset-*` module stay free of Android imports** so they're JVM-unit-testable (mirrors iOS, where the packages run `swift test` on the host). UI lives **only** in `:app`.
+- **Shared parchment chrome** (iOS's `DnD5eUICore` — theme, wizard atoms, the `ReferenceCodex*` browsers): on Android, UI rules say this lives in `:app`, organised under a `theme` / `codex` package. Extract a `:ui-core` Android library only if a second ruleset's UI actually justifies it (don't pre-extract empty).
+- **Only `:ruleset-dnd5e-core` + `:ruleset-dnd5e-2014` are created now.** The 2024 / PF2e modules are listed for orientation but get scaffolded when their build steps land — no empty modules carrying build cost ahead of content.
+
+## iOS → Android translation map
+
+| iOS | Android | Notes |
+|---|---|---|
+| SwiftData `@Model` (thin JSON envelopes, `payloadData: Data`) | Room entity + `kotlinx.serialization` blob | persistence is already envelope-style — clean map |
+| Codecs `CharacterCodec` / `CampaignCodec` | domain ↔ Room row translators | keep the seam |
+| `@Observable` store (`CharacterStore`) | ViewModel + `StateFlow` | `store.apply(intent)` → `Campaign.apply` → persist + journal |
+| Intent structs | sealed-class hierarchy of intents | pure logic, voluminous, correctness-critical |
+| `NavigationStack` + closure routing | Navigation Compose | sheet/picker enums → routes or bottom-sheet state |
+| 6-tab paged `TabView` (CodexShell) | `HorizontalPager` + tab row | |
+| StoreKit 2 (`PatronStore`) | Play Billing | A14 |
+| Apple FoundationModels (`@Generable`) | Gemini Nano + JSON-schema prompting | gated; degrade gracefully |
+| `ImageRenderer`→PDF export | `PdfDocument`/Canvas hand-built layout | no Compose equivalent to SwiftUI-view PDF |
+| Shared-core + version packages (`DnD5eCore`/`DnD5e`/`DnD5e2024`) | `:ruleset-dnd5e-core` + `:ruleset-dnd5e-2014` + `:ruleset-dnd5e-2024` | same seam, Gradle modules |
+
+## Greenfield simplification vs iOS
+
+iOS carries ~1200 lines of **tolerant `Codable`** with legacy-field migration branches (years of shipped schema changes for existing users). **Android is greenfield with no users**, so port only the *current* payload schema — skip the legacy-migration branches. This removes the single biggest porting risk. (Keep the schema versioned in Room so future migrations are clean.)
 
 ## Build order
 
-The iOS app was built abstraction-first and shipped in a working order that proved out well; Android follows the same spine. Everything below is unstarted.
+The iOS app was built abstraction-first and shipped in a working order that proved out well; Android follows the same spine. A-step numbers map to iOS *features*, not 1:1 to iOS step numbers (the cross-references note which iOS step each mirrors).
 
 ### Foundation
 
-- [x] **A1. Project skeleton** — Android Studio project, Gradle (Kotlin DSL) setup, git repo + `.gitignore`, module structure (`:app`, `:domain`, `:ruleset-dnd5e`, `:data` — mirrors the iOS package split so the domain stays ruleset-agnostic and the 5e engine is isolated). SRD catalogues + fonts copied in. *(Builds with Android Studio's bundled JBR — no standalone JDK on the dev machine; set `JAVA_HOME` to it.)*
-- [x] **A2. Core domain abstractions** — `Ruleset`, `Character`, `CharacterPayload`, `CharacterEvent`, `CharacterIntent` as Kotlin interfaces + value types (data classes / sealed classes), plus `LoggedEvent`, `NoteKind`, and the `Summon`/`Creature` value types (shape only; A15 behaviour later). Intents validate-then-return via `CharacterIntent.applyTo → IntentResult` (Kotlin has no `inout`; the campaign-logged path arrives with `Campaign.apply` at A7a). Codec surface uses JSON `String` (kotlinx.serialization). 12 JUnit5 tests: creation, rename, validation failures, codec round-trips. *(`Campaign` itself is A7a per build order.)*
-- [x] **A3. D&D 5e ruleset, minimal slice** — `DnD5eRuleset` + `DnD5ePayload` (race, classes/`ClassEntry`, derived level, six abilities via `AbilityScores`, HP). `Ability` enum + modifier math; proficiency-bonus-by-level. First handful of intents (`TakeDamage`/`Heal`/`GainTempHp`/`LevelUp`) + their events, with the JSON codec wired per type-id. `LevelUpMath` (HP) + a stand-in class hit-die map (full `ClassCatalog` JSON loading deferred to the content steps). 36 JUnit5 tests: ruleset/payload defaults, proficiency + modifier tables, each intent, codec round-trips, full mini character build. *(Simpler than shipped iOS — no resistances/feats/slots/subclass yet; shapes match so logic grows in place.)*
+- [x] **A1. Project skeleton** — Android Studio project, Gradle (Kotlin DSL), git repo + `.gitignore`, multi-module structure. SRD catalogues + fonts copied in. *(Builds with Android Studio's bundled JBR — no standalone JDK on the dev machine; set `JAVA_HOME` to it.)*
+- [x] **A2. Core domain abstractions** — `Ruleset`, `Character`, `CharacterPayload`, `CharacterEvent`, `CharacterIntent` as Kotlin interfaces + value types, plus `LoggedEvent`, `NoteKind`, `Summon`/`Creature`. Intents validate-then-return via `CharacterIntent.applyTo → IntentResult`. Codec surface uses JSON `String` (kotlinx.serialization). JUnit5 tests. *(iOS 1–2.)*
+- [x] **A3. D&D 5e ruleset, minimal slice** — `DnD5eRuleset` + `DnD5ePayload` (race, classes/`ClassEntry`, derived level, six abilities via `AbilityScores`, HP). `Ability` enum + modifier math; proficiency-bonus-by-level. First intents (`TakeDamage`/`Heal`/`GainTempHp`/`LevelUp`) + events + JSON codec. `LevelUpMath` (HP). JUnit5 tests. *(iOS 3. Currently all in `:ruleset-dnd5e` — split in A3.5.)*
+- [x] **A3.5. Module split for multi-ruleset** — renamed `:ruleset-dnd5e` → `:ruleset-dnd5e-2014`; extracted the edition-agnostic A3 machinery into a new `:ruleset-dnd5e-core` (`Ability`/`AbilityScores` + modifier math, `HpChoice`/`LevelUpMath`/`DnD5eClasses`, `Proficiency.bonus`), package `…dnd5e.core`. `:ruleset-dnd5e-2014` depends on `-core`; `:app` depends on `-2014` (gets `-core` transitively). All tests green + APK assembles. Establishes the seam iOS proved at step 23 *before* the 2014 engine fully grows in. *(iOS 23 architecture, applied up front.)*
 
 ### UI shell + persistence
 
-- [ ] **A4. UI shell** — character list → character sheet (read-only), driven by a `CharacterStore` (ViewModel + `StateFlow`) seeded with demo 5e characters. Per-ruleset sheet composable dispatched by `rulesetID`. Identity / Vitals / Abilities sections; the change log as a separate Journal screen (Navigation Compose).
-- [ ] **A5. Local persistence (Room)** — `:data` module. Room entities + DAOs for characters and campaign logs; a `CharacterCodec` bridges value-type domain `Character`s to/from Room rows (store the payload + events as serialized JSON, mirroring the iOS codec). **Repository interface** (`CharacterRepository`) wraps the data layer so a future sync backend slots in without touching the domain or UI. Demo seed on first launch. App relaunch preserves data.
-  - *Note:* no CloudKit equivalent — Android is **local-only** for now. Cross-device (and eventual cross-platform) sync is an explicit later phase; the repository seam is what keeps that cheap.
-- [ ] **A6. Create / edit / delete flows** — repository `add` / `update` / `delete`. Create screen from a `+` action; edit from the sheet; swipe-to-delete with confirmation. Sheet looks up by ID so updates reflect immediately.
+- [ ] **A4. UI shell** — character list → character sheet (read-only), driven by a `CharacterStore` (ViewModel + `StateFlow`) seeded with demo 5e characters. Per-ruleset sheet composable dispatched by `rulesetID`. Identity / Vitals / Abilities sections; the change log as a separate Journal screen (Navigation Compose). *(iOS 4.)*
+- [ ] **A5. Local persistence (Room)** — `:data` module. Room entities + DAOs for characters and campaign logs; a `CharacterCodec` bridges value-type domain `Character`s to/from Room rows (payload + events as serialized JSON, mirroring the iOS codec). **Repository interface** (`CharacterRepository`) wraps the data layer so a future sync backend slots in without touching domain or UI. **Demo seed is debug-only** (`BuildConfig.DEBUG`) — release installs start empty and reach character creation via onboarding (A12), matching iOS. App relaunch preserves data. *(iOS 5a; no CloudKit equivalent — Android is local-only.)*
+- [ ] **A6. Create / edit / delete flows** — repository `add` / `update` / `delete`. Create from a `+` action; edit from the sheet; swipe-to-delete with confirmation. Sheet looks up by ID so updates reflect immediately. Per-character settings page (PDF export + delete). *(iOS 6.)*
 
 ### Campaigns + in-play
 
-- [ ] **A7a. Campaign data model + lifecycle** — logs live on `Campaign`, not the character. `CharacterPhase` (`building` / `inCampaign(id)`) gates whether intents are allowed. `Campaign` value type + `Campaign.apply`; Room entities + codec; repository `startCampaign` / `endCampaign` / `apply(intent, toCampaign:)`.
-- [ ] **A7b. In-campaign UI** — phase-aware sheet chrome (building → Edit + Start Campaign; in-campaign → Journal + Actions). Active-campaign banner. Start-campaign flow, paged journal with empty state, rename/end.
-- [ ] **A7c. Past Adventures** — index of ended campaigns (build phase only), each row showing name, level arc, primary class, party, ended date; tapping opens the journal read-only.
-- [ ] **A7d. AI chronicles** — on-device narrative summaries via **Gemini Nano** (AICore / ML Kit GenAI). One paragraph per session, third-person past-tense, every event reflected, no invented content. Stored on `Campaign`. Availability-gated: on devices without on-device LLM support the affordance simply doesn't appear (single availability flag, reused everywhere — same discipline as iOS).
-- [ ] **A7e. Codex shell** — the ink-on-parchment in-character experience: a persistent shell with the 6 tabbed pages (Stats / Skills / Combat / Spells / Items / Lore), richer Actions sheet, and campaign journal. This is the big design-heavy build; match the iOS codex.
-- [ ] **A7f. Play mechanics** — wire every action to a real intent + journal entry: damage/heal/temp HP, death saves, inspiration, concentration, conditions, coins, hit dice, short/long rest, attack rolls, cast spell (slot consumption + upcast + ritual), prepare/unprepare. Spell-slot accuracy (full / half / warlock pact progressions). Campaign opening line.
+- [ ] **A7a. Campaign data model + lifecycle** — logs live on `Campaign`, not the character. `CharacterPhase` (`building` / `inCampaign(id)`) gates whether intents are allowed. `Campaign` value type + `Campaign.apply`; Room entities + codec; repository `startCampaign` / `endCampaign` / `apply(intent, toCampaign:)`. *(iOS 7a.)*
+- [ ] **A7b. In-campaign UI** — phase-aware sheet chrome (building → Edit + Start Campaign; in-campaign → Journal + Actions). Active-campaign banner. Start-campaign flow, paged journal with empty state, rename/end. **Editable journal entries** — tap a non-readonly row to correct it in place (text editor for narrative kinds; attack-editor re-opens the attack picker pre-settled on the recorded dice). *(iOS 7b + 26.)*
+- [ ] **A7c. Past Adventures** — index of ended campaigns (build phase only), each row showing name, level arc, primary class, party, ended date; tapping opens the journal read-only. *(iOS 7c.)*
+- [ ] **A7d. AI chronicles** — on-device narrative summaries via **Gemini Nano**. One paragraph per session, third-person past-tense, every event reflected, no invented content. Stored on `Campaign`. Availability-gated: on devices without on-device LLM support the affordance simply doesn't appear (single flag, reused everywhere). *(iOS 7d.)*
+- [ ] **A7e. Codex shell** — the ink-on-parchment in-character experience: a persistent shell with the 6 tabbed pages (Stats / Skills / Combat / Spells / Items / Lore), richer Actions sheet, and campaign journal. The big design-heavy build; match the iOS codex. *(iOS 7e.)*
+- [ ] **A7f. Play mechanics** — wire every action to a real intent + journal entry: damage/heal/temp HP, death saves, inspiration, concentration, conditions, coins, hit dice, short/long rest, attack rolls, cast spell (slot consumption + upcast + ritual), prepare/unprepare. Spell-slot accuracy (full / half / warlock progressions). Campaign opening line. *(iOS 7f.)*
 
 ### Content + character creation
 
-- [ ] **A8. Multi-step character creation wizard** — the parchment-themed multi-step builder (Ruleset → Name → Race → Class → Manner → Abilities → Skills → Spells → Advancements → Review). Ruleset is per-character. Materialises a draft into a `Character`.
-- [ ] **A9. Settings** — narration style, light/dark/system appearance, Reference section, About (Credits & Licenses — carry the SRD + data-source + typeface attributions verbatim).
-- [ ] **A10. Expand 5e content** — equipment + inventory, item usage (potions/scrolls/wondrous charges), class features incl. pool-resource counters, spell prep per-class buckets, realistic slot tables, third-caster casting (EK/AT), hit-die sizing, real AC computation. (See the iOS README's "5e rules — coverage gaps" for the long tail.)
-- [ ] **A11. Level-up wizard + high-level creation** — multi-step in-campaign level-up plus the "Advancements" step for characters created above level 1. Shared choice catalogues (feats, fighting styles, metamagic, invocations, pact boons, ASIs, expertise, spell picks).
+- [ ] **A8. Multi-step character creation wizard** — the parchment multi-step builder (Ruleset → Name → Race → Background → Class → Manner → Abilities → Skills → Spells → Advancements → Review). Ruleset is per-character. Materialises a draft into a `Character`. *(iOS 8.)*
+- [ ] **A9. Settings + Reference codex** — narration style, light/dark/system appearance, About (Credits & Licenses — carry SRD 5.1/5.2 CC BY 4.0, Open5e, PF2e Monster Core/AoN ORC, and typeface attributions verbatim). **Reference section** with a ruleset-tabbed Spell Library / Item Catalog / Monster Codex (per the iOS `ReferenceTabShell`), each ruleset supplying its own read-only browsers from the catalogues it ships. *(iOS 9 — grew to span all three rulesets.)*
+- [ ] **A10. Expand 5e content** — equipment + inventory, item usage (potions/scrolls/wondrous charges), class features incl. pool-resource counters, spell prep per-class buckets, realistic slot tables, third-caster casting (EK/AT), hit-die sizing, real AC computation. (See the iOS README's "5e rules — coverage gaps".) *(iOS 10.)*
+- [ ] **A11. Level-up wizard + high-level creation** — multi-step in-campaign level-up plus the "Advancements" step for characters created above level 1. Shared choice catalogues (feats, fighting styles, metamagic, invocations, pact boons, ASIs, expertise, spell picks). *(iOS 11.)*
+- [ ] **A12. First-run onboarding** — a parchment first-run flow shown once on launch (Welcome / Characters / Campaigns / The Seal), AI-aware copy where on-device AI is real, completion persisted. Pairs with the debug-only demo seed (A5) so a fresh install lands on onboarding → character creation. *(iOS 25.)*
 
-### Platform polish + later phases
+### Platform polish + monetisation
 
-- [ ] **A12. Tablet / large-screen layouts** — width-aware readable caps; multi-pane where it adds value (codex + actions side-by-side in landscape). Mirrors iOS 12a/12b.
-- [ ] **A13. Free tier + paywall** — Google Play Billing. One character free; additional characters via a one-time IAP. Mirror the iOS gating once the iOS monetisation model is finalised.
-- [ ] **A14. Active effects** — unified in-play modifier model (spells/items/features as typed effects with durations + sources, surfaced as coloured chips with concrete impact). Auto-apply on cast/use/feature, auto-cancel on concentration-end / long-rest.
-- [ ] **A15. Familiars + summoned creatures** — secondary entities tied to a character (Find Familiar/Steed, Conjure Animals, Summon X family, Beast Master companion), surfaced as statblock cards.
-- [ ] **A16. Die-roll animation primitive** — the Compose equivalent of `RollResultView`: tumbling dice, bonus chips streaming in, total ticker, crit flourish, haptics. Consumed by attack / save / skill / ability / initiative / hit-die / death-save / HP-roll pickers.
-- [ ] **A17. AI-assisted character creation** — "describe your character" → on-device LLM produces a *concept*, deterministic Kotlin fills the mechanics. Gated behind the same on-device-AI availability flag as chronicles.
+- [ ] **A13. Tablet / large-screen layouts** — width-aware readable caps; multi-pane where it adds value (codex + actions side-by-side in landscape). *(iOS 12a/12b.)*
+- [ ] **A14. Free tier + paywall** — Google Play Billing. One character free; additional characters via a one-time IAP. Mirror the iOS gating (`isPatron` single source of truth; roster CTA flips to "Upgrade" at the free limit). *(iOS 13.)*
+- [ ] **A15. Combat actions audit + Initiative** — every Actions-Sheet tile gets a real intent, journal entry, and rules depth (initiative, skill/save/ability checks, slot-only expenditure, custom effects, concentration auto-break on damage). *(iOS 14.)*
+- [ ] **A16. Die-roll animation primitive** — the Compose equivalent of `RollResultView`: tumbling dice, bonus chips streaming in, total ticker, crit flourish, haptics. Consumed by attack / save / skill / ability / initiative / hit-die / death-save / HP-roll pickers. *(iOS 15.)*
+
+### Deeper rules + later rulesets
+
+- [ ] **A17. Active effects** — unified in-play modifier model (spells/items/features as typed effects with durations + sources, surfaced as coloured chips with concrete impact). Auto-apply on cast/use/feature, auto-cancel on concentration-end / long-rest. *(iOS 17.)*
+- [ ] **A18. Familiars + summoned creatures** — secondary entities tied to a character (Find Familiar/Steed, Conjure Animals, Summon X family, Beast Master companion), surfaced as statblock cards + a homebrew creature library. *(iOS 18.)*
+- [ ] **A19. Race-trait mechanical auto-apply + optional content sources** — race traits that fire their rule effect (Lucky, Savage Attacks, Relentless Endurance, innate resistances, save advantage), plus per-character supplement toggles (`enabledSources`), parameterized feats, subclasses, Custom Origin/Lineage. *(iOS 20–21.)*
+- [ ] **A20. AI-assisted character creation** — "describe your character" → on-device LLM produces a *concept*, deterministic Kotlin fills the mechanics. Gated behind the same on-device-AI availability flag as chronicles. *(iOS 22.)*
+- [ ] **A21. D&D 5e (2024) ruleset** — second 5e edition as a sibling ruleset (`rulesetID "dnd-5e-2024"`) in a new `:ruleset-dnd5e-2024` module on `:ruleset-dnd5e-core`. Ability scores move from species to **background**; species carry traits only; tiered feats; Weapon Mastery; subclasses at level 3; unified Arcane/Divine/Primal spell lists. Existing 2014 characters stay bound to 2014 forever (no cross-edition migration). Content from SRD 5.2 (CC BY 4.0). *(iOS 23 — this is where the `-core` seam pays off.)*
+- [ ] **A22. Pathfinder 2e (Remaster) ruleset** — first non-D&D system (`rulesetID "pf2e-remaster"`) in `:ruleset-pf2e` on its own `:ruleset-pf2e-core`. Five-rank proficiency ladder, four degrees of success, valued conditions, traditions/heightening, Hero Points + dying/wounded. *Full* ORC content is the target (legally sourceable via AoN). Three-action economy modelled as static action-cost data, **not** a live turn tracker (companion-app scope). Build sub-steps mirror iOS 24's: core+payload → derived stats → ancestries/creation → classes → spells → feats → play intents → equipment → AI creation. *(iOS 24.)*
+
+### Cross-platform + far-later phases
+
+- [ ] **A23. Party mode — shared journals (cross-platform)** — players in the same campaign share third-person journal entries; join by **code** (no accounts). **Cross-platform from day one** (iOS + Android players in one campaign) — this is the explicit reason iOS dropped CloudKit as the transport. A thin shared **party plane** (Supabase recommended: anonymous auth + RLS + realtime + receipt-validating edge function; Swift + Kotlin + JS SDKs) holds campaigns/memberships/shared entries, kept *separate* from the local-first private plane. Each entry carries `inputPayload` (portable structured event) + `bodyBasic` (deterministic third-person) + `bodyNarrated` (on-device-AI polish, backfilled by any capable teammate's device — Android Gemini Nano can narrate an iOS member's entries and vice-versa). **Read-gated** behind the same IAP as A14. *(iOS 16 — unbuilt on both platforms; needs the shared backend designed jointly. Do not get ahead of the reference app.)*
+- [ ] **A24. Active-effects / summon cross-character propagation, PDF export, and the iOS "coverage gaps" long tail** — track against the iOS README as those land there. *(iOS open follow-ups.)*
 
 ## Open decisions
 
-- **Kotlin Multiplatform (deferred).** We chose a parallel Kotlin port over a KMP shared domain to keep the shipping iOS app untouched and Android idiomatic. Revisit if logic drift between platforms becomes painful — the natural seam would be extracting the domain + 5e engine into a KMP module consumed by both.
-- **Sync backend (deferred).** Local-only via Room for now, behind `CharacterRepository`. When cross-device (or cross-platform iOS↔Android) sync is wanted, decide between Firebase/Firestore, a Supabase/custom backend that both apps target, or per-platform native sync. The repository interface is the insertion point.
-- **Min SDK + on-device-AI device coverage.** Pin the min SDK and confirm which devices actually expose Gemini Nano / AICore; the AI features are availability-gated, so unsupported devices fall back gracefully (no chronicle / no AI creation, never a broken affordance).
-- **Monetisation parity.** Keep the Play Billing model aligned with the iOS StoreKit model (one free character + IAP unlock) once iOS step 13 lands.
+- **Multi-ruleset module seam — resolved (anticipate now).** Mirror iOS's `DnD5eCore` / version-package split from the start (`:ruleset-dnd5e-core` + `:ruleset-dnd5e-2014`), rather than extracting later. The 2024 / PF2e modules get scaffolded at their build steps (A21/A22), not as empty modules now.
+- **Kotlin Multiplatform (deferred).** Parallel Kotlin port over a KMP shared domain to keep the shipping iOS app untouched and Android idiomatic. Revisit if logic drift between platforms becomes painful — the natural seam would be a KMP module for the domain + ruleset cores.
+- **Sync backend (deferred for character data; required for party mode).** Character data is local-only via Room behind `CharacterRepository`. **Party mode (A23) is the exception** — it needs a thin shared backend (Supabase recommended) and is cross-platform with iOS, so it must be designed jointly with the iOS side when that step is taken.
+- **Min SDK + on-device-AI device coverage.** `minSdk = 26` is pinned. Confirm which devices actually expose Gemini Nano / AICore; AI features are availability-gated, so unsupported devices fall back gracefully (no chronicle / no AI creation, never a broken affordance).
+- **Monetisation parity.** Keep the Play Billing model aligned with the iOS StoreKit model (one free character + IAP unlock); the same purchase also read-unlocks party mode.
 
 ## Reference
 
 - iOS reference app + canonical roadmap: [`../nat20-ios/README.md`](../nat20-ios/README.md)
-- SRD JSON to copy: `../nat20-ios/Packages/DnD5e/Sources/DnD5e/Resources/`
+- SRD JSON to copy: under each iOS ruleset package's `Sources/<Package>/Resources/`
