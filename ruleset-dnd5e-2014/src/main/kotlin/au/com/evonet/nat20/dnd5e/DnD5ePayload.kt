@@ -3,6 +3,7 @@ package au.com.evonet.nat20.dnd5e
 import au.com.evonet.nat20.dnd5e.core.AbilityScores
 import au.com.evonet.nat20.dnd5e.core.Coin
 import au.com.evonet.nat20.dnd5e.core.DeathSaves
+import au.com.evonet.nat20.dnd5e.core.Exhaustion
 import au.com.evonet.nat20.dnd5e.core.FeatureUseEntry
 import au.com.evonet.nat20.domain.CharacterPayload
 import kotlinx.serialization.Serializable
@@ -72,6 +73,10 @@ data class DnD5ePayload(
     val hasInspiration: Boolean = false,
     /** Death-save tracker; only meaningful while downed at 0 HP. Cleared on a long rest / heal. */
     val deathSaves: DeathSaves = DeathSaves.cleared,
+    /** Active condition names (standard + house-rule), in application order. */
+    val activeConditions: List<String> = emptyList(),
+    /** Exhaustion track 0–6 (level 6 = death); a long rest sheds one level. */
+    val exhaustionLevel: Int = 0,
 ) : CharacterPayload {
 
     /** Total character level = sum of all class entry levels, floored at 1. */
@@ -98,9 +103,9 @@ data class DnD5ePayload(
     val isDying: Boolean
         get() = currentHp == 0 && !deathSaves.isStable && !deathSaves.isDead
 
-    /** Three death-save failures — the character has died. */
+    /** Dead — three death-save failures or six levels of exhaustion. */
     val isDead: Boolean
-        get() = deathSaves.isDead
+        get() = deathSaves.isDead || Exhaustion.isFatal(exhaustionLevel)
 
     companion object {
         const val MIN_LEVEL: Int = 1

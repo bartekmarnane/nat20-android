@@ -6,6 +6,7 @@ import au.com.evonet.nat20.dnd5e.core.ClassResourceCatalog
 import au.com.evonet.nat20.dnd5e.core.DeathSaveOutcome
 import au.com.evonet.nat20.dnd5e.core.DeathSaves
 import au.com.evonet.nat20.dnd5e.core.DnD5eClasses
+import au.com.evonet.nat20.dnd5e.core.Exhaustion
 import au.com.evonet.nat20.dnd5e.core.FeatureRecovery
 import au.com.evonet.nat20.dnd5e.core.FeatureUseEntry
 import au.com.evonet.nat20.dnd5e.core.HpChoice
@@ -151,6 +152,56 @@ data class AddNote(
         val trimmed = text.trim()
         if (trimmed.isEmpty()) throw CharacterIntentError.Invalid("Note must not be empty")
         return IntentResult(character, NoteEvent(text = trimmed, kind = kind))
+    }
+}
+
+/** Applies a condition (standard or house-rule) by name; idempotent (case-insensitive). */
+data class ApplyCondition(
+    val name: String,
+    val source: String? = null,
+) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        val trimmed = name.trim()
+        if (trimmed.isEmpty()) throw CharacterIntentError.Invalid("Condition name cannot be empty")
+        val payload = character.dnd5ePayload()
+        val alreadyApplied = payload.activeConditions.any { it.equals(trimmed, ignoreCase = true) }
+        val updated = if (alreadyApplied) payload else payload.copy(activeConditions = payload.activeConditions + trimmed)
+        return IntentResult(
+            character.copy(payload = updated),
+            ConditionAppliedEvent(trimmed, source, wasNew = !alreadyApplied),
+        )
+    }
+}
+
+/** Clears a condition by name (case-insensitive); a no-op if absent. */
+data class ClearCondition(
+    val name: String,
+) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        val payload = character.dnd5ePayload()
+        val remaining = payload.activeConditions.filterNot { it.equals(name.trim(), ignoreCase = true) }
+        val wasPresent = remaining.size != payload.activeConditions.size
+        return IntentResult(
+            character.copy(payload = payload.copy(activeConditions = remaining)),
+            ConditionClearedEvent(name.trim(), wasPresent),
+        )
+    }
+}
+
+/** Raises or lowers the exhaustion track by [delta], clamped to 0–6 (level 6 = death). */
+data class AdjustExhaustion(
+    val delta: Int,
+) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        if (delta == 0) throw CharacterIntentError.Invalid("Exhaustion change can't be zero")
+        val payload = character.dnd5ePayload()
+        val previous = payload.exhaustionLevel
+        val next = Exhaustion.clamp(previous + delta)
+        if (next == previous) throw CharacterIntentError.Invalid("Exhaustion already at ${if (delta > 0) "maximum" else "zero"}")
+        return IntentResult(
+            character.copy(payload = payload.copy(exhaustionLevel = next)),
+            ExhaustionChangedEvent(previous, next),
+        )
     }
 }
 
@@ -551,6 +602,7 @@ class LongRest : CharacterIntent {
         // 5e: regain up to half your total hit dice (min 1) on a long rest.
         val hitDiceRegained = if (payload.hitDiceSpent == 0) 0 else maxOf(1, payload.hitDiceSpent / 2)
         val deathSavesCleared = !payload.deathSaves.isCleared
+        val exhaustionAfter = Exhaustion.clamp(payload.exhaustionLevel - 1)
         val updated = payload.copy(
             currentHp = payload.maxHp,
             temporaryHp = 0,
@@ -561,6 +613,7 @@ class LongRest : CharacterIntent {
             resourcePools = emptyMap(),
             classFeatureUses = emptyMap(),
             deathSaves = DeathSaves.cleared,
+            exhaustionLevel = exhaustionAfter,
         )
         val event = LongRestEvent(
             hpRestored = maxOf(0, hpRestored),
@@ -568,6 +621,7 @@ class LongRest : CharacterIntent {
             slotsRestored = maxOf(0, regularRestored + pactRestored),
             hitDiceRegained = hitDiceRegained,
             deathSavesCleared = deathSavesCleared,
+            exhaustionRecovered = exhaustionAfter < payload.exhaustionLevel,
         )
         return IntentResult(character.copy(payload = updated), event)
     }

@@ -136,6 +136,7 @@ internal fun CombatPage(character: Character, payload: DnD5ePayload, onApplyInte
                 }
             }
         }
+        ConditionsSection(payload, onApplyIntent)
         ClassResourcesSection(payload, onApplyIntent)
         RestSection(onApplyIntent)
     }

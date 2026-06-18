@@ -243,6 +243,7 @@ data class LongRestEvent(
     val slotsRestored: Int = 0,
     val hitDiceRegained: Int = 0,
     val deathSavesCleared: Boolean = false,
+    val exhaustionRecovered: Boolean = false,
 ) : CharacterEvent {
     override val summary: String
         get() {
@@ -250,6 +251,7 @@ data class LongRestEvent(
                 if (slotsRestored > 0) add("$slotsRestored spell slot${if (slotsRestored == 1) "" else "s"}")
                 if (hitDiceRegained > 0) add("$hitDiceRegained hit di${if (hitDiceRegained == 1) "e" else "ce"}")
                 if (deathSavesCleared) add("death saves")
+                if (exhaustionRecovered) add("a level of exhaustion")
             }
             val extras = if (parts.isEmpty()) "" else " (${parts.joinToString(" + ")} restored)"
             return "Took a long rest — back to full health$extras"
@@ -303,6 +305,41 @@ data class DeathSaveMarkedEvent(
             au.com.evonet.nat20.dnd5e.core.DeathSaveOutcome.FAILURE ->
                 if (newState.isDead) "Fell — three death-save failures" else "Death save failure (${newState.failures}/3)"
             au.com.evonet.nat20.dnd5e.core.DeathSaveOutcome.CLEAR -> "Cleared death saves"
+        }
+}
+
+@Serializable
+data class ConditionAppliedEvent(
+    val name: String,
+    val source: String? = null,
+    val wasNew: Boolean,
+) : CharacterEvent {
+    override val summary: String
+        get() {
+            val src = source?.let { " from $it" } ?: ""
+            return if (wasNew) "Gained the $name condition$src" else "Still $name$src"
+        }
+}
+
+@Serializable
+data class ConditionClearedEvent(
+    val name: String,
+    val wasPresent: Boolean,
+) : CharacterEvent {
+    override val summary: String
+        get() = if (wasPresent) "Cleared the $name condition" else "Not $name — no change"
+}
+
+@Serializable
+data class ExhaustionChangedEvent(
+    val previousLevel: Int,
+    val newLevel: Int,
+) : CharacterEvent {
+    override val summary: String
+        get() = when {
+            newLevel >= au.com.evonet.nat20.dnd5e.core.Exhaustion.MAX -> "Exhaustion reached level 6 — death"
+            newLevel > previousLevel -> "Exhaustion rose to level $newLevel"
+            else -> "Exhaustion eased to level $newLevel"
         }
 }
 
