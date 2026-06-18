@@ -6,6 +6,7 @@ import au.com.evonet.nat20.dnd5e.core.Proficiency
 import au.com.evonet.nat20.domain.Character
 import au.com.evonet.nat20.domain.CharacterIntentError
 import au.com.evonet.nat20.domain.CharacterPhase
+import au.com.evonet.nat20.domain.NoteKind
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
@@ -172,6 +173,31 @@ class LevelUpTests {
         )
         assertThrows(CharacterIntentError.Invalid::class.java) {
             LevelUp(classId = "fighter").applyTo(twenty, ruleset)
+        }
+    }
+}
+
+class NoteIntentTests {
+    private val ruleset = DnD5eRuleset()
+    private fun character(): Character = Character.new(
+        name = "Aria",
+        ruleset = ruleset,
+        payload = DnD5ePayload(classes = listOf(ClassEntry("cleric", 1))),
+        timestamp = NOW,
+    )
+
+    @Test
+    fun `note creates a NoteEvent and leaves the character unchanged`() {
+        val before = character()
+        val result = AddNote("Spoke with the innkeeper", NoteKind.NPC).applyTo(before, ruleset)
+        assertEquals(before, result.character)
+        assertEquals("Spoke with the innkeeper", result.event.summary)
+    }
+
+    @Test
+    fun `blank note is rejected`() {
+        assertThrows(CharacterIntentError.Invalid::class.java) {
+            AddNote("   ").applyTo(character(), ruleset)
         }
     }
 }

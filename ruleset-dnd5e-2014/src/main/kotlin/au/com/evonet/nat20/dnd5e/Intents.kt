@@ -8,6 +8,7 @@ import au.com.evonet.nat20.domain.Character
 import au.com.evonet.nat20.domain.CharacterIntent
 import au.com.evonet.nat20.domain.CharacterIntentError
 import au.com.evonet.nat20.domain.IntentResult
+import au.com.evonet.nat20.domain.NoteKind
 import au.com.evonet.nat20.domain.Ruleset
 
 /**
@@ -96,6 +97,18 @@ data class GainTempHp(
             newValue = newValue,
         )
         return IntentResult(character.copy(payload = updated), event)
+    }
+}
+
+/** Records a free-text journal note. Doesn't change character state. */
+data class AddNote(
+    val text: String,
+    val kind: NoteKind? = null,
+) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        val trimmed = text.trim()
+        if (trimmed.isEmpty()) throw CharacterIntentError.Invalid("Note must not be empty")
+        return IntentResult(character, NoteEvent(text = trimmed, kind = kind))
     }
 }
 

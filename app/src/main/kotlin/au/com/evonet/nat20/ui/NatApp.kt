@@ -3,6 +3,7 @@ package au.com.evonet.nat20.ui
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
@@ -11,7 +12,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import au.com.evonet.nat20.app.Nat20Application
+import au.com.evonet.nat20.domain.Campaign
 import au.com.evonet.nat20.domain.Character
+import au.com.evonet.nat20.domain.CharacterPhase
 import au.com.evonet.nat20.store.CharacterStore
 import au.com.evonet.nat20.ui.editor.DnD5eEditorScreen
 import au.com.evonet.nat20.ui.journal.JournalScreen
@@ -70,11 +73,18 @@ fun NatApp() {
             if (character == null) {
                 nav.popBackStack()
             } else {
+                val campaigns by remember(character.id) { store.campaignsForCharacter(character.id) }
+                    .collectAsState(initial = emptyList())
+                val active = activeCampaign(character, campaigns)
                 CharacterSheetScreen(
                     character = character,
+                    activeCampaign = active,
                     onBack = { nav.popBackStack() },
                     onEdit = { nav.navigate(Routes.edit(character.id)) },
+                    onStartCampaign = { store.startCampaign(character, it) },
+                    onEndCampaign = { active?.let { c -> store.endCampaign(character, c) } },
                     onOpenJournal = { nav.navigate(Routes.journal(character.id)) },
+                    onApplyIntent = { intent -> active?.let { c -> store.applyIntent(intent, character, c) } },
                 )
             }
         }
@@ -87,7 +97,13 @@ fun NatApp() {
             if (character == null) {
                 nav.popBackStack()
             } else {
-                JournalScreen(characterName = character.name, onBack = { nav.popBackStack() })
+                val campaigns by remember(character.id) { store.campaignsForCharacter(character.id) }
+                    .collectAsState(initial = emptyList())
+                JournalScreen(
+                    campaign = activeCampaign(character, campaigns),
+                    characterName = character.name,
+                    onBack = { nav.popBackStack() },
+                )
             }
         }
 
@@ -116,6 +132,12 @@ fun NatApp() {
         }
     }
 }
+
+/** The character's active campaign, if it's committed to one. */
+private fun activeCampaign(character: Character, campaigns: List<Campaign>): Campaign? =
+    (character.phase as? CharacterPhase.InCampaign)?.let { phase ->
+        campaigns.firstOrNull { it.id == phase.campaignId }
+    }
 
 /** Parse the `id` path arg into a UUID, or null if absent/malformed. */
 private fun androidx.navigation.NavBackStackEntry.characterId(): UUID? =
