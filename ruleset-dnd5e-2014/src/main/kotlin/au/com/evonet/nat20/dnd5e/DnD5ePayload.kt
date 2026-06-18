@@ -27,6 +27,12 @@ data class DnD5ePayload(
      * and doesn't stack (a higher value replaces, otherwise discarded).
      */
     val temporaryHp: Int = 0,
+    /** Background id (A8); resolved through [DnD5eCatalog.background] at display. */
+    val background: String = "",
+    /** Skill ids the character is proficient in (background-granted + class picks). */
+    val selectedSkills: List<String> = emptyList(),
+    /** Alignment label, e.g. "Lawful Good"; null until chosen. */
+    val alignment: String? = null,
 ) : CharacterPayload {
 
     /** Total character level = sum of all class entry levels, floored at 1. */

@@ -10,7 +10,12 @@ enum class Ability(val abbreviation: String) {
     CONSTITUTION("CON"),
     INTELLIGENCE("INT"),
     WISDOM("WIS"),
-    CHARISMA("CHA"),
+    CHARISMA("CHA");
+
+    companion object {
+        /** Resolve a catalogue key like `"strength"` (case-insensitive) to an [Ability]. */
+        fun fromKey(key: String): Ability? = entries.firstOrNull { it.name.equals(key, ignoreCase = true) }
+    }
 }
 
 /**
