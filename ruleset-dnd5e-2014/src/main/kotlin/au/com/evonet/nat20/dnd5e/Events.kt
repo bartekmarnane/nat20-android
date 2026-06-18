@@ -20,6 +20,10 @@ data class DamageTakenEvent(
     val newHp: Int,
     val tempAbsorbed: Int = 0,
     val maxHp: Int? = null,
+    /** True when an active effect halved this typed damage (Rage, Stoneskin). */
+    val resistanceApplied: Boolean = false,
+    /** Concentration save DC this hit demands, or null if not concentrating (A17, resolved manually). */
+    val concentrationCheckDC: Int? = null,
 ) : CharacterEvent {
     override val summary: String
         get() {
@@ -29,8 +33,10 @@ data class DamageTakenEvent(
                 "Took $amount damage"
             }
             val narrative = if (!note.isNullOrEmpty()) " — $note" else ""
+            val resist = if (resistanceApplied) " (resisted)" else ""
             val tempNote = if (tempAbsorbed > 0) " ($tempAbsorbed absorbed by temp)" else ""
-            return "$head$narrative (HP $previousHp → $newHp)$tempNote"
+            val conc = concentrationCheckDC?.let { " · concentration save DC $it" } ?: ""
+            return "$head$narrative$resist (HP $previousHp → $newHp)$tempNote$conc"
         }
 }
 
@@ -405,6 +411,29 @@ data class DeathSaveRolledEvent(
             d20 >= 10 -> "Rolled $d20 — death save success (${newState.successes}/3)"
             else -> "Rolled $d20 — death save failure (${newState.failures}/3)"
         }
+}
+
+// ── Active effects (A17) ──────────────────────────────────────────────────────
+
+@Serializable
+data class ConcentrationEndedEvent(
+    val target: String? = null,
+) : CharacterEvent {
+    override val summary: String get() = target?.let { "Lost concentration on $it" } ?: "Ended concentration"
+}
+
+@Serializable
+data class EffectAppliedEvent(
+    val name: String,
+) : CharacterEvent {
+    override val summary: String get() = "Gained the $name effect"
+}
+
+@Serializable
+data class EffectCancelledEvent(
+    val name: String,
+) : CharacterEvent {
+    override val summary: String get() = "Lost the $name effect"
 }
 
 @Serializable

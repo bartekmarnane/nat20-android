@@ -2,7 +2,10 @@ package au.com.evonet.nat20.dnd5e
 
 import au.com.evonet.nat20.dnd5e.core.Ability
 import au.com.evonet.nat20.dnd5e.core.AbilityScores
+import au.com.evonet.nat20.dnd5e.core.ActiveEffect
 import au.com.evonet.nat20.dnd5e.core.AttackOutcome
+import au.com.evonet.nat20.dnd5e.core.EffectDuration
+import au.com.evonet.nat20.dnd5e.core.RestKind
 import au.com.evonet.nat20.dnd5e.core.Coin
 import au.com.evonet.nat20.dnd5e.core.ClassResourceCatalog
 import au.com.evonet.nat20.dnd5e.core.DeathSaveOutcome
@@ -47,10 +50,19 @@ data class TakeDamage(
         if (amount <= 0) throw CharacterIntentError.Invalid("Damage must be positive")
         val payload = character.dnd5ePayload()
 
-        val tempAbsorbed = minOf(payload.temporaryHp, amount)
-        val hpDamage = amount - tempAbsorbed
+        // 5e: resistance halves the typed damage (rounded down) before temp HP soaks it.
+        val typeKey = damageType?.trim()?.lowercase()
+        val resisted = typeKey != null && typeKey.isNotEmpty() && typeKey in payload.effectiveDamageResistances
+        val effectiveAmount = if (resisted) amount / 2 else amount
+
+        val tempAbsorbed = minOf(payload.temporaryHp, effectiveAmount)
+        val hpDamage = effectiveAmount - tempAbsorbed
         val newTempHp = payload.temporaryHp - tempAbsorbed
         val newHp = maxOf(0, payload.currentHp - hpDamage)
+
+        // Concentration: damage prompts a CON save (DC = max of 10 and half the damage taken).
+        // The player resolves it manually (rolls the save, ends concentration on a fail).
+        val concentrationDc = if (payload.concentratingOn != null && hpDamage > 0) maxOf(10, hpDamage / 2) else null
 
         val updated = payload.copy(currentHp = newHp, temporaryHp = newTempHp)
         val event = DamageTakenEvent(
@@ -61,6 +73,8 @@ data class TakeDamage(
             newHp = newHp,
             tempAbsorbed = tempAbsorbed,
             maxHp = payload.maxHp,
+            resistanceApplied = resisted,
+            concentrationCheckDC = concentrationDc,
         )
         return IntentResult(character.copy(payload = updated), event)
     }
@@ -354,7 +368,11 @@ data class UseItem(
             payload.currentHp
         }
 
-        val updated = payload.copy(inventory = updatedInventory, currentHp = newHp)
+        // Catalogue auto-apply (A17): potions/oils land their effect on the user.
+        val itemEffect = ItemEffectCatalog.effectFor(existing.catalogueID)
+        val newEffects = if (itemEffect != null) payload.activeEffects + itemEffect else payload.activeEffects
+
+        val updated = payload.copy(inventory = updatedInventory, currentHp = newHp, activeEffects = newEffects)
         val event = ItemUsedEvent(
             itemName = existing.name,
             healingRolled = healingRolled?.takeIf { it > 0 },
@@ -412,6 +430,10 @@ data class CastSpell(
     val asRitual: Boolean = false,
     val fromScroll: Boolean = false,
     val target: String? = null,
+    /** Concentration spell — sets [DnD5ePayload.concentratingOn] and drops any prior concentration (A17). */
+    val requiresConcentration: Boolean = false,
+    /** For a target-picked buff (Bless, Mage Armor), whether the caster applies the effect to themselves. */
+    val applyToSelf: Boolean = false,
 ) : CharacterIntent {
     override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
         if (slotLevel < spellLevel) {
@@ -434,6 +456,24 @@ data class CastSpell(
                 }
                 updated = payload.copy(currentSpellSlots = payload.currentSpellSlots.withSlot(slotLevel, remaining - 1))
             }
+        }
+
+        // Concentration: a new concentration spell drops every prior concentration-owning effect.
+        val startsConcentration = requiresConcentration && !asRitual
+        if (startsConcentration) {
+            updated = updated.copy(
+                concentratingOn = spellName,
+                activeEffects = updated.activeEffects.filterNot { it.concentrationOwner },
+            )
+        }
+        // Catalogue auto-apply: always-self / caster-rider land unconditionally;
+        // target-picked buffs only when the caster opted to apply to themselves.
+        SpellEffectCatalog.template(spellID)?.let { tmpl ->
+            val applies = when (tmpl.scope) {
+                EffectScope.ALWAYS_SELF, EffectScope.CASTER_RIDER -> true
+                EffectScope.TARGET_PICKED -> applyToSelf
+            }
+            if (applies) updated = updated.copy(activeEffects = updated.activeEffects + tmpl.resolve(spellID))
         }
 
         val trimmedTarget = target?.trim()?.takeIf { it.isNotEmpty() }
@@ -577,8 +617,78 @@ data class UseClassFeature(
                 classFeatureUses = payload.classFeatureUses + (featureID to FeatureUseEntry(next, recovery)),
             )
         }
+        // Catalogue auto-apply (A17): the feature's effect lands on the user. Rage's damage
+        // bonus is swapped to the level-correct tier; concentration features replace any prior.
+        ClassFeatureEffectCatalog.template(featureID)?.let { tmpl ->
+            var effect = tmpl.resolve(featureID)
+            if (featureID == "rage") {
+                val barbLevel = updated.classes.firstOrNull { it.classId.lowercase() == "barbarian" }?.level ?: 1
+                effect = ClassFeatureEffectCatalog.withRageDamage(effect, barbLevel)
+            }
+            if (effect.concentrationOwner) {
+                updated = updated.copy(
+                    concentratingOn = effect.name,
+                    activeEffects = updated.activeEffects.filterNot { it.concentrationOwner },
+                )
+            }
+            updated = updated.copy(activeEffects = updated.activeEffects + effect)
+        }
         val event = ClassFeatureUsedEvent(featureID, featureName, recovery, remainingAfter, note?.trim()?.takeIf { it.isNotEmpty() })
         return IntentResult(character.copy(payload = updated), event)
+    }
+}
+
+// ── Active effects (A17) ──────────────────────────────────────────────────────
+
+/** Ends concentration, dropping every concentration-owning effect (5e: one at a time). */
+class EndConcentration : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        val payload = character.dnd5ePayload()
+        val target = payload.concentratingOn
+        val updated = payload.copy(
+            concentratingOn = null,
+            activeEffects = payload.activeEffects.filterNot { it.concentrationOwner },
+        )
+        return IntentResult(character.copy(payload = updated), ConcentrationEndedEvent(target))
+    }
+
+    override fun equals(other: Any?): Boolean = other is EndConcentration
+    override fun hashCode(): Int = javaClass.hashCode()
+}
+
+/** Cancels a single active effect by id; also drops concentration if no owner effects remain. */
+data class CancelEffect(
+    val effectId: String,
+) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        val payload = character.dnd5ePayload()
+        val effect = payload.activeEffects.firstOrNull { it.id == effectId }
+            ?: throw CharacterIntentError.Invalid("No active effect $effectId")
+        val remaining = payload.activeEffects.filterNot { it.id == effectId }
+        val stillConcentrating = remaining.any { it.concentrationOwner }
+        val updated = payload.copy(
+            activeEffects = remaining,
+            concentratingOn = if (effect.concentrationOwner && !stillConcentrating) null else payload.concentratingOn,
+        )
+        return IntentResult(character.copy(payload = updated), EffectCancelledEvent(effect.name))
+    }
+}
+
+/** Applies an ad-hoc effect (a DM buff/debuff); concentration owners replace any prior concentration. */
+data class ApplyEffect(
+    val effect: ActiveEffect,
+) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        val payload = character.dnd5ePayload()
+        var updated = payload
+        if (effect.concentrationOwner) {
+            updated = updated.copy(
+                concentratingOn = effect.name,
+                activeEffects = updated.activeEffects.filterNot { it.concentrationOwner },
+            )
+        }
+        updated = updated.copy(activeEffects = updated.activeEffects + effect)
+        return IntentResult(character.copy(payload = updated), EffectAppliedEvent(effect.name))
     }
 }
 
@@ -657,10 +767,13 @@ class ShortRest : CharacterIntent {
         // Reset short-rest point pools (absent key = full).
         val shortRestPoolIds = ClassResourceCatalog.allPools.filter { it.recovery == FeatureRecovery.SHORT_REST }.map { it.id }
         val keptPools = payload.resourcePools - shortRestPoolIds.toSet()
+        // Drop effects that last "until a short rest".
+        val keptEffects = payload.activeEffects.filterNot { it.duration == EffectDuration.UntilRest(RestKind.SHORT) }
         val updated = payload.copy(
             currentPactSlots = maxPact,
             classFeatureUses = keptFeatures,
             resourcePools = keptPools,
+            activeEffects = keptEffects,
         )
         return IntentResult(character.copy(payload = updated), ShortRestEvent(restored))
     }
@@ -694,6 +807,12 @@ class LongRest : CharacterIntent {
             classFeatureUses = emptyMap(),
             deathSaves = DeathSaves.cleared,
             exhaustionLevel = exhaustionAfter,
+            // End concentration and clear timed/concentration effects (Until-Cancelled buffs persist).
+            concentratingOn = null,
+            activeEffects = payload.activeEffects.filterNot {
+                it.concentrationOwner || it.duration is EffectDuration.Concentration ||
+                    it.duration is EffectDuration.UntilRest || it.duration is EffectDuration.Rounds
+            },
         )
         val event = LongRestEvent(
             hpRestored = maxOf(0, hpRestored),

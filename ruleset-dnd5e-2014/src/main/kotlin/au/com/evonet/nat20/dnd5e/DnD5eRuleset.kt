@@ -48,6 +48,9 @@ class DnD5eRuleset : Ruleset {
         is ResourceSpentEvent -> "dnd5e.resource"
         is ClassFeatureUsedEvent -> "dnd5e.feature"
         is InspirationChangedEvent -> "dnd5e.inspiration"
+        is ConcentrationEndedEvent -> "dnd5e.concentrationEnded"
+        is EffectAppliedEvent -> "dnd5e.effectApplied"
+        is EffectCancelledEvent -> "dnd5e.effectCancelled"
         is DeathSaveMarkedEvent -> "dnd5e.deathSave"
         is DeathSaveRolledEvent -> "dnd5e.deathSaveRoll"
         is AttackEvent -> "dnd5e.attack"
@@ -78,6 +81,9 @@ class DnD5eRuleset : Ruleset {
         is ResourceSpentEvent -> json.encodeToString(ResourceSpentEvent.serializer(), event)
         is ClassFeatureUsedEvent -> json.encodeToString(ClassFeatureUsedEvent.serializer(), event)
         is InspirationChangedEvent -> json.encodeToString(InspirationChangedEvent.serializer(), event)
+        is ConcentrationEndedEvent -> json.encodeToString(ConcentrationEndedEvent.serializer(), event)
+        is EffectAppliedEvent -> json.encodeToString(EffectAppliedEvent.serializer(), event)
+        is EffectCancelledEvent -> json.encodeToString(EffectCancelledEvent.serializer(), event)
         is DeathSaveMarkedEvent -> json.encodeToString(DeathSaveMarkedEvent.serializer(), event)
         is DeathSaveRolledEvent -> json.encodeToString(DeathSaveRolledEvent.serializer(), event)
         is AttackEvent -> json.encodeToString(AttackEvent.serializer(), event)
@@ -108,6 +114,9 @@ class DnD5eRuleset : Ruleset {
         "dnd5e.resource" -> this.json.decodeFromString(ResourceSpentEvent.serializer(), json)
         "dnd5e.feature" -> this.json.decodeFromString(ClassFeatureUsedEvent.serializer(), json)
         "dnd5e.inspiration" -> this.json.decodeFromString(InspirationChangedEvent.serializer(), json)
+        "dnd5e.concentrationEnded" -> this.json.decodeFromString(ConcentrationEndedEvent.serializer(), json)
+        "dnd5e.effectApplied" -> this.json.decodeFromString(EffectAppliedEvent.serializer(), json)
+        "dnd5e.effectCancelled" -> this.json.decodeFromString(EffectCancelledEvent.serializer(), json)
         "dnd5e.deathSave" -> this.json.decodeFromString(DeathSaveMarkedEvent.serializer(), json)
         "dnd5e.deathSaveRoll" -> this.json.decodeFromString(DeathSaveRolledEvent.serializer(), json)
         "dnd5e.attack" -> this.json.decodeFromString(AttackEvent.serializer(), json)

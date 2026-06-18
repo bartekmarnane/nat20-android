@@ -1,6 +1,7 @@
 package au.com.evonet.nat20.dnd5e
 
 import au.com.evonet.nat20.dnd5e.core.AbilityScores
+import au.com.evonet.nat20.dnd5e.core.ActiveEffect
 import au.com.evonet.nat20.dnd5e.core.Coin
 import au.com.evonet.nat20.dnd5e.core.DeathSaves
 import au.com.evonet.nat20.dnd5e.core.Exhaustion
@@ -79,6 +80,10 @@ data class DnD5ePayload(
     val exhaustionLevel: Int = 0,
     /** This encounter's rolled initiative; null when not in an encounter. */
     val initiative: Int? = null,
+    /** In-play modifiers (spell/item/feature effects + DM buffs); folded into derived stats (A17). */
+    val activeEffects: List<ActiveEffect> = emptyList(),
+    /** The spell/feature the character is concentrating on; null = not concentrating. */
+    val concentratingOn: String? = null,
 ) : CharacterPayload {
 
     /** Total character level = sum of all class entry levels, floored at 1. */

@@ -105,7 +105,7 @@ internal fun SpellsPage(
                     SpellRow(
                         spell = s,
                         canCast = true,
-                        onCast = { applyIntent(CastSpell(s.index, s.name, 0, 0)) },
+                        onCast = { applyIntent(CastSpell(s.index, s.name, 0, 0, requiresConcentration = s.concentration, applyToSelf = true)) },
                         onRemove = { editPayload { it.copy(cantripsKnown = it.cantripsKnown - s.index) } },
                     )
                 }
@@ -123,7 +123,7 @@ internal fun SpellsPage(
                     SpellRow(
                         spell = s,
                         canCast = hasSlot,
-                        onCast = { applyIntent(CastSpell(s.index, s.name, s.level, s.level)) },
+                        onCast = { applyIntent(CastSpell(s.index, s.name, s.level, s.level, requiresConcentration = s.concentration, applyToSelf = true)) },
                         onRemove = {
                             if (prepared) {
                                 applyIntent(UnprepareSpell(s.index, s.name, primaryClass))

@@ -36,6 +36,9 @@ import au.com.evonet.nat20.dnd5e.equippedWeapons
 import au.com.evonet.nat20.dnd5e.initiativeBonus
 import au.com.evonet.nat20.dnd5e.core.DeathSaveOutcome
 import au.com.evonet.nat20.dnd5e.DnD5ePayload
+import au.com.evonet.nat20.dnd5e.effectiveAbilityScores
+import au.com.evonet.nat20.dnd5e.temporarySaveBonus
+import au.com.evonet.nat20.dnd5e.temporarySkillBonus
 import au.com.evonet.nat20.dnd5e.core.Ability
 import au.com.evonet.nat20.dnd5e.core.AbilityScores
 import au.com.evonet.nat20.dnd5e.core.DnD5eClasses
@@ -55,14 +58,15 @@ internal fun StatsPage(payload: DnD5ePayload, onLevelUp: () -> Unit) {
     val proficientSaves = payload.primaryClass()?.savingThrowAbilities()?.toSet().orEmpty()
     val perceptionProficient = "perception" in payload.selectedSkills
     var check by remember { mutableStateOf<CheckRoll?>(null) }
+    val effectiveScores = payload.effectiveAbilityScores
     CodexPage {
         SectionCard("Abilities") {
             Ability.entries.chunked(3).forEach { row ->
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     row.forEach { ability ->
-                        val mod = payload.abilityScores.modifier(ability)
+                        val mod = effectiveScores.modifier(ability)
                         AbilityMedallion(
-                            ability, payload.abilityScores,
+                            ability, effectiveScores,
                             Modifier
                                 .weight(1f)
                                 .clickable { check = CheckRoll("${ability.abbreviation} check", listOf(RollBonus(ability.abbreviation, mod))) },
@@ -79,11 +83,16 @@ internal fun StatsPage(payload: DnD5ePayload, onLevelUp: () -> Unit) {
         SectionCard("Saving Throws") {
             Ability.entries.forEach { ability ->
                 val proficient = ability in proficientSaves
-                val abilityMod = payload.abilityScores.modifier(ability)
-                val mod = abilityMod + if (proficient) prof else 0
+                val abilityMod = effectiveScores.modifier(ability)
+                val effectBonus = payload.temporarySaveBonus(ability)
+                val mod = abilityMod + (if (proficient) prof else 0) + effectBonus
                 ProficiencyLine(
                     ability.abbreviation, mod.signed(), proficient,
-                    onClick = { check = CheckRoll("${ability.abbreviation} save", checkBonuses(ability.abbreviation, abilityMod, proficient, prof)) },
+                    onClick = {
+                        val bonuses = checkBonuses(ability.abbreviation, abilityMod, proficient, prof) +
+                            (if (effectBonus != 0) listOf(RollBonus("Effects", effectBonus)) else emptyList())
+                        check = CheckRoll("${ability.abbreviation} save", bonuses)
+                    },
                 )
             }
         }
@@ -98,17 +107,24 @@ internal fun StatsPage(payload: DnD5ePayload, onLevelUp: () -> Unit) {
 internal fun SkillsPage(payload: DnD5ePayload) {
     val prof = Proficiency.bonus(payload.level)
     var check by remember { mutableStateOf<CheckRoll?>(null) }
+    val effectiveScores = payload.effectiveAbilityScores
+    val anySkillBonus = payload.temporarySkillBonus("__any__")
     CodexPage {
         SectionCard("Skills") {
             DnD5eCatalog.skills.forEachIndexed { index, skill ->
                 if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
                 val proficient = skill.id in payload.selectedSkills
-                val abilityMod = payload.abilityScores.modifier(skill.ability)
-                val mod = abilityMod + if (proficient) prof else 0
+                val abilityMod = effectiveScores.modifier(skill.ability)
+                val effectBonus = payload.temporarySkillBonus(skill.id) + anySkillBonus
+                val mod = abilityMod + (if (proficient) prof else 0) + effectBonus
                 Row(
                     Modifier
                         .fillMaxWidth()
-                        .clickable { check = CheckRoll("${skill.name} check", checkBonuses(skill.ability.abbreviation, abilityMod, proficient, prof)) }
+                        .clickable {
+                            val bonuses = checkBonuses(skill.ability.abbreviation, abilityMod, proficient, prof) +
+                                (if (effectBonus != 0) listOf(RollBonus("Effects", effectBonus)) else emptyList())
+                            check = CheckRoll("${skill.name} check", bonuses)
+                        }
                         .padding(vertical = 2.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -226,6 +242,7 @@ internal fun CombatPage(character: Character, payload: DnD5ePayload, onApplyInte
                 }
             }
         }
+        EffectsSection(payload, onApplyIntent)
         ConditionsSection(payload, onApplyIntent)
         ClassResourcesSection(payload, onApplyIntent)
         RestSection(onApplyIntent)

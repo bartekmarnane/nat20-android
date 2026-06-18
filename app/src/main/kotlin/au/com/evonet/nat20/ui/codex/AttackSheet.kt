@@ -101,7 +101,7 @@ internal fun AttackSheet(payload: DnD5ePayload, onApplyIntent: (CharacterIntent)
                         val spec = if (outcome == AttackOutcome.CRITICAL) attack.damageSpec.critDoubled() else attack.damageSpec
                         RollResultView(
                             baseSpec = spec,
-                            bonuses = attack.damageBonus?.let { listOf(it) } ?: emptyList(),
+                            bonuses = attack.damageBonuses,
                             allowAdvantageToggle = false,
                             onSettled = { result: RollResult -> damage = maxOf(0, result.total) },
                         )

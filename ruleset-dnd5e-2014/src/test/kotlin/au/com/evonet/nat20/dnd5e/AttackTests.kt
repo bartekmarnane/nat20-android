@@ -52,7 +52,7 @@ class AttackMathTests {
         assertEquals("STR", attack.abilityLabel)
         assertEquals(listOf(3, 3), attack.attackBonuses.map { it.value })
         assertEquals(RollSpec.d(1, 8), attack.damageSpec)
-        assertEquals(3, attack.damageBonus?.value)
+        assertEquals(3, attack.damageBonuses.single().value)
         assertEquals("slashing", attack.damageType)
     }
 

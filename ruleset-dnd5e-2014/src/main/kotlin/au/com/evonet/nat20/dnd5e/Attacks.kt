@@ -19,7 +19,7 @@ object AttackMath {
         val abilityLabel: String,
         val attackBonuses: List<RollBonus>,
         val damageSpec: RollSpec,
-        val damageBonus: RollBonus?,
+        val damageBonuses: List<RollBonus>,
         val damageType: String,
     )
 
@@ -35,12 +35,24 @@ object AttackMath {
             else -> "STR" to str
         }
         val prof = Proficiency.bonus(payload.level)
+        // Active-effect riders (Bless +2 attack, Rage/Hex/Hunter's Mark +N damage) fold in as chips.
+        val effectAttack = payload.effectAttackBonus
+        val effectDamage = payload.effectDamageBonus
+        val attackBonuses = buildList {
+            add(RollBonus(label, mod))
+            add(RollBonus("Proficiency", prof))
+            if (effectAttack != 0) add(RollBonus("Effects", effectAttack))
+        }
+        val damageBonuses = buildList {
+            if (mod != 0) add(RollBonus(label, mod))
+            if (effectDamage != 0) add(RollBonus("Effects", effectDamage))
+        }
         return WeaponAttack(
             name = item.name,
             abilityLabel = label,
-            attackBonuses = listOf(RollBonus(label, mod), RollBonus("Proficiency", prof)),
+            attackBonuses = attackBonuses,
             damageSpec = RollSpec.parse(weapon.damageDice) ?: RollSpec.d(1, 4),
-            damageBonus = if (mod != 0) RollBonus(label, mod) else null,
+            damageBonuses = damageBonuses,
             damageType = weapon.damageType,
         )
     }
