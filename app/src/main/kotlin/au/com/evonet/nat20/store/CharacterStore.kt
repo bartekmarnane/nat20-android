@@ -5,49 +5,106 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import au.com.evonet.nat20.data.CampaignRepository
 import au.com.evonet.nat20.data.CharacterRepository
+import au.com.evonet.nat20.domain.Campaign
 import au.com.evonet.nat20.domain.Character
+import au.com.evonet.nat20.domain.CharacterIntent
+import au.com.evonet.nat20.domain.CharacterPhase
+import au.com.evonet.nat20.domain.RulesetRegistry
+import au.com.evonet.nat20.domain.apply
+import au.com.evonet.nat20.domain.end
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.time.Instant
 import java.util.UUID
 
 /**
- * The roster's single source of truth for the UI. Port of the iOS
- * `CharacterStore` (`@Observable @MainActor`); a `ViewModel` projecting the
- * repository's `Flow` into a `StateFlow` the composables collect.
+ * The roster's single source of truth for the UI, and the orchestrator for
+ * campaign lifecycle. Port of the iOS `CharacterStore` (`@Observable
+ * @MainActor`). Reads project the repository Flows into Compose-collectable
+ * state; writes delegate to the repositories.
  *
- * As of A5 it's Room-backed through [CharacterRepository] — the UI is unchanged
- * from A4 because it always talked to this store, not the data layer. Create /
- * edit / delete (A6) add write methods here that delegate to the repository.
+ * Campaign ops (A7a) coordinate *both* stores: starting/ending flips the
+ * character's phase and persists the campaign; applying an intent mutates the
+ * character and appends to the campaign log atomically from the UI's view.
  */
-class CharacterStore(private val repository: CharacterRepository) : ViewModel() {
-    val characters: StateFlow<List<Character>> = repository.characters
+class CharacterStore(
+    private val characters: CharacterRepository,
+    private val campaigns: CampaignRepository,
+    private val registry: RulesetRegistry,
+) : ViewModel() {
+
+    val roster: StateFlow<List<Character>> = characters.characters
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     /** Look a character up by id (the sheet/journal routes carry the id). */
-    fun character(id: UUID): Character? = characters.value.firstOrNull { it.id == id }
+    fun character(id: UUID): Character? = roster.value.firstOrNull { it.id == id }
 
-    /**
-     * Persist a created or edited character (A6). The editor builds the whole
-     * [Character] (it owns the ruleset-specific payload), so the store just
-     * hands it to the repository. The roster/sheet update via the Flow.
-     */
+    /** Live stream of a character's campaigns (active + past), newest first. */
+    fun campaignsForCharacter(characterId: UUID): Flow<List<Campaign>> =
+        campaigns.campaignsForCharacter(characterId)
+
+    /** Persist a created or edited character (A6). */
     fun save(character: Character) {
-        viewModelScope.launch { repository.upsert(character) }
+        viewModelScope.launch { characters.upsert(character) }
     }
 
     /** Delete a character by id (swipe-to-delete on the roster). */
     fun delete(id: UUID) {
-        viewModelScope.launch { repository.delete(id) }
+        viewModelScope.launch { characters.delete(id) }
+    }
+
+    /**
+     * Begin a campaign: snapshot the character, commit it to the new campaign's
+     * phase, and persist both. The character can no longer be freely edited —
+     * mutations now flow through [applyIntent] and are logged.
+     */
+    fun startCampaign(character: Character, name: String) {
+        viewModelScope.launch {
+            val now = Instant.now()
+            val campaign = Campaign.start(character, name = name, startedAt = now)
+            campaigns.upsert(campaign)
+            characters.upsert(
+                character.copy(phase = CharacterPhase.InCampaign(campaign.id), updatedAt = now),
+            )
+        }
+    }
+
+    /** End a campaign: capture the final snapshot and return the character to building. */
+    fun endCampaign(character: Character, campaign: Campaign) {
+        viewModelScope.launch {
+            val now = Instant.now()
+            campaigns.upsert(campaign.end(now, finalSnapshot = character))
+            characters.upsert(character.copy(phase = CharacterPhase.Building, updatedAt = now))
+        }
+    }
+
+    /**
+     * Apply [intent] to [character] within [campaign]: mutates the character and
+     * appends the journal entry, persisting both. Silently no-ops if the
+     * ruleset can't be resolved (shouldn't happen for a live character).
+     */
+    fun applyIntent(intent: CharacterIntent, character: Character, campaign: Campaign) {
+        val ruleset = registry.ruleset(character.rulesetId) ?: return
+        viewModelScope.launch {
+            val result = campaign.apply(intent, character, ruleset, Instant.now())
+            campaigns.upsert(result.campaign)
+            characters.upsert(result.character)
+        }
     }
 
     companion object {
-        /** Factory that injects the repository from the app's container. */
-        fun factory(repository: CharacterRepository): ViewModelProvider.Factory =
-            viewModelFactory {
-                initializer { CharacterStore(repository) }
-            }
+        /** Factory that injects the repositories + registry from the app's container. */
+        fun factory(
+            characters: CharacterRepository,
+            campaigns: CampaignRepository,
+            registry: RulesetRegistry,
+        ): ViewModelProvider.Factory = viewModelFactory {
+            initializer { CharacterStore(characters, campaigns, registry) }
+        }
     }
 }

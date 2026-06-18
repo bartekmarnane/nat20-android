@@ -40,9 +40,15 @@ private object Routes {
 @Composable
 fun NatApp() {
     val container = (LocalContext.current.applicationContext as Nat20Application).container
-    val store: CharacterStore = viewModel(factory = CharacterStore.factory(container.characterRepository))
+    val store: CharacterStore = viewModel(
+        factory = CharacterStore.factory(
+            container.characterRepository,
+            container.campaignRepository,
+            container.rulesetRegistry,
+        ),
+    )
     val nav = rememberNavController()
-    val characters by store.characters.collectAsState()
+    val characters by store.roster.collectAsState()
 
     fun find(id: UUID?): Character? = id?.let { wanted -> characters.firstOrNull { it.id == wanted } }
 
