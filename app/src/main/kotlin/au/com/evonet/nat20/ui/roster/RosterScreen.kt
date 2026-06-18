@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import au.com.evonet.nat20.dnd5e.DnD5ePayload
+import au.com.evonet.nat20.dnd5e2024.DnD5e2024Payload
 import au.com.evonet.nat20.domain.Character
 import au.com.evonet.nat20.ui.slugToTitle
 
@@ -147,6 +148,11 @@ private fun DeleteSwipeBackground() {
 
 /** "Mountain Dwarf · Fighter 3" — a quick identity line for the roster row. */
 private fun Character.subtitle(): String {
+    (payload as? DnD5e2024Payload)?.let { p ->
+        val species = p.species.takeIf { it.isNotEmpty() }?.slugToTitle()
+        val cls = p.characterClass.takeIf { it.isNotEmpty() }?.slugToTitle()?.let { "$it ${p.level}" }
+        return listOfNotNull(species, cls).joinToString(" · ").ifEmpty { "Level ${p.level}" } + " · 2024"
+    }
     val payload = payload as? DnD5ePayload ?: return rulesetId
     val race = payload.race.takeIf { it.isNotEmpty() }?.slugToTitle()
     val cls = payload.characterClass.takeIf { it.isNotEmpty() }?.slugToTitle()

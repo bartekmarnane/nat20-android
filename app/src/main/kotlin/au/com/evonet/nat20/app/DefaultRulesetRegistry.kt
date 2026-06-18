@@ -1,6 +1,7 @@
 package au.com.evonet.nat20.app
 
 import au.com.evonet.nat20.dnd5e.DnD5eRuleset
+import au.com.evonet.nat20.dnd5e2024.DnD5e2024Ruleset
 import au.com.evonet.nat20.domain.Ruleset
 import au.com.evonet.nat20.domain.RulesetId
 import au.com.evonet.nat20.domain.RulesetRegistry
@@ -14,6 +15,7 @@ import au.com.evonet.nat20.domain.RulesetRegistry
 class DefaultRulesetRegistry : RulesetRegistry {
     private val byId: Map<RulesetId, Ruleset> = listOf(
         DnD5eRuleset(),
+        DnD5e2024Ruleset(),
     ).associateBy { it.id }
 
     override fun ruleset(id: RulesetId): Ruleset? = byId[id]

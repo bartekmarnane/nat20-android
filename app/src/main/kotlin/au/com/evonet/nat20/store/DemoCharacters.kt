@@ -5,9 +5,13 @@ import au.com.evonet.nat20.dnd5e.DnD5ePayload
 import au.com.evonet.nat20.dnd5e.DnD5eRuleset
 import au.com.evonet.nat20.dnd5e.InventoryItem
 import au.com.evonet.nat20.dnd5e.withFullSpellSlots
+import au.com.evonet.nat20.dnd5e.core.Ability
 import au.com.evonet.nat20.dnd5e.core.AbilityScores
 import au.com.evonet.nat20.dnd5e.core.Coin
 import au.com.evonet.nat20.dnd5e.ClassEntry
+import au.com.evonet.nat20.dnd5e2024.ClassEntry2024
+import au.com.evonet.nat20.dnd5e2024.DnD5e2024Payload
+import au.com.evonet.nat20.dnd5e2024.DnD5e2024Ruleset
 import au.com.evonet.nat20.domain.Character
 import java.time.Instant
 
@@ -21,12 +25,35 @@ import java.time.Instant
  */
 object DemoCharacters {
     private val ruleset = DnD5eRuleset()
+    private val ruleset2024 = DnD5e2024Ruleset()
     private val seededAt: Instant = Instant.parse("2026-06-18T00:00:00Z")
 
-    fun seed(): List<Character> = listOf(thorgar(), lyra(), kael())
+    fun seed(): List<Character> = listOf(thorgar(), lyra(), kael(), nyx())
 
     private fun character(name: String, payload: DnD5ePayload): Character =
         Character.new(name = name, ruleset = ruleset, payload = payload, timestamp = seededAt)
+
+    /** A D&D 5e (2024) character — proves the second ruleset renders alongside 2014 (A18). */
+    private fun nyx(): Character = Character.new(
+        name = "Nyx Veil",
+        ruleset = ruleset2024,
+        payload = DnD5e2024Payload(
+            species = "elf",
+            classes = listOf(ClassEntry2024("rogue", 4, subclass = "thief")),
+            background = "criminal",
+            abilityScores = AbilityScores(
+                strength = 10, dexterity = 17, constitution = 13,
+                intelligence = 14, wisdom = 12, charisma = 10,
+            ),
+            backgroundASI = mapOf(Ability.DEXTERITY to 2, Ability.INTELLIGENCE to 1),
+            maxHp = 27,
+            currentHp = 27,
+            skillProficiencies = listOf("stealth", "sleightOfHand", "perception", "investigation"),
+            originFeat = "alert",
+            weaponMasteries = listOf("vex", "nick"),
+        ),
+        timestamp = seededAt,
+    )
 
     // Catalogue helpers so the demo seed carries real equipment (drives AC + the Items tab).
     private fun weapon(id: String, equipped: Boolean = false): InventoryItem =
