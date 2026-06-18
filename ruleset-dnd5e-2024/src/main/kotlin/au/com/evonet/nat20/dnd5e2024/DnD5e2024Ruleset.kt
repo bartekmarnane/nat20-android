@@ -38,6 +38,13 @@ class DnD5e2024Ruleset : Ruleset {
         is InspirationChanged2024Event -> "dnd5e2024.inspiration"
         is ConditionChanged2024Event -> "dnd5e2024.condition"
         is LeveledUp2024Event -> "dnd5e2024.level"
+        is LongRested2024Event -> "dnd5e2024.longRest"
+        is HitDieSpent2024Event -> "dnd5e2024.hitDie"
+        is CastSpell2024Event -> "dnd5e2024.castSpell"
+        is SlotExpended2024Event -> "dnd5e2024.expendSlot"
+        is SpellPrep2024Event -> "dnd5e2024.prepare"
+        is DeathSaveRolled2024Event -> "dnd5e2024.deathSaveRoll"
+        is Initiative2024Event -> "dnd5e2024.initiative"
         else -> "dnd5e2024.unknown"
     }
 
@@ -50,6 +57,13 @@ class DnD5e2024Ruleset : Ruleset {
         is InspirationChanged2024Event -> json.encodeToString(InspirationChanged2024Event.serializer(), event)
         is ConditionChanged2024Event -> json.encodeToString(ConditionChanged2024Event.serializer(), event)
         is LeveledUp2024Event -> json.encodeToString(LeveledUp2024Event.serializer(), event)
+        is LongRested2024Event -> json.encodeToString(LongRested2024Event.serializer(), event)
+        is HitDieSpent2024Event -> json.encodeToString(HitDieSpent2024Event.serializer(), event)
+        is CastSpell2024Event -> json.encodeToString(CastSpell2024Event.serializer(), event)
+        is SlotExpended2024Event -> json.encodeToString(SlotExpended2024Event.serializer(), event)
+        is SpellPrep2024Event -> json.encodeToString(SpellPrep2024Event.serializer(), event)
+        is DeathSaveRolled2024Event -> json.encodeToString(DeathSaveRolled2024Event.serializer(), event)
+        is Initiative2024Event -> json.encodeToString(Initiative2024Event.serializer(), event)
         else -> throw CharacterCodecError.UnknownEventType(event::class.simpleName ?: "unknown")
     }
 
@@ -62,6 +76,13 @@ class DnD5e2024Ruleset : Ruleset {
         "dnd5e2024.inspiration" -> this.json.decodeFromString(InspirationChanged2024Event.serializer(), json)
         "dnd5e2024.condition" -> this.json.decodeFromString(ConditionChanged2024Event.serializer(), json)
         "dnd5e2024.level" -> this.json.decodeFromString(LeveledUp2024Event.serializer(), json)
+        "dnd5e2024.longRest" -> this.json.decodeFromString(LongRested2024Event.serializer(), json)
+        "dnd5e2024.hitDie" -> this.json.decodeFromString(HitDieSpent2024Event.serializer(), json)
+        "dnd5e2024.castSpell" -> this.json.decodeFromString(CastSpell2024Event.serializer(), json)
+        "dnd5e2024.expendSlot" -> this.json.decodeFromString(SlotExpended2024Event.serializer(), json)
+        "dnd5e2024.prepare" -> this.json.decodeFromString(SpellPrep2024Event.serializer(), json)
+        "dnd5e2024.deathSaveRoll" -> this.json.decodeFromString(DeathSaveRolled2024Event.serializer(), json)
+        "dnd5e2024.initiative" -> this.json.decodeFromString(Initiative2024Event.serializer(), json)
         else -> throw CharacterCodecError.UnknownEventType(typeId)
     }
 

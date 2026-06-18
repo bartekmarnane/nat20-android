@@ -102,6 +102,51 @@ class Intents2024Tests {
     }
 }
 
+class Catalog2024Tests {
+    @Test
+    fun `the SRD 5_2 spell library loads, sorted by level then name`() {
+        val spells = DnD5e2024Catalog.spellLibrary
+        assertEquals(339, spells.size)
+        assertEquals(0, spells.first().level) // cantrips first
+        val fireball = DnD5e2024Catalog.spell("fireball")!!
+        assertEquals(3, fireball.level)
+        assertEquals("Evocation", fireball.school)
+        assertTrue(fireball.description.isNotEmpty())
+    }
+}
+
+class SpellIntents2024Tests {
+    private fun wizard() = character(DnD5e2024Payload(classes = listOf(ClassEntry2024("wizard", 3))).withFullSpellSlots())
+
+    @Test
+    fun `casting consumes the matching slot`() {
+        val result = CastSpell2024("magic-missile", "Magic Missile", 1, 1).applyTo(wizard(), ruleset)
+        assertEquals(3, result.character.p().currentSpellSlots[1]) // wizard L3 has 4 at level 1
+        assertEquals("Cast Magic Missile", result.event.summary)
+    }
+
+    @Test
+    fun `upcasting drains the higher slot`() {
+        val result = CastSpell2024("magic-missile", "Magic Missile", 1, 2).applyTo(wizard(), ruleset)
+        assertEquals(1, result.character.p().currentSpellSlots[2]) // L3 wizard has 2 at level 2 → 1
+        assertEquals("Cast Magic Missile at 2nd level", result.event.summary)
+    }
+
+    @Test
+    fun `long rest refills slots and HP`() {
+        val spent = character(DnD5e2024Payload(classes = listOf(ClassEntry2024("wizard", 3)), maxHp = 17, currentHp = 6, currentSpellSlots = mapOf(1 to 1)))
+        val p = LongRest2024().applyTo(spent, ruleset).character.p()
+        assertEquals(17, p.currentHp)
+        assertEquals(p.maxSpellSlots, p.currentSpellSlots)
+    }
+
+    @Test
+    fun `full-slot seeding matches the derived max`() {
+        val p = DnD5e2024Payload(classes = listOf(ClassEntry2024("wizard", 3))).withFullSpellSlots()
+        assertEquals(p.maxSpellSlots, p.currentSpellSlots)
+    }
+}
+
 class Codec2024Tests {
     @Test
     fun `a full 2024 payload round-trips, including core sealed effects`() {

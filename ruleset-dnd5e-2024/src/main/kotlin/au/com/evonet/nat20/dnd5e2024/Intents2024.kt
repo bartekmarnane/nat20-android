@@ -95,6 +95,120 @@ data class ClearCondition2024(val name: String) : CharacterIntent {
     }
 }
 
+/** A long rest: full HP, temp cleared, all spell slots back, death saves cleared, one level of exhaustion shed, half hit dice back. */
+class LongRest2024 : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        val p = character.payload2024()
+        val maxSlots = p.maxSpellSlots
+        val slotsRestored = maxSlots.values.sum() - p.currentSpellSlots.values.sum()
+        val exhaustionAfter = Exhaustion2024.clamp(p.exhaustionLevel - 1)
+        val hitDiceRegained = if (p.hitDiceSpent == 0) 0 else maxOf(1, p.hitDiceSpent / 2)
+        val updated = p.copy(
+            currentHp = p.maxHp, temporaryHp = 0,
+            currentSpellSlots = maxSlots,
+            deathSaves = au.com.evonet.nat20.dnd5e.core.DeathSaves.cleared,
+            exhaustionLevel = exhaustionAfter,
+            hitDiceSpent = maxOf(0, p.hitDiceSpent - hitDiceRegained),
+        )
+        return IntentResult(
+            character.copy(payload = updated),
+            LongRested2024Event(maxOf(0, p.maxHp - p.currentHp), maxOf(0, slotsRestored), exhaustionAfter < p.exhaustionLevel),
+        )
+    }
+    override fun equals(other: Any?): Boolean = other is LongRest2024
+    override fun hashCode(): Int = javaClass.hashCode()
+}
+
+/** Spends one hit die to heal (rolled amount passed in, clamped to max). */
+data class SpendHitDie2024(val healingRolled: Int) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        if (healingRolled < 0) throw CharacterIntentError.Invalid("Healing cannot be negative")
+        val p = character.payload2024()
+        if (p.currentHitDice <= 0) throw CharacterIntentError.Invalid("No hit dice remaining")
+        val newHp = minOf(p.maxHp, p.currentHp + healingRolled)
+        val updated = p.copy(hitDiceSpent = p.hitDiceSpent + 1, currentHp = newHp)
+        return IntentResult(character.copy(payload = updated), HitDieSpent2024Event(healingRolled, p.currentHp, newHp, updated.currentHitDice))
+    }
+}
+
+/** Casts a spell at [slotLevel] (0 = cantrip), consuming a slot unless it's a cantrip. */
+data class CastSpell2024(val spellID: String, val spellName: String, val spellLevel: Int, val slotLevel: Int, val target: String? = null) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        if (slotLevel < spellLevel) throw CharacterIntentError.Invalid("Slot level cannot be lower than the spell level")
+        val p = character.payload2024()
+        var updated = p
+        if (slotLevel > 0) {
+            val remaining = p.currentSpellSlots[slotLevel] ?: 0
+            if (remaining <= 0) throw CharacterIntentError.Invalid("No level $slotLevel spell slots remaining")
+            updated = p.copy(currentSpellSlots = p.currentSpellSlots.withSlot(slotLevel, remaining - 1))
+        }
+        val event = CastSpell2024Event(spellID, spellName, slotLevel, slotLevel > spellLevel && spellLevel > 0, target?.trim()?.takeIf { it.isNotEmpty() })
+        return IntentResult(character.copy(payload = updated), event)
+    }
+}
+
+/** Spends a spell slot without casting a catalogued spell. */
+data class ExpendSpellSlot2024(val slotLevel: Int, val source: String? = null) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        if (slotLevel !in 1..9) throw CharacterIntentError.Invalid("Spell slot level must be 1–9")
+        val p = character.payload2024()
+        val remaining = p.currentSpellSlots[slotLevel] ?: 0
+        if (remaining <= 0) throw CharacterIntentError.Invalid("No level $slotLevel spell slots remaining")
+        val updated = p.copy(currentSpellSlots = p.currentSpellSlots.withSlot(slotLevel, remaining - 1))
+        return IntentResult(character.copy(payload = updated), SlotExpended2024Event(slotLevel, remaining - 1, source?.trim()?.takeIf { it.isNotEmpty() }))
+    }
+}
+
+data class PrepareSpell2024(val spellID: String, val spellName: String, val classID: String) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        val p = character.payload2024()
+        val bucket = p.preparedSpells[classID].orEmpty()
+        val updated = if (spellID in bucket) p else p.copy(preparedSpells = p.preparedSpells + (classID to (bucket + spellID)))
+        return IntentResult(character.copy(payload = updated), SpellPrep2024Event(spellName, prepared = true))
+    }
+}
+
+data class UnprepareSpell2024(val spellID: String, val spellName: String, val classID: String) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        val p = character.payload2024()
+        val bucket = p.preparedSpells[classID].orEmpty().filterNot { it == spellID }
+        val newMap = if (bucket.isEmpty()) p.preparedSpells - classID else p.preparedSpells + (classID to bucket)
+        return IntentResult(character.copy(payload = p.copy(preparedSpells = newMap)), SpellPrep2024Event(spellName, prepared = false))
+    }
+}
+
+/** Resolves a death save from a rolled d20 atomically (nat-20 revive, nat-1 two failures, 10+ success). */
+data class RollDeathSave2024(val d20: Int) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        if (d20 !in 1..20) throw CharacterIntentError.Invalid("A d20 roll is 1–20")
+        val p = character.payload2024()
+        val prev = p.deathSaves
+        var revivedHp: Int? = null
+        val next = when {
+            d20 == 20 -> { revivedHp = if (p.currentHp == 0) 1 else p.currentHp; au.com.evonet.nat20.dnd5e.core.DeathSaves.cleared }
+            d20 == 1 -> au.com.evonet.nat20.dnd5e.core.DeathSaves.clamped(prev.successes, prev.failures + 2)
+            d20 >= 10 -> prev.copy(successes = minOf(3, prev.successes + 1))
+            else -> prev.copy(failures = minOf(3, prev.failures + 1))
+        }
+        val updated = p.copy(deathSaves = next, currentHp = revivedHp ?: p.currentHp)
+        return IntentResult(character.copy(payload = updated), DeathSaveRolled2024Event(d20, prev, next, revivedHp))
+    }
+}
+
+data class SetInitiative2024(val value: Int?) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        val p = character.payload2024()
+        return IntentResult(character.copy(payload = p.copy(initiative = value)), Initiative2024Event(value))
+    }
+}
+
+/** Sets a level's remaining slot count, dropping the key at zero. */
+private fun Map<Int, Int>.withSlot(level: Int, remaining: Int): Map<Int, Int> =
+    if (remaining <= 0) this - level else this + (level to remaining)
+
+/** A copy with all spell slots reset to full — used at creation and on a long rest. */
+fun DnD5e2024Payload.withFullSpellSlots(): DnD5e2024Payload = copy(currentSpellSlots = maxSpellSlots)
+
 data class LevelUp2024(
     val classId: String,
     val isNewClass: Boolean = false,

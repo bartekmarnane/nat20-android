@@ -12,6 +12,7 @@ import au.com.evonet.nat20.dnd5e.ClassEntry
 import au.com.evonet.nat20.dnd5e2024.ClassEntry2024
 import au.com.evonet.nat20.dnd5e2024.DnD5e2024Payload
 import au.com.evonet.nat20.dnd5e2024.DnD5e2024Ruleset
+import au.com.evonet.nat20.dnd5e2024.withFullSpellSlots
 import au.com.evonet.nat20.domain.Character
 import java.time.Instant
 
@@ -28,7 +29,7 @@ object DemoCharacters {
     private val ruleset2024 = DnD5e2024Ruleset()
     private val seededAt: Instant = Instant.parse("2026-06-18T00:00:00Z")
 
-    fun seed(): List<Character> = listOf(thorgar(), lyra(), kael(), nyx())
+    fun seed(): List<Character> = listOf(thorgar(), lyra(), kael(), nyx(), wisp())
 
     private fun character(name: String, payload: DnD5ePayload): Character =
         Character.new(name = name, ruleset = ruleset, payload = payload, timestamp = seededAt)
@@ -52,6 +53,29 @@ object DemoCharacters {
             originFeat = "alert",
             weaponMasteries = listOf("vex", "nick"),
         ),
+        timestamp = seededAt,
+    )
+
+    /** A D&D 5e (2024) caster — exercises the 2024 Spells tab (slots + prepared + SRD 5.2 library). */
+    private fun wisp(): Character = Character.new(
+        name = "Wisp Emberkin",
+        ruleset = ruleset2024,
+        payload = DnD5e2024Payload(
+            species = "gnome",
+            classes = listOf(ClassEntry2024("wizard", 3)),
+            background = "sage",
+            abilityScores = AbilityScores(
+                strength = 8, dexterity = 14, constitution = 13,
+                intelligence = 17, wisdom = 12, charisma = 10,
+            ),
+            backgroundASI = mapOf(Ability.INTELLIGENCE to 2, Ability.CONSTITUTION to 1),
+            maxHp = 17,
+            currentHp = 17,
+            skillProficiencies = listOf("arcana", "history", "investigation", "insight"),
+            cantripsKnown = listOf("fire-bolt", "mage-hand", "light"),
+            preparedSpells = mapOf("wizard" to listOf("magic-missile", "shield", "detect-magic", "sleep")),
+            originFeat = "magic-initiate",
+        ).withFullSpellSlots(),
         timestamp = seededAt,
     )
 
