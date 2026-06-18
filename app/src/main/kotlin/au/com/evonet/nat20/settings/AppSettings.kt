@@ -20,9 +20,18 @@ class AppSettings(context: Context) {
     private val _appearance = MutableStateFlow(readAppearance())
     val appearance: StateFlow<AppearanceMode> = _appearance.asStateFlow()
 
+    /** Whether the first-run onboarding flow has been completed (A12). */
+    private val _onboardingComplete = MutableStateFlow(prefs.getBoolean(KEY_ONBOARDING_COMPLETE, false))
+    val onboardingComplete: StateFlow<Boolean> = _onboardingComplete.asStateFlow()
+
     fun setAppearance(mode: AppearanceMode) {
         prefs.edit().putString(KEY_APPEARANCE, mode.name).apply()
         _appearance.value = mode
+    }
+
+    fun setOnboardingComplete(value: Boolean) {
+        prefs.edit().putBoolean(KEY_ONBOARDING_COMPLETE, value).apply()
+        _onboardingComplete.value = value
     }
 
     private fun readAppearance(): AppearanceMode =
@@ -32,5 +41,6 @@ class AppSettings(context: Context) {
 
     private companion object {
         const val KEY_APPEARANCE = "appearance"
+        const val KEY_ONBOARDING_COMPLETE = "onboarding.completed"
     }
 }

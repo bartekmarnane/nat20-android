@@ -52,7 +52,7 @@ PF2e modules are scaffolded when their steps land, not as empty modules ahead of
   TBD / API 33+" line to 26 — the scaffold already pins 26.)*
 - **On-device AI:** Gemini Nano (AICore / ML Kit GenAI), availability-gated. **Off by default**
   on unsupported devices — the affordance simply doesn't appear (one flag, reused everywhere).
-- **Billing:** Google Play Billing (one free character + one-time IAP unlock). Step A13.
+- **Billing:** Google Play Billing (one free character + one-time IAP unlock). Step A14.
 
 ## iOS → Android translation map
 
@@ -64,7 +64,7 @@ PF2e modules are scaffolded when their steps land, not as empty modules ahead of
 | Intent structs (33 of them) | sealed-class hierarchy of intents | pure logic, voluminous, correctness-critical |
 | `NavigationStack` + closure routing | Navigation Compose | sheet/picker enums → routes or bottom-sheet state |
 | 6-tab paged `TabView` (CodexShell) | `HorizontalPager` + tab row | |
-| StoreKit 2 (`PatronStore`) | Play Billing | A13 |
+| StoreKit 2 (`PatronStore`) | Play Billing | A14 |
 | Apple FoundationModels (`@Generable`) | Gemini Nano + JSON-schema prompting | gated; degrade gracefully |
 | `ImageRenderer`→PDF export | `PdfDocument`/Canvas hand-built layout | no Compose equivalent to SwiftUI-view PDF |
 | 15 JSON catalogues + 8 TTF fonts | copied verbatim (see below) | zero rework |
@@ -135,5 +135,7 @@ Each web session clones only this repo, so:
 - **CloudKit-style sync** — Android is local-only; the `CharacterRepository` seam is where a
   backend slots in later (Open decisions in README).
 - **KMP shared domain** — deferred; revisit only if logic drift gets painful.
+- **Tablet / large-screen layouts (A13)** — descoped 2026-06-18. Phone-only; no width-aware
+  multi-pane layouts planned. Step number retained as a tombstone so A14+ stay aligned with iOS.
 - Anything under the iOS README's "open follow-ups" that's unstarted there (e.g. party-merged
   chronicles, step 16) — do not get ahead of the reference app.

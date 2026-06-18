@@ -77,6 +77,11 @@ fun SettingsScreen(
                 ) {
                     Text("Credits & Licenses", style = MaterialTheme.typography.bodyLarge)
                 }
+                Row(
+                    Modifier.fillMaxWidth().clickable { appSettings.setOnboardingComplete(false); onBack() }.padding(vertical = 8.dp),
+                ) {
+                    Text("Replay introduction", style = MaterialTheme.typography.bodyLarge)
+                }
             }
         }
     }
