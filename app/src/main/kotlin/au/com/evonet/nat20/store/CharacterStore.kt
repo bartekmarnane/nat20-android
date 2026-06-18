@@ -10,6 +10,7 @@ import au.com.evonet.nat20.domain.Character
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import java.util.UUID
 
 /**
@@ -27,6 +28,20 @@ class CharacterStore(private val repository: CharacterRepository) : ViewModel() 
 
     /** Look a character up by id (the sheet/journal routes carry the id). */
     fun character(id: UUID): Character? = characters.value.firstOrNull { it.id == id }
+
+    /**
+     * Persist a created or edited character (A6). The editor builds the whole
+     * [Character] (it owns the ruleset-specific payload), so the store just
+     * hands it to the repository. The roster/sheet update via the Flow.
+     */
+    fun save(character: Character) {
+        viewModelScope.launch { repository.upsert(character) }
+    }
+
+    /** Delete a character by id (swipe-to-delete on the roster). */
+    fun delete(id: UUID) {
+        viewModelScope.launch { repository.delete(id) }
+    }
 
     companion object {
         /** Factory that injects the repository from the app's container. */

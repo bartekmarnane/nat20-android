@@ -28,6 +28,7 @@ import au.com.evonet.nat20.domain.Character
 fun CharacterSheetScreen(
     character: Character,
     onBack: () -> Unit,
+    onEdit: () -> Unit,
     onOpenJournal: () -> Unit,
 ) {
     Scaffold(
@@ -36,7 +37,10 @@ fun CharacterSheetScreen(
             TopAppBar(
                 title = { Text(character.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 navigationIcon = { TextButton(onClick = onBack) { Text("Back") } },
-                actions = { TextButton(onClick = onOpenJournal) { Text("Journal") } },
+                actions = {
+                    TextButton(onClick = onEdit) { Text("Edit") }
+                    TextButton(onClick = onOpenJournal) { Text("Journal") }
+                },
             )
         },
     ) { inner ->
