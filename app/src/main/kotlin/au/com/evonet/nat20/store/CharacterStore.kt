@@ -10,9 +10,13 @@ import au.com.evonet.nat20.data.CampaignRepository
 import au.com.evonet.nat20.data.CharacterRepository
 import au.com.evonet.nat20.dnd5e.DnD5ePayload
 import au.com.evonet.nat20.domain.Campaign
+import au.com.evonet.nat20.domain.CampaignError
 import au.com.evonet.nat20.domain.Character
 import au.com.evonet.nat20.domain.CharacterIntent
+import au.com.evonet.nat20.domain.CharacterIntentError
 import au.com.evonet.nat20.domain.CharacterPhase
+import au.com.evonet.nat20.domain.JournalProseKind
+import au.com.evonet.nat20.domain.LoggedEvent
 import au.com.evonet.nat20.domain.RulesetRegistry
 import au.com.evonet.nat20.domain.apply
 import au.com.evonet.nat20.domain.end
@@ -80,12 +84,29 @@ class CharacterStore(
     fun startCampaign(character: Character, name: String) {
         viewModelScope.launch {
             val now = Instant.now()
-            val campaign = Campaign.start(character, name = name, startedAt = now)
+            val started = Campaign.start(character, name = name, startedAt = now)
+            // Seed an opening journal line so the journal isn't empty on day one (A7f).
+            val campaign = registry.ruleset(character.rulesetId)?.let { ruleset ->
+                val opening = ruleset.makeProseEvent(openingLine(character, name), JournalProseKind.CAMPAIGN_OPENING)
+                started.copy(log = started.log + LoggedEvent(timestamp = now, event = opening))
+            } ?: started
             campaigns.upsert(campaign)
             characters.upsert(
                 character.copy(phase = CharacterPhase.InCampaign(campaign.id), updatedAt = now),
             )
         }
+    }
+
+    /** A deterministic opening journal sentence (AI-authored openings are a later step). */
+    private fun openingLine(character: Character, campaignName: String): String {
+        val payload = character.payload as? DnD5ePayload
+        val descriptor = payload?.let {
+            val race = it.race.takeIf { r -> r.isNotEmpty() }?.slugToTitle()
+            val cls = it.characterClass.takeIf { c -> c.isNotEmpty() }?.slugToTitle()
+            listOfNotNull(race, cls).joinToString(" ")
+        }.orEmpty()
+        val who = if (descriptor.isNotEmpty()) "${character.name}, the $descriptor," else character.name
+        return "$who sets out on a new adventure: \"$campaignName.\""
     }
 
     /** End a campaign: capture the final snapshot and return the character to building. */
@@ -98,16 +119,30 @@ class CharacterStore(
     }
 
     /**
-     * Apply [intent] to [character] within [campaign]: mutates the character and
-     * appends the journal entry, persisting both. Silently no-ops if the
-     * ruleset can't be resolved (shouldn't happen for a live character).
+     * Apply [intent] to [character], **phase-aware**: inside an active [campaign]
+     * it runs through [Campaign.apply] so the action is journaled (the A7f play
+     * loop); in the building phase ([campaign] null) it's a direct, unlogged edit
+     * that just persists the mutated character. Invalid intents (e.g. casting
+     * with no slots left, overspending a pool) and campaign-gating failures are
+     * swallowed — the UI gates most of these, this is the backstop.
      */
-    fun applyIntent(intent: CharacterIntent, character: Character, campaign: Campaign) {
+    fun applyIntent(intent: CharacterIntent, character: Character, campaign: Campaign?) {
         val ruleset = registry.ruleset(character.rulesetId) ?: return
         viewModelScope.launch {
-            val result = campaign.apply(intent, character, ruleset, Instant.now())
-            campaigns.upsert(result.campaign)
-            characters.upsert(result.character)
+            try {
+                if (campaign != null) {
+                    val result = campaign.apply(intent, character, ruleset, Instant.now())
+                    campaigns.upsert(result.campaign)
+                    characters.upsert(result.character)
+                } else {
+                    val result = intent.applyTo(character, ruleset)
+                    characters.upsert(result.character.copy(updatedAt = Instant.now()))
+                }
+            } catch (_: CharacterIntentError) {
+                // Invalid edit — ignore (buttons are gated, this is a backstop).
+            } catch (_: CampaignError) {
+                // Campaign gating failed (ended / phase mismatch) — ignore.
+            }
         }
     }
 

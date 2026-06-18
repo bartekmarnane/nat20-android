@@ -116,6 +116,17 @@ data class AddNote(
     }
 }
 
+/** Grants or spends Inspiration. No-op (still emits an event) if already in the target state. */
+data class SetInspiration(
+    val has: Boolean,
+) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        val payload = character.dnd5ePayload()
+        val updated = payload.copy(hasInspiration = has)
+        return IntentResult(character.copy(payload = updated), InspirationChangedEvent(has))
+    }
+}
+
 // ── Inventory & coins (A10) ───────────────────────────────────────────────────
 
 /**

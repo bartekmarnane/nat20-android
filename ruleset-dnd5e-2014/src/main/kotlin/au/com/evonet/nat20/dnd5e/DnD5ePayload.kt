@@ -67,6 +67,8 @@ data class DnD5ePayload(
      * remaining + recovery recorded at use time. A missing key means "full".
      */
     val classFeatureUses: Map<String, FeatureUseEntry> = emptyMap(),
+    /** Whether the character currently holds Inspiration (the DM-granted reroll). */
+    val hasInspiration: Boolean = false,
 ) : CharacterPayload {
 
     /** Total character level = sum of all class entry levels, floored at 1. */

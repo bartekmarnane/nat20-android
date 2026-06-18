@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import au.com.evonet.nat20.dnd5e.DnD5ePayload
 import au.com.evonet.nat20.dnd5e.core.Proficiency
 import au.com.evonet.nat20.domain.Character
+import au.com.evonet.nat20.domain.CharacterIntent
 import au.com.evonet.nat20.ui.slugToTitle
 import kotlinx.coroutines.launch
 
@@ -47,6 +48,7 @@ private enum class CodexTab(val title: String) {
 fun CodexShellView(
     character: Character,
     onBrowseSpells: () -> Unit,
+    onApplyIntent: (CharacterIntent) -> Unit,
     onSave: (Character) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -66,9 +68,9 @@ fun CodexShellView(
             when (tabs[page]) {
                 CodexTab.STATS -> StatsPage(payload)
                 CodexTab.SKILLS -> SkillsPage(payload)
-                CodexTab.COMBAT -> CombatPage(character, payload, onSave)
-                CodexTab.SPELLS -> SpellsPage(character, payload, onBrowseSpells, onSave)
-                CodexTab.ITEMS -> ItemsPage(character, payload, onSave)
+                CodexTab.COMBAT -> CombatPage(character, payload, onApplyIntent)
+                CodexTab.SPELLS -> SpellsPage(character, payload, onBrowseSpells, onApplyIntent, onSave)
+                CodexTab.ITEMS -> ItemsPage(character, payload, onApplyIntent, onSave)
                 CodexTab.LORE -> LorePage(character, payload)
             }
         }

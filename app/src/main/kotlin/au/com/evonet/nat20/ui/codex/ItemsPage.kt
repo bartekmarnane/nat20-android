@@ -32,7 +32,6 @@ import au.com.evonet.nat20.dnd5e.AcquireItem
 import au.com.evonet.nat20.dnd5e.AdjustCoin
 import au.com.evonet.nat20.dnd5e.DnD5eCatalog
 import au.com.evonet.nat20.dnd5e.DnD5ePayload
-import au.com.evonet.nat20.dnd5e.DnD5eRuleset
 import au.com.evonet.nat20.dnd5e.DropItem
 import au.com.evonet.nat20.dnd5e.InventoryItem
 import au.com.evonet.nat20.dnd5e.ItemKind
@@ -40,7 +39,6 @@ import au.com.evonet.nat20.dnd5e.UseItem
 import au.com.evonet.nat20.dnd5e.core.Coin
 import au.com.evonet.nat20.domain.Character
 import au.com.evonet.nat20.domain.CharacterIntent
-import au.com.evonet.nat20.domain.CharacterIntentError
 
 /**
  * The codex **Items** tab (A10): coins, equipped gear, and the full inventory
@@ -50,19 +48,18 @@ import au.com.evonet.nat20.domain.CharacterIntentError
  * build-phase Items view, which never journals an equip change).
  */
 @Composable
-internal fun ItemsPage(character: Character, payload: DnD5ePayload, onSave: (Character) -> Unit) {
-    val ruleset = remember { DnD5eRuleset() }
+internal fun ItemsPage(
+    character: Character,
+    payload: DnD5ePayload,
+    onApplyIntent: (CharacterIntent) -> Unit,
+    onSave: (Character) -> Unit,
+) {
     var showAdd by remember { mutableStateOf(false) }
     var coinDialog by remember { mutableStateOf(false) }
 
-    fun applyIntent(intent: CharacterIntent) {
-        try {
-            onSave(intent.applyTo(character, ruleset).character)
-        } catch (_: CharacterIntentError) {
-            // Invalid edits (e.g. overspending coins) are simply ignored.
-        }
-    }
+    fun applyIntent(intent: CharacterIntent) = onApplyIntent(intent)
 
+    // Equip is a direct (unlogged) payload toggle in both phases — iOS never journals it.
     fun toggleEquip(item: InventoryItem) {
         onSave(character.copy(payload = payload.withEquipToggled(item)))
     }

@@ -47,6 +47,7 @@ class DnD5eRuleset : Ruleset {
         is HitDieSpentEvent -> "dnd5e.hitDie"
         is ResourceSpentEvent -> "dnd5e.resource"
         is ClassFeatureUsedEvent -> "dnd5e.feature"
+        is InspirationChangedEvent -> "dnd5e.inspiration"
         else -> "dnd5e.unknown"
     }
 
@@ -69,6 +70,7 @@ class DnD5eRuleset : Ruleset {
         is HitDieSpentEvent -> json.encodeToString(HitDieSpentEvent.serializer(), event)
         is ResourceSpentEvent -> json.encodeToString(ResourceSpentEvent.serializer(), event)
         is ClassFeatureUsedEvent -> json.encodeToString(ClassFeatureUsedEvent.serializer(), event)
+        is InspirationChangedEvent -> json.encodeToString(InspirationChangedEvent.serializer(), event)
         else -> throw CharacterCodecError.UnknownEventType(event::class.simpleName ?: "unknown")
     }
 
@@ -91,6 +93,7 @@ class DnD5eRuleset : Ruleset {
         "dnd5e.hitDie" -> this.json.decodeFromString(HitDieSpentEvent.serializer(), json)
         "dnd5e.resource" -> this.json.decodeFromString(ResourceSpentEvent.serializer(), json)
         "dnd5e.feature" -> this.json.decodeFromString(ClassFeatureUsedEvent.serializer(), json)
+        "dnd5e.inspiration" -> this.json.decodeFromString(InspirationChangedEvent.serializer(), json)
         else -> throw CharacterCodecError.UnknownEventType(typeId)
     }
 

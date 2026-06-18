@@ -28,7 +28,6 @@ import androidx.compose.ui.unit.dp
 import au.com.evonet.nat20.dnd5e.CastSpell
 import au.com.evonet.nat20.dnd5e.DnD5eCatalog
 import au.com.evonet.nat20.dnd5e.DnD5ePayload
-import au.com.evonet.nat20.dnd5e.DnD5eRuleset
 import au.com.evonet.nat20.dnd5e.ExpendSpellSlot
 import au.com.evonet.nat20.dnd5e.PrepareSpell
 import au.com.evonet.nat20.dnd5e.Spell
@@ -43,7 +42,6 @@ import au.com.evonet.nat20.dnd5e.totalCurrentSlots
 import au.com.evonet.nat20.dnd5e.totalMaxSlots
 import au.com.evonet.nat20.domain.Character
 import au.com.evonet.nat20.domain.CharacterIntent
-import au.com.evonet.nat20.domain.CharacterIntentError
 import au.com.evonet.nat20.ui.slugToTitle
 
 /**
@@ -60,6 +58,7 @@ internal fun SpellsPage(
     character: Character,
     payload: DnD5ePayload,
     onBrowseSpells: () -> Unit,
+    onApplyIntent: (CharacterIntent) -> Unit,
     onSave: (Character) -> Unit,
 ) {
     if (!payload.isSpellcaster) {
@@ -76,19 +75,13 @@ internal fun SpellsPage(
         return
     }
 
-    val ruleset = remember { DnD5eRuleset() }
     val primaryClass = payload.spellcastingClasses.first().classId
     val prepared = CastingProgression.usesPreparation(primaryClass)
     var addLevel by remember { mutableStateOf<Int?>(null) } // null = closed; 0 = cantrip; ≥1 = leveled
 
-    fun applyIntent(intent: CharacterIntent) {
-        try {
-            onSave(intent.applyTo(character, ruleset).character)
-        } catch (_: CharacterIntentError) {
-            // e.g. casting with no slots left — ignore.
-        }
-    }
+    fun applyIntent(intent: CharacterIntent) = onApplyIntent(intent)
 
+    // Learning/forgetting cantrips & known spells is a direct (unlogged) list edit.
     fun editPayload(transform: (DnD5ePayload) -> DnD5ePayload) {
         onSave(character.copy(payload = transform(payload)))
     }

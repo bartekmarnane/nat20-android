@@ -285,6 +285,14 @@ data class ClassFeatureUsedEvent(
         }
 }
 
+@Serializable
+data class InspirationChangedEvent(
+    val hasInspiration: Boolean,
+) : CharacterEvent {
+    override val summary: String
+        get() = if (hasInspiration) "Gained Inspiration" else "Used Inspiration"
+}
+
 /** Free-form journal note (used by [DnD5eRuleset.makeProseEvent]). */
 @Serializable
 data class NoteEvent(

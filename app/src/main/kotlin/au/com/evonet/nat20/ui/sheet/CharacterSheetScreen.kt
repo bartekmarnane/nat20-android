@@ -84,7 +84,7 @@ fun CharacterSheetScreen(
                 ActiveCampaignBanner(activeCampaign.name, onEnd = { showEnd = true })
             }
             when (character.rulesetId) {
-                DnD5eRuleset.RULESET_ID -> CodexShellView(character, onBrowseSpells, onSave, Modifier.fillMaxSize())
+                DnD5eRuleset.RULESET_ID -> CodexShellView(character, onBrowseSpells, onApplyIntent, onSave, Modifier.fillMaxSize())
                 else -> UnsupportedRuleset(character.rulesetId)
             }
         }

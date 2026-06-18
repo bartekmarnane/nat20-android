@@ -119,7 +119,8 @@ fun NatApp() {
                     onOpenJournal = { active?.let { c -> nav.navigate(Routes.journal(character.id, c.id)) } },
                     onOpenPastAdventures = { nav.navigate(Routes.past(character.id)) },
                     onBrowseSpells = { nav.navigate(Routes.SPELL_LIBRARY) },
-                    onApplyIntent = { intent -> active?.let { c -> store.applyIntent(intent, character, c) } },
+                    // Phase-aware: journaled in-campaign, a direct edit while building.
+                    onApplyIntent = { intent -> store.applyIntent(intent, character, active) },
                     onSave = { store.save(it) },
                 )
             }

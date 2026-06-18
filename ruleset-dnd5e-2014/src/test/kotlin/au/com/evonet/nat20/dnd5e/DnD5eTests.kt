@@ -239,6 +239,31 @@ class CodecTests {
     }
 }
 
+class InspirationTests {
+    private val ruleset = DnD5eRuleset()
+    private fun character() = Character.new(
+        "Aria", ruleset, DnD5ePayload(classes = listOf(ClassEntry("bard", 1))), NOW,
+    )
+
+    @Test
+    fun `granting then using inspiration flips the flag and journals it`() {
+        val granted = SetInspiration(true).applyTo(character(), ruleset)
+        assertEquals(true, (granted.character.payload as DnD5ePayload).hasInspiration)
+        assertEquals("Gained Inspiration", granted.event.summary)
+
+        val used = SetInspiration(false).applyTo(granted.character, ruleset)
+        assertEquals(false, (used.character.payload as DnD5ePayload).hasInspiration)
+        assertEquals("Used Inspiration", used.event.summary)
+    }
+
+    @Test
+    fun `inspiration event round-trips through the codec`() {
+        val event = InspirationChangedEvent(hasInspiration = true)
+        val typeId = ruleset.eventTypeId(event)
+        assertEquals(event, ruleset.decodeEvent(ruleset.encodeEvent(event), typeId))
+    }
+}
+
 class MiniCharacterBuildTests {
     private val ruleset = DnD5eRuleset()
     private fun Character.payload() = payload as DnD5ePayload

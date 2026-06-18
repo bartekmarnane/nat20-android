@@ -11,6 +11,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -19,12 +20,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import au.com.evonet.nat20.dnd5e.ArmorClassCalculator
 import au.com.evonet.nat20.dnd5e.DnD5eCatalog
+import au.com.evonet.nat20.dnd5e.SetInspiration
 import au.com.evonet.nat20.dnd5e.DnD5ePayload
 import au.com.evonet.nat20.dnd5e.core.Ability
 import au.com.evonet.nat20.dnd5e.core.AbilityScores
 import au.com.evonet.nat20.dnd5e.core.DnD5eClasses
 import au.com.evonet.nat20.dnd5e.core.Proficiency
 import au.com.evonet.nat20.domain.Character
+import au.com.evonet.nat20.domain.CharacterIntent
 import au.com.evonet.nat20.ui.slugToTitle
 
 // ── Pages ────────────────────────────────────────────────────────────────────
@@ -85,7 +88,7 @@ internal fun SkillsPage(payload: DnD5ePayload) {
 }
 
 @Composable
-internal fun CombatPage(character: Character, payload: DnD5ePayload, onSave: (Character) -> Unit) {
+internal fun CombatPage(character: Character, payload: DnD5ePayload, onApplyIntent: (CharacterIntent) -> Unit) {
     val dexMod = payload.abilityScores.modifier(Ability.DEXTERITY)
     val acBreakdown = ArmorClassCalculator.compute(payload)
     CodexPage {
@@ -113,8 +116,23 @@ internal fun CombatPage(character: Character, payload: DnD5ePayload, onSave: (Ch
                 Text("—", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
-        ClassResourcesSection(character, payload, onSave)
-        RestSection(character, onSave)
+        SectionCard("Inspiration") {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    if (payload.hasInspiration) "You hold Inspiration" else "No Inspiration",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (payload.hasInspiration) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f),
+                )
+                if (payload.hasInspiration) {
+                    OutlinedButton(onClick = { onApplyIntent(SetInspiration(false)) }) { Text("Use") }
+                } else {
+                    OutlinedButton(onClick = { onApplyIntent(SetInspiration(true)) }) { Text("Grant") }
+                }
+            }
+        }
+        ClassResourcesSection(payload, onApplyIntent)
+        RestSection(onApplyIntent)
     }
 }
 

@@ -20,7 +20,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import au.com.evonet.nat20.dnd5e.DnD5ePayload
-import au.com.evonet.nat20.dnd5e.DnD5eRuleset
 import au.com.evonet.nat20.dnd5e.LongRest
 import au.com.evonet.nat20.dnd5e.ResolvedResourcePool
 import au.com.evonet.nat20.dnd5e.ShortRest
@@ -29,9 +28,7 @@ import au.com.evonet.nat20.dnd5e.UseClassFeature
 import au.com.evonet.nat20.dnd5e.availableClassFeatures
 import au.com.evonet.nat20.dnd5e.availableResourcePools
 import au.com.evonet.nat20.dnd5e.hasClassResources
-import au.com.evonet.nat20.domain.Character
 import au.com.evonet.nat20.domain.CharacterIntent
-import au.com.evonet.nat20.domain.CharacterIntentError
 
 /**
  * The Combat-tab **Rest** and **Class Resources** sections (A10). Rest is
@@ -41,34 +38,21 @@ import au.com.evonet.nat20.domain.CharacterIntentError
  */
 
 @Composable
-internal fun RestSection(character: Character, onSave: (Character) -> Unit) {
-    val ruleset = remember { DnD5eRuleset() }
-    fun apply(intent: CharacterIntent) {
-        try {
-            onSave(intent.applyTo(character, ruleset).character)
-        } catch (_: CharacterIntentError) {
-        }
-    }
+internal fun RestSection(onApplyIntent: (CharacterIntent) -> Unit) {
     SectionCard("Rest") {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(onClick = { apply(ShortRest()) }) { Text("Short rest") }
-            OutlinedButton(onClick = { apply(LongRest()) }) { Text("Long rest") }
+            OutlinedButton(onClick = { onApplyIntent(ShortRest()) }) { Text("Short rest") }
+            OutlinedButton(onClick = { onApplyIntent(LongRest()) }) { Text("Long rest") }
         }
     }
 }
 
 @Composable
-internal fun ClassResourcesSection(character: Character, payload: DnD5ePayload, onSave: (Character) -> Unit) {
+internal fun ClassResourcesSection(payload: DnD5ePayload, onApplyIntent: (CharacterIntent) -> Unit) {
     if (!payload.hasClassResources()) return
-    val ruleset = remember { DnD5eRuleset() }
     var spendPool by remember { mutableStateOf<ResolvedResourcePool?>(null) }
 
-    fun apply(intent: CharacterIntent) {
-        try {
-            onSave(intent.applyTo(character, ruleset).character)
-        } catch (_: CharacterIntentError) {
-        }
-    }
+    fun apply(intent: CharacterIntent) = onApplyIntent(intent)
 
     SectionCard("Class Resources") {
         val pools = payload.availableResourcePools()
