@@ -42,12 +42,17 @@ import au.com.evonet.nat20.dnd5e.core.Ability
 import au.com.evonet.nat20.dnd5e.core.AbilityScores
 import au.com.evonet.nat20.dnd5e.core.CastingProgression
 import au.com.evonet.nat20.dnd5e.core.Proficiency
+import au.com.evonet.nat20.dnd5e.core.EffectModifier
 import au.com.evonet.nat20.dnd5e.core.RollBonus
 import au.com.evonet.nat20.dnd5e.core.RollSpec
 import au.com.evonet.nat20.dnd5e2024.ApplyCondition2024
+import au.com.evonet.nat20.dnd5e2024.CancelEffect2024
 import au.com.evonet.nat20.dnd5e2024.CastSpell2024
 import au.com.evonet.nat20.dnd5e2024.ClearCondition2024
 import au.com.evonet.nat20.dnd5e2024.ChangeExhaustion2024
+import au.com.evonet.nat20.dnd5e2024.EndConcentration2024
+import au.com.evonet.nat20.dnd5e2024.armorClass
+import au.com.evonet.nat20.dnd5e2024.temporarySaveBonus
 import au.com.evonet.nat20.dnd5e2024.DnD5e2024Catalog
 import au.com.evonet.nat20.dnd5e2024.DnD5e2024Payload
 import au.com.evonet.nat20.dnd5e2024.ExpendSpellSlot2024
@@ -152,8 +157,12 @@ private fun Stats2024(payload: DnD5e2024Payload, onLevelUp: () -> Unit) {
         }
         Card2024("Saving Throws") {
             Ability.entries.forEach { a ->
-                val mod = AbilityScores.modifier(scores.score(a))
-                Row(Modifier.fillMaxWidth().clickable { check = "${a.abbreviation} save" to listOf(RollBonus(a.abbreviation, mod)) }.padding(vertical = 2.dp)) {
+                val abilityMod = AbilityScores.modifier(scores.score(a))
+                val effectBonus = payload.temporarySaveBonus(a)
+                val mod = abilityMod + effectBonus
+                Row(Modifier.fillMaxWidth().clickable {
+                    check = "${a.abbreviation} save" to buildList { add(RollBonus(a.abbreviation, abilityMod)); if (effectBonus != 0) add(RollBonus("Effects", effectBonus)) }
+                }.padding(vertical = 2.dp)) {
                     Text(a.abbreviation, Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
                     Text(mod.signed2024(), fontWeight = FontWeight.Medium)
                 }
@@ -218,8 +227,9 @@ private fun Combat2024(character: Character, payload: DnD5e2024Payload, onApplyI
                 }
             }
         }
+        Effects2024Card(payload, onApplyIntent)
         Card2024("Defense & Movement") {
-            StatRow("Armor Class", (10 + dexMod).toString())
+            StatRow("Armor Class", payload.armorClass.toString())
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text("Initiative", Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
                 Text(payload.initiative?.toString() ?: dexMod.signed2024(), fontWeight = FontWeight.Medium, color = if (payload.initiative != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
@@ -302,8 +312,8 @@ private fun Spells2024(character: Character, payload: DnD5e2024Payload, onApplyI
                 }
                 Text("Recover with a long rest on the Combat tab.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            SpellListCard("Cantrips", payload.cantripsKnown, payload, onCast = { s -> onApplyIntent(CastSpell2024(s.id, s.name, 0, 0)) }, onRemove = { s -> onSave(character.copy(payload = payload.copy(cantripsKnown = payload.cantripsKnown - s.id))) }, onAdd = { browse = true })
-            SpellListCard("Prepared — ${classId.slugToTitle()}", payload.preparedSpells[classId].orEmpty(), payload, onCast = { s -> onApplyIntent(CastSpell2024(s.id, s.name, s.level, s.level)) }, onRemove = { s -> onSave(character.copy(payload = payload.copy(preparedSpells = payload.preparedSpells + (classId to (payload.preparedSpells[classId].orEmpty() - s.id))))) }, onAdd = { browse = false })
+            SpellListCard("Cantrips", payload.cantripsKnown, payload, onCast = { s -> onApplyIntent(CastSpell2024(s.id, s.name, 0, 0, requiresConcentration = s.concentration, applyToSelf = true)) }, onRemove = { s -> onSave(character.copy(payload = payload.copy(cantripsKnown = payload.cantripsKnown - s.id))) }, onAdd = { browse = true })
+            SpellListCard("Prepared — ${classId.slugToTitle()}", payload.preparedSpells[classId].orEmpty(), payload, onCast = { s -> onApplyIntent(CastSpell2024(s.id, s.name, s.level, s.level, requiresConcentration = s.concentration, applyToSelf = true)) }, onRemove = { s -> onSave(character.copy(payload = payload.copy(preparedSpells = payload.preparedSpells + (classId to (payload.preparedSpells[classId].orEmpty() - s.id))))) }, onAdd = { browse = false })
             OutlinedButton(onClick = { library = true }, modifier = Modifier.fillMaxWidth()) { Text("Browse full Spell Library") }
         }
     }
@@ -512,6 +522,40 @@ private fun FlowRowChips(items: List<String>, onClick: (String) -> Unit) {
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         items.forEach { AssistChip(onClick = { onClick(it) }, label = { Text(it) }) }
     }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun Effects2024Card(payload: DnD5e2024Payload, onApplyIntent: (CharacterIntent) -> Unit) {
+    if (payload.concentratingOn == null && payload.activeEffects.isEmpty()) return
+    Card2024("Active Effects") {
+        payload.concentratingOn?.let { focus ->
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text("Concentrating on $focus", Modifier.weight(1f), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodyMedium)
+                TextButton(onClick = { onApplyIntent(EndConcentration2024()) }) { Text("End") }
+            }
+        }
+        if (payload.activeEffects.isEmpty()) Text("No lasting effects.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        else FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            payload.activeEffects.forEach { e ->
+                AssistChip(
+                    onClick = { onApplyIntent(CancelEffect2024(e.id)) },
+                    label = { Text(e.name + e.modifiers.firstNotNullOfOrNull { it.shortLabel2024() }?.let { "  $it" }.orEmpty()) },
+                    trailingIcon = { Text("✕", style = MaterialTheme.typography.labelMedium) },
+                )
+            }
+        }
+    }
+}
+
+private fun EffectModifier.shortLabel2024(): String? = when (this) {
+    is EffectModifier.AcBonus -> "${if (value >= 0) "+$value" else "$value"} AC"
+    is EffectModifier.AcOverride -> "AC set"
+    is EffectModifier.AttackBonus -> "${if (value >= 0) "+$value" else "$value"} atk"
+    is EffectModifier.DamageBonus -> "${if (value >= 0) "+$value" else "$value"} dmg"
+    is EffectModifier.SaveBonus -> "${if (value >= 0) "+$value" else "$value"} save"
+    is EffectModifier.DamageResistance -> "resist $type"
+    else -> null
 }
 
 private fun heroLine2024(payload: DnD5e2024Payload): String {

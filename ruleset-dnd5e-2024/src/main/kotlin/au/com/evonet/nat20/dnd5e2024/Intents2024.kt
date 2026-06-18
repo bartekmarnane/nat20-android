@@ -24,10 +24,15 @@ data class TakeDamage2024(val amount: Int, val damageType: String? = null) : Cha
     override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
         if (amount <= 0) throw CharacterIntentError.Invalid("Damage must be positive")
         val p = character.payload2024()
-        val tempAbsorbed = minOf(p.temporaryHp, amount)
-        val newHp = maxOf(0, p.currentHp - (amount - tempAbsorbed))
+        val typeKey = damageType?.trim()?.lowercase()
+        val resisted = typeKey != null && typeKey.isNotEmpty() && typeKey in p.effectiveDamageResistances
+        val effective = if (resisted) amount / 2 else amount
+        val tempAbsorbed = minOf(p.temporaryHp, effective)
+        val hpDamage = effective - tempAbsorbed
+        val newHp = maxOf(0, p.currentHp - hpDamage)
+        val concentrationDc = if (p.concentratingOn != null && hpDamage > 0) maxOf(10, hpDamage / 2) else null
         val updated = p.copy(currentHp = newHp, temporaryHp = p.temporaryHp - tempAbsorbed)
-        return IntentResult(character.copy(payload = updated), DamageTaken2024Event(amount, damageType, p.currentHp, newHp, tempAbsorbed))
+        return IntentResult(character.copy(payload = updated), DamageTaken2024Event(amount, damageType, p.currentHp, newHp, tempAbsorbed, resisted, concentrationDc))
     }
 }
 
@@ -109,6 +114,12 @@ class LongRest2024 : CharacterIntent {
             deathSaves = au.com.evonet.nat20.dnd5e.core.DeathSaves.cleared,
             exhaustionLevel = exhaustionAfter,
             hitDiceSpent = maxOf(0, p.hitDiceSpent - hitDiceRegained),
+            // End concentration and clear timed effects; Until-Cancelled buffs persist.
+            concentratingOn = null,
+            activeEffects = p.activeEffects.filterNot {
+                it.concentrationOwner || it.duration is au.com.evonet.nat20.dnd5e.core.EffectDuration.Concentration ||
+                    it.duration is au.com.evonet.nat20.dnd5e.core.EffectDuration.UntilRest || it.duration is au.com.evonet.nat20.dnd5e.core.EffectDuration.Rounds
+            },
         )
         return IntentResult(
             character.copy(payload = updated),
@@ -131,8 +142,16 @@ data class SpendHitDie2024(val healingRolled: Int) : CharacterIntent {
     }
 }
 
-/** Casts a spell at [slotLevel] (0 = cantrip), consuming a slot unless it's a cantrip. */
-data class CastSpell2024(val spellID: String, val spellName: String, val spellLevel: Int, val slotLevel: Int, val target: String? = null) : CharacterIntent {
+/** Casts a spell at [slotLevel] (0 = cantrip), consuming a slot unless it's a cantrip; applies catalogue effects + concentration (A21/A17). */
+data class CastSpell2024(
+    val spellID: String,
+    val spellName: String,
+    val spellLevel: Int,
+    val slotLevel: Int,
+    val target: String? = null,
+    val requiresConcentration: Boolean = false,
+    val applyToSelf: Boolean = false,
+) : CharacterIntent {
     override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
         if (slotLevel < spellLevel) throw CharacterIntentError.Invalid("Slot level cannot be lower than the spell level")
         val p = character.payload2024()
@@ -142,8 +161,53 @@ data class CastSpell2024(val spellID: String, val spellName: String, val spellLe
             if (remaining <= 0) throw CharacterIntentError.Invalid("No level $slotLevel spell slots remaining")
             updated = p.copy(currentSpellSlots = p.currentSpellSlots.withSlot(slotLevel, remaining - 1))
         }
+        if (requiresConcentration) {
+            updated = updated.copy(concentratingOn = spellName, activeEffects = updated.activeEffects.filterNot { it.concentrationOwner })
+        }
+        SpellEffectCatalog2024.template(spellID)?.let { tmpl ->
+            val applies = when (tmpl.scope) {
+                EffectScope2024.ALWAYS_SELF, EffectScope2024.CASTER_RIDER -> true
+                EffectScope2024.TARGET_PICKED -> applyToSelf
+            }
+            if (applies) updated = updated.copy(activeEffects = updated.activeEffects + tmpl.resolve(spellID))
+        }
         val event = CastSpell2024Event(spellID, spellName, slotLevel, slotLevel > spellLevel && spellLevel > 0, target?.trim()?.takeIf { it.isNotEmpty() })
         return IntentResult(character.copy(payload = updated), event)
+    }
+}
+
+/** Ends concentration, dropping every concentration-owning effect. */
+class EndConcentration2024 : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        val p = character.payload2024()
+        val target = p.concentratingOn
+        val updated = p.copy(concentratingOn = null, activeEffects = p.activeEffects.filterNot { it.concentrationOwner })
+        return IntentResult(character.copy(payload = updated), ConcentrationEnded2024Event(target))
+    }
+    override fun equals(other: Any?): Boolean = other is EndConcentration2024
+    override fun hashCode(): Int = javaClass.hashCode()
+}
+
+/** Cancels a single active effect by id; clears concentration if no owner effects remain. */
+data class CancelEffect2024(val effectId: String) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        val p = character.payload2024()
+        val effect = p.activeEffects.firstOrNull { it.id == effectId } ?: throw CharacterIntentError.Invalid("No active effect $effectId")
+        val remaining = p.activeEffects.filterNot { it.id == effectId }
+        val stillConcentrating = remaining.any { it.concentrationOwner }
+        val updated = p.copy(activeEffects = remaining, concentratingOn = if (effect.concentrationOwner && !stillConcentrating) null else p.concentratingOn)
+        return IntentResult(character.copy(payload = updated), EffectCancelled2024Event(effect.name))
+    }
+}
+
+/** Applies an ad-hoc effect (a DM buff/debuff). */
+data class ApplyEffect2024(val effect: au.com.evonet.nat20.dnd5e.core.ActiveEffect) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        val p = character.payload2024()
+        var updated = p
+        if (effect.concentrationOwner) updated = updated.copy(concentratingOn = effect.name, activeEffects = updated.activeEffects.filterNot { it.concentrationOwner })
+        updated = updated.copy(activeEffects = updated.activeEffects + effect)
+        return IntentResult(character.copy(payload = updated), EffectApplied2024Event(effect.name))
     }
 }
 

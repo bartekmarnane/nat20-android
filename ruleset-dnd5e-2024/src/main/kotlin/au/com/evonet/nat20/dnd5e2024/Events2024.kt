@@ -18,13 +18,32 @@ data class DamageTaken2024Event(
     val previousHp: Int,
     val newHp: Int,
     val tempAbsorbed: Int = 0,
+    val resistanceApplied: Boolean = false,
+    val concentrationCheckDC: Int? = null,
 ) : CharacterEvent {
     override val summary: String
         get() {
             val type = damageType?.takeIf { it.isNotBlank() }?.let { " ${it.lowercase()}" } ?: ""
+            val resist = if (resistanceApplied) " (resisted)" else ""
             val temp = if (tempAbsorbed > 0) " ($tempAbsorbed absorbed by temp)" else ""
-            return "Took $amount$type damage (HP $previousHp → $newHp)$temp"
+            val conc = concentrationCheckDC?.let { " · concentration save DC $it" } ?: ""
+            return "Took $amount$type damage$resist (HP $previousHp → $newHp)$temp$conc"
         }
+}
+
+@Serializable
+data class ConcentrationEnded2024Event(val target: String? = null) : CharacterEvent {
+    override val summary: String get() = target?.let { "Lost concentration on $it" } ?: "Ended concentration"
+}
+
+@Serializable
+data class EffectApplied2024Event(val name: String) : CharacterEvent {
+    override val summary: String get() = "Gained the $name effect"
+}
+
+@Serializable
+data class EffectCancelled2024Event(val name: String) : CharacterEvent {
+    override val summary: String get() = "Lost the $name effect"
 }
 
 @Serializable

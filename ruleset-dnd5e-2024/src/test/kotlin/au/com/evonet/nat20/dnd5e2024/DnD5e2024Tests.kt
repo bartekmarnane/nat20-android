@@ -200,6 +200,49 @@ class CreationCatalog2024Tests {
     }
 }
 
+class Effects2024Tests {
+    @Test
+    fun `mage armor sets the unarmored AC base to 13 plus DEX`() {
+        val mageArmor = au.com.evonet.nat20.dnd5e.core.ActiveEffect("m", "Mage Armor", au.com.evonet.nat20.dnd5e.core.EffectSource.Spell("mage-armor"), listOf(au.com.evonet.nat20.dnd5e.core.EffectModifier.AcOverride(au.com.evonet.nat20.dnd5e.core.ACOverrideFormula.BaseDex(13))), au.com.evonet.nat20.dnd5e.core.EffectDuration.UntilCancelled)
+        val p = DnD5e2024Payload(abilityScores = AbilityScores(dexterity = 16), activeEffects = listOf(mageArmor))
+        assertEquals(16, p.armorClass) // 13 + 3
+    }
+
+    @Test
+    fun `barbarian unarmored defense uses CON via the passive effect`() {
+        val p = DnD5e2024Payload(classes = listOf(ClassEntry2024("barbarian", 3)), abilityScores = AbilityScores(dexterity = 14, constitution = 16))
+        assertEquals(15, p.armorClass) // 10 + DEX 2 + CON 3
+    }
+
+    @Test
+    fun `casting a concentration spell applies its effect and sets focus`() {
+        val cleric = character(DnD5e2024Payload(classes = listOf(ClassEntry2024("cleric", 3))).withFullSpellSlots())
+        val result = CastSpell2024("bless", "Bless", 1, 1, requiresConcentration = true, applyToSelf = true).applyTo(cleric, ruleset)
+        val p = result.character.p()
+        assertEquals("Bless", p.concentratingOn)
+        assertTrue(p.activeEffects.any { it.name == "Bless" })
+        assertEquals(2, p.temporarySaveBonus(Ability.WISDOM))
+    }
+
+    @Test
+    fun `damage while concentrating prompts a save and resistance halves it`() {
+        val raging = character(DnD5e2024Payload(classes = listOf(ClassEntry2024("barbarian", 3)), maxHp = 30, currentHp = 30, concentratingOn = "Hex", activeEffects = listOf(au.com.evonet.nat20.dnd5e.core.ActiveEffect("r", "Rage", au.com.evonet.nat20.dnd5e.core.EffectSource.Feature("rage"), listOf(au.com.evonet.nat20.dnd5e.core.EffectModifier.DamageResistance("slashing")), au.com.evonet.nat20.dnd5e.core.EffectDuration.UntilCancelled))))
+        val result = TakeDamage2024(10, "Slashing").applyTo(raging, ruleset)
+        val event = result.event as DamageTaken2024Event
+        assertEquals(25, result.character.p().currentHp) // 10 resisted → 5
+        assertTrue(event.resistanceApplied)
+        assertEquals(10, event.concentrationCheckDC)
+    }
+
+    @Test
+    fun `ending concentration clears the focus and its effects`() {
+        val c = character(DnD5e2024Payload(activeEffects = listOf(au.com.evonet.nat20.dnd5e.core.ActiveEffect("b", "Bless", au.com.evonet.nat20.dnd5e.core.EffectSource.Custom, listOf(au.com.evonet.nat20.dnd5e.core.EffectModifier.AttackBonus(2)), au.com.evonet.nat20.dnd5e.core.EffectDuration.Concentration, concentrationOwner = true)), concentratingOn = "Bless"))
+        val p = EndConcentration2024().applyTo(c, ruleset).character.p()
+        assertEquals(null, p.concentratingOn)
+        assertTrue(p.activeEffects.isEmpty())
+    }
+}
+
 class Codec2024Tests {
     @Test
     fun `a full 2024 payload round-trips, including core sealed effects`() {
