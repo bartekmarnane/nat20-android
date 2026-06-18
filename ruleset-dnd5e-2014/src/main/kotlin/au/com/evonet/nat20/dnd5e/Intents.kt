@@ -1,5 +1,6 @@
 package au.com.evonet.nat20.dnd5e
 
+import au.com.evonet.nat20.dnd5e.core.Ability
 import au.com.evonet.nat20.dnd5e.core.AbilityScores
 import au.com.evonet.nat20.dnd5e.core.AttackOutcome
 import au.com.evonet.nat20.dnd5e.core.Coin
@@ -721,6 +722,12 @@ data class LevelUp(
     val classId: String,
     val isNewClass: Boolean = false,
     val hpChoice: HpChoice = HpChoice.Average,
+    /** Subclass id chosen this level-up (only valid at the class's subclass level). */
+    val subclass: String? = null,
+    /** Ability Score Improvement applied this level-up — at most +2 total, capped at 20. */
+    val abilityIncreases: Map<Ability, Int> = emptyMap(),
+    /** Display name for the journal (catalogue-resolved by the caller). */
+    val className: String = "",
 ) : CharacterIntent {
     override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
         val payload = character.dnd5ePayload()
@@ -749,34 +756,58 @@ data class LevelUp(
                 "Rolled HP ${hpChoice.value} outside 1..$hitDie for a d$hitDie",
             )
         }
+        if (abilityIncreases.values.sum() > 2 || abilityIncreases.values.any { it < 0 }) {
+            throw CharacterIntentError.Invalid("An Ability Score Improvement grants at most +2 total")
+        }
 
         val previousLevel = payload.level
         val updatedClasses = payload.classes.toMutableList()
         if (existingIndex >= 0) {
             val entry = updatedClasses[existingIndex]
-            updatedClasses[existingIndex] = entry.copy(level = entry.level + 1)
+            updatedClasses[existingIndex] = entry.copy(
+                level = entry.level + 1,
+                subclass = subclass ?: entry.subclass,
+            )
         } else {
-            updatedClasses.add(ClassEntry(classId = classId, level = 1))
+            updatedClasses.add(ClassEntry(classId = classId, level = 1, subclass = subclass))
         }
         val classLevelAfter = updatedClasses.first { it.classId == classId }.level
 
-        val conMod = AbilityScores.modifier(payload.abilityScores.constitution)
+        // Apply the ASI, capping each score at 20.
+        var newScores = payload.abilityScores
+        for ((ability, increase) in abilityIncreases) {
+            newScores = newScores.with(ability, minOf(20, newScores.score(ability) + increase))
+        }
+
+        val conMod = AbilityScores.modifier(newScores.constitution)
         val hpGained = LevelUpMath.levelUpHp(hpChoice, hitDie, conMod)
 
-        val updated = payload.copy(
-            classes = updatedClasses,
+        // Grant any newly-unlocked spell slots while preserving spent ones.
+        val leveled = payload.copy(classes = updatedClasses, abilityScores = newScores)
+        val oldMaxSlots = payload.maxSpellSlots
+        val newCurrentSlots = leveled.maxSpellSlots.mapValues { (level, max) ->
+            val gained = maxOf(0, max - (oldMaxSlots[level] ?: 0))
+            (payload.currentSpellSlots[level] ?: 0) + gained
+        }
+        val newPactSlots = payload.currentPactSlots + maxOf(0, leveled.maxPactSlots - payload.maxPactSlots)
+
+        val updated = leveled.copy(
             maxHp = payload.maxHp + hpGained,
             currentHp = payload.currentHp + hpGained,
+            currentSpellSlots = newCurrentSlots,
+            currentPactSlots = newPactSlots,
         )
         val event = LeveledUpEvent(
             classId = classId,
-            className = "", // catalogue display name lands with content steps
+            className = className,
             isNewClass = isNewClass,
             previousLevel = previousLevel,
             newLevel = updated.level,
             classLevelAfter = classLevelAfter,
             hpChoice = hpChoice,
             hpGained = hpGained,
+            subclass = subclass,
+            abilityIncreases = abilityIncreases,
         )
         return IntentResult(character.copy(payload = updated), event)
     }

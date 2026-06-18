@@ -18,7 +18,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -56,6 +59,7 @@ fun CodexShellView(
     val tabs = CodexTab.entries
     val pagerState = rememberPagerState(pageCount = { tabs.size })
     val scope = rememberCoroutineScope()
+    var levelingUp by remember { mutableStateOf(false) }
 
     Column(modifier.fillMaxSize()) {
         HeroHeader(character, payload)
@@ -66,7 +70,7 @@ fun CodexShellView(
             modifier = Modifier.weight(1f).fillMaxWidth(),
         ) { page ->
             when (tabs[page]) {
-                CodexTab.STATS -> StatsPage(payload)
+                CodexTab.STATS -> StatsPage(payload) { levelingUp = true }
                 CodexTab.SKILLS -> SkillsPage(payload)
                 CodexTab.COMBAT -> CombatPage(character, payload, onApplyIntent)
                 CodexTab.SPELLS -> SpellsPage(character, payload, onBrowseSpells, onApplyIntent, onSave)
@@ -81,6 +85,10 @@ fun CodexShellView(
             selected = pagerState.currentPage,
             onSelect = { index -> scope.launch { pagerState.animateScrollToPage(index) } },
         )
+    }
+
+    if (levelingUp) {
+        LevelUpWizard(payload, onApplyIntent, onDismiss = { levelingUp = false })
     }
 }
 

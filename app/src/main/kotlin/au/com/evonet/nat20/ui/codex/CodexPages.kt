@@ -50,7 +50,7 @@ import au.com.evonet.nat20.ui.slugToTitle
 // ── Pages ────────────────────────────────────────────────────────────────────
 
 @Composable
-internal fun StatsPage(payload: DnD5ePayload) {
+internal fun StatsPage(payload: DnD5ePayload, onLevelUp: () -> Unit) {
     val prof = Proficiency.bonus(payload.level)
     val proficientSaves = payload.primaryClass()?.savingThrowAbilities()?.toSet().orEmpty()
     val perceptionProficient = "perception" in payload.selectedSkills
@@ -86,6 +86,9 @@ internal fun StatsPage(payload: DnD5ePayload) {
                     onClick = { check = CheckRoll("${ability.abbreviation} save", checkBonuses(ability.abbreviation, abilityMod, proficient, prof)) },
                 )
             }
+        }
+        if (payload.level < DnD5ePayload.MAX_LEVEL) {
+            Button(onClick = onLevelUp, modifier = Modifier.fillMaxWidth()) { Text("Level Up") }
         }
     }
     check?.let { CheckRollDialog(it) { check = null } }

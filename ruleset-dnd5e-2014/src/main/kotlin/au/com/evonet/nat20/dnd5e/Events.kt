@@ -80,6 +80,10 @@ data class LeveledUpEvent(
     val classLevelAfter: Int,
     val hpChoice: HpChoice,
     val hpGained: Int,
+    /** Subclass chosen this level-up, if any (A11). */
+    val subclass: String? = null,
+    /** Ability score increases applied this level-up (A11). */
+    val abilityIncreases: Map<au.com.evonet.nat20.dnd5e.core.Ability, Int> = emptyMap(),
 ) : CharacterEvent {
     override val summary: String
         get() {
@@ -87,7 +91,14 @@ data class LeveledUpEvent(
             val classLabel = if (displayClass.isEmpty()) "level" else "$displayClass $classLevelAfter"
             val hpPart = if (hpGained > 0) " — +$hpGained HP" else ""
             val newPart = if (isNewClass) " (multiclass)" else ""
-            return "Leveled up to $classLabel$newPart$hpPart"
+            val extras = buildList {
+                subclass?.takeIf { it.isNotBlank() }?.let { add(it) }
+                if (abilityIncreases.isNotEmpty()) {
+                    add(abilityIncreases.entries.joinToString(", ") { "+${it.value} ${it.key.abbreviation}" })
+                }
+            }
+            val extraPart = if (extras.isEmpty()) "" else " · ${extras.joinToString(" · ")}"
+            return "Leveled up to $classLabel$newPart$hpPart$extraPart"
         }
 }
 

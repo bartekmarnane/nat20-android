@@ -49,12 +49,24 @@ data class CharacterClass(
     val skillChoiceFrom: List<String> = emptyList(),
     /** Casting block; null ⇒ non-caster. Only [Caster.kind] is needed for now. */
     val caster: Caster? = null,
+    /** Subclass options (id + name); chosen at [subclassLevel] in the level-up wizard (A11). */
+    val subclasses: List<Subclass> = emptyList(),
+    /** The class level at which a subclass is chosen (3 for most; 1 cleric, 2 wizard/druid, …). */
+    val subclassLevel: Int = 3,
 ) {
     /** Saving-throw-proficient abilities as [Ability] values. */
     fun savingThrowAbilities(): List<Ability> = savingThrows.mapNotNull(Ability::fromKey)
 
     val isCaster: Boolean get() = caster?.kind?.let { it.isNotEmpty() && it != "none" } ?: false
 }
+
+/** A subclass option for a class (the features list is decoded later, when A19 wires traits). */
+@Serializable
+data class Subclass(
+    val id: String,
+    val name: String,
+    val description: String = "",
+)
 
 @Serializable
 data class Caster(

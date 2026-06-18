@@ -35,6 +35,21 @@ object LevelUpMath {
         }
         return maxOf(1, dieValue + conMod)
     }
+
+    /**
+     * Whether reaching [classLevel] in [classId] grants an Ability Score
+     * Improvement (or feat). Every class: 4/8/12/16/19; Fighter also 6/14;
+     * Rogue also 10.
+     */
+    fun grantsAbilityScoreImprovement(classId: String, classLevel: Int): Boolean {
+        val standard = classLevel in setOf(4, 8, 12, 16, 19)
+        val extra = when (classId.lowercase()) {
+            "fighter" -> classLevel in setOf(6, 14)
+            "rogue" -> classLevel == 10
+            else -> false
+        }
+        return standard || extra
+    }
 }
 
 /**
