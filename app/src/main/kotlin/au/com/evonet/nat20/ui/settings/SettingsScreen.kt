@@ -33,6 +33,8 @@ import au.com.evonet.nat20.settings.AppearanceMode
 fun SettingsScreen(
     appSettings: AppSettings,
     onOpenSpellLibrary: () -> Unit,
+    onOpenMonsterCodex: () -> Unit,
+    onOpenItemCatalog: () -> Unit,
     onOpenCredits: () -> Unit,
     onBack: () -> Unit,
 ) {
@@ -64,10 +66,14 @@ fun SettingsScreen(
             }
 
             SettingSection("Reference") {
-                Row(
-                    Modifier.fillMaxWidth().clickable(onClick = onOpenSpellLibrary).padding(vertical = 8.dp),
-                ) {
+                Row(Modifier.fillMaxWidth().clickable(onClick = onOpenSpellLibrary).padding(vertical = 8.dp)) {
                     Text("Spell Library", style = MaterialTheme.typography.bodyLarge)
+                }
+                Row(Modifier.fillMaxWidth().clickable(onClick = onOpenMonsterCodex).padding(vertical = 8.dp)) {
+                    Text("Monster Codex (2024)", style = MaterialTheme.typography.bodyLarge)
+                }
+                Row(Modifier.fillMaxWidth().clickable(onClick = onOpenItemCatalog).padding(vertical = 8.dp)) {
+                    Text("Item Catalog (2024)", style = MaterialTheme.typography.bodyLarge)
                 }
             }
 

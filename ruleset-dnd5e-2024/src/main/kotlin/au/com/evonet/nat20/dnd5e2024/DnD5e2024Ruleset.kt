@@ -48,6 +48,12 @@ class DnD5e2024Ruleset : Ruleset {
         is ConcentrationEnded2024Event -> "dnd5e2024.concentrationEnded"
         is EffectApplied2024Event -> "dnd5e2024.effectApplied"
         is EffectCancelled2024Event -> "dnd5e2024.effectCancelled"
+        is ItemAcquired2024Event -> "dnd5e2024.itemAcquired"
+        is ItemDropped2024Event -> "dnd5e2024.itemDropped"
+        is ArmorEquipped2024Event -> "dnd5e2024.armorEquipped"
+        is ShieldChanged2024Event -> "dnd5e2024.shield"
+        is CoinAdjusted2024Event -> "dnd5e2024.coin"
+        is WeaponMasteries2024Event -> "dnd5e2024.weaponMasteries"
         else -> "dnd5e2024.unknown"
     }
 
@@ -70,6 +76,12 @@ class DnD5e2024Ruleset : Ruleset {
         is ConcentrationEnded2024Event -> json.encodeToString(ConcentrationEnded2024Event.serializer(), event)
         is EffectApplied2024Event -> json.encodeToString(EffectApplied2024Event.serializer(), event)
         is EffectCancelled2024Event -> json.encodeToString(EffectCancelled2024Event.serializer(), event)
+        is ItemAcquired2024Event -> json.encodeToString(ItemAcquired2024Event.serializer(), event)
+        is ItemDropped2024Event -> json.encodeToString(ItemDropped2024Event.serializer(), event)
+        is ArmorEquipped2024Event -> json.encodeToString(ArmorEquipped2024Event.serializer(), event)
+        is ShieldChanged2024Event -> json.encodeToString(ShieldChanged2024Event.serializer(), event)
+        is CoinAdjusted2024Event -> json.encodeToString(CoinAdjusted2024Event.serializer(), event)
+        is WeaponMasteries2024Event -> json.encodeToString(WeaponMasteries2024Event.serializer(), event)
         else -> throw CharacterCodecError.UnknownEventType(event::class.simpleName ?: "unknown")
     }
 
@@ -92,6 +104,12 @@ class DnD5e2024Ruleset : Ruleset {
         "dnd5e2024.concentrationEnded" -> this.json.decodeFromString(ConcentrationEnded2024Event.serializer(), json)
         "dnd5e2024.effectApplied" -> this.json.decodeFromString(EffectApplied2024Event.serializer(), json)
         "dnd5e2024.effectCancelled" -> this.json.decodeFromString(EffectCancelled2024Event.serializer(), json)
+        "dnd5e2024.itemAcquired" -> this.json.decodeFromString(ItemAcquired2024Event.serializer(), json)
+        "dnd5e2024.itemDropped" -> this.json.decodeFromString(ItemDropped2024Event.serializer(), json)
+        "dnd5e2024.armorEquipped" -> this.json.decodeFromString(ArmorEquipped2024Event.serializer(), json)
+        "dnd5e2024.shield" -> this.json.decodeFromString(ShieldChanged2024Event.serializer(), json)
+        "dnd5e2024.coin" -> this.json.decodeFromString(CoinAdjusted2024Event.serializer(), json)
+        "dnd5e2024.weaponMasteries" -> this.json.decodeFromString(WeaponMasteries2024Event.serializer(), json)
         else -> throw CharacterCodecError.UnknownEventType(typeId)
     }
 

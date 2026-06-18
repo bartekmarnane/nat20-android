@@ -1,6 +1,7 @@
 package au.com.evonet.nat20.dnd5e2024
 
 import au.com.evonet.nat20.dnd5e.core.AbilityScores
+import au.com.evonet.nat20.dnd5e.core.Coin
 import au.com.evonet.nat20.dnd5e.core.DnD5eClasses
 import au.com.evonet.nat20.dnd5e.core.HpChoice
 import au.com.evonet.nat20.dnd5e.core.LevelUpMath
@@ -29,10 +30,18 @@ data class TakeDamage2024(val amount: Int, val damageType: String? = null) : Cha
         val effective = if (resisted) amount / 2 else amount
         val tempAbsorbed = minOf(p.temporaryHp, effective)
         val hpDamage = effective - tempAbsorbed
-        val newHp = maxOf(0, p.currentHp - hpDamage)
+        var newHp = maxOf(0, p.currentHp - hpDamage)
+        // Relentless Endurance (Orc): when reduced to 0 (but not killed outright) the
+        // first time per long rest, drop to 1 HP instead. Massive overkill still drops you.
+        var relentless = false
+        val overkill = hpDamage >= p.currentHp + p.maxHp // damage ≥ current + max ⇒ instant death (RAW)
+        if (newHp == 0 && p.currentHp > 0 && !p.relentlessEnduranceUsed && !overkill && SpeciesTraits2024.hasRelentlessEndurance(p.species)) {
+            newHp = 1
+            relentless = true
+        }
         val concentrationDc = if (p.concentratingOn != null && hpDamage > 0) maxOf(10, hpDamage / 2) else null
-        val updated = p.copy(currentHp = newHp, temporaryHp = p.temporaryHp - tempAbsorbed)
-        return IntentResult(character.copy(payload = updated), DamageTaken2024Event(amount, damageType, p.currentHp, newHp, tempAbsorbed, resisted, concentrationDc))
+        val updated = p.copy(currentHp = newHp, temporaryHp = p.temporaryHp - tempAbsorbed, relentlessEnduranceUsed = p.relentlessEnduranceUsed || relentless)
+        return IntentResult(character.copy(payload = updated), DamageTaken2024Event(amount, damageType, p.currentHp, newHp, tempAbsorbed, resisted, concentrationDc, relentless))
     }
 }
 
@@ -113,6 +122,7 @@ class LongRest2024 : CharacterIntent {
             currentSpellSlots = maxSlots,
             deathSaves = au.com.evonet.nat20.dnd5e.core.DeathSaves.cleared,
             exhaustionLevel = exhaustionAfter,
+            relentlessEnduranceUsed = false,
             hitDiceSpent = maxOf(0, p.hitDiceSpent - hitDiceRegained),
             // End concentration and clear timed effects; Until-Cancelled buffs persist.
             concentratingOn = null,
@@ -266,6 +276,77 @@ data class SetInitiative2024(val value: Int?) : CharacterIntent {
     }
 }
 
+// ── Inventory + equipment (A21) ─────────────────────────────────────────────────
+
+/** Adds a line item to the pack; stackable kinds (gear/consumable/treasure) merge by catalogue id. */
+data class AcquireItem2024(val item: InventoryItem2024) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        if (item.quantity <= 0) throw CharacterIntentError.Invalid("Quantity must be positive")
+        val p = character.payload2024()
+        val stackable = item.kind != ItemKind2024.WEAPON && item.kind != ItemKind2024.ARMOR && item.catalogueID != null
+        val index = if (stackable) p.inventory.indexOfFirst { it.catalogueID == item.catalogueID && it.kind == item.kind } else -1
+        val updated = p.inventory.toMutableList()
+        if (index >= 0) updated[index] = updated[index].copy(quantity = updated[index].quantity + item.quantity) else updated.add(item)
+        return IntentResult(character.copy(payload = p.copy(inventory = updated)), ItemAcquired2024Event(item.name, item.quantity))
+    }
+}
+
+/** Drops some or all of a pack item; removes the line when the stack empties. */
+data class DropItem2024(val itemID: String, val quantity: Int = 1) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        if (quantity <= 0) throw CharacterIntentError.Invalid("Quantity must be positive")
+        val p = character.payload2024()
+        val index = p.inventory.indexOfFirst { it.id == itemID }
+        if (index < 0) throw CharacterIntentError.Invalid("No item with id $itemID")
+        val existing = p.inventory[index]
+        val dropped = minOf(quantity, existing.quantity)
+        val updated = p.inventory.toMutableList()
+        if (dropped >= existing.quantity) updated.removeAt(index) else updated[index] = existing.copy(quantity = existing.quantity - dropped)
+        return IntentResult(character.copy(payload = p.copy(inventory = updated)), ItemDropped2024Event(existing.name, dropped))
+    }
+}
+
+/** Dons or doffs armor (drives AC); pass null to go unarmored. The id must resolve in [Armors2024]. */
+data class EquipArmor2024(val armorId: String?) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        val p = character.payload2024()
+        val resolved = armorId?.let { Armors2024.armor(it) ?: throw CharacterIntentError.Invalid("Unknown armor $it") }
+        return IntentResult(character.copy(payload = p.copy(equippedArmor = resolved?.id)), ArmorEquipped2024Event(resolved?.name))
+    }
+}
+
+/** Straps on or stows a shield (+2 AC). */
+data class SetShield2024(val equipped: Boolean) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        val p = character.payload2024()
+        return IntentResult(character.copy(payload = p.copy(hasShield = equipped)), ShieldChanged2024Event(equipped))
+    }
+}
+
+/** Adjusts a coin pouch by [delta] (positive = gain, negative = spend); never goes negative. */
+data class AdjustCoin2024(val coin: Coin, val delta: Int, val source: String? = null) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        if (delta == 0) throw CharacterIntentError.Invalid("Coin adjustment must be non-zero")
+        val p = character.payload2024()
+        val current = p.coins[coin] ?: 0
+        val newValue = current + delta
+        if (newValue < 0) throw CharacterIntentError.Invalid("Not enough ${coin.abbreviation}: have $current, spending ${-delta}")
+        val coins = p.coins.toMutableMap()
+        if (newValue == 0) coins.remove(coin) else coins[coin] = newValue
+        return IntentResult(character.copy(payload = p.copy(coins = coins)), CoinAdjusted2024Event(coin, delta, source?.trim()?.takeIf { it.isNotEmpty() }))
+    }
+}
+
+/** Sets the character's weapon-mastery picks (de-duped, case-insensitive, capped by class progression). */
+data class SetWeaponMasteries2024(val masteries: List<String>) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        val p = character.payload2024()
+        val cap = p.classes.maxOfOrNull { WeaponMasteryProgression2024.slots(it.classId, it.level) } ?: 0
+        val cleaned = masteries.mapNotNull { WeaponMastery2024.from(it)?.name?.lowercase() }.distinct().take(cap)
+        return IntentResult(character.copy(payload = p.copy(weaponMasteries = cleaned)), WeaponMasteries2024Event(cleaned))
+    }
+}
+
 /** Sets a level's remaining slot count, dropping the key at zero. */
 private fun Map<Int, Int>.withSlot(level: Int, remaining: Int): Map<Int, Int> =
     if (remaining <= 0) this - level else this + (level to remaining)
@@ -278,8 +359,10 @@ data class LevelUp2024(
     val isNewClass: Boolean = false,
     val hpChoice: HpChoice = HpChoice.Average,
     val subclass: String? = null,
-    /** Ability Score Improvement applied this level (≤ +2 total, capped at 20). */
+    /** Ability Score Improvement applied this level (≤ +2 total, capped at 20). Also carries a half-feat's +1. */
     val abilityIncreases: Map<au.com.evonet.nat20.dnd5e.core.Ability, Int> = emptyMap(),
+    /** A General/Epic feat taken in place of (or alongside, for half-feats) the ASI at an advancement level. */
+    val feat: String? = null,
     val className: String = "",
 ) : CharacterIntent {
     override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
@@ -297,6 +380,9 @@ data class LevelUp2024(
         }
         if (abilityIncreases.values.sum() > 2 || abilityIncreases.values.any { it < 0 }) {
             throw CharacterIntentError.Invalid("An Ability Score Improvement grants at most +2 total")
+        }
+        if (feat != null && Feats2024.feat(feat) == null) {
+            throw CharacterIntentError.Invalid("Unknown feat $feat")
         }
 
         val classes = p.classes.toMutableList()
@@ -320,14 +406,16 @@ data class LevelUp2024(
             (p.currentSpellSlots[lvl] ?: 0) + maxOf(0, max - (oldMax[lvl] ?: 0))
         }
 
+        val newFeats = if (feat != null && feat !in p.chosenFeats) p.chosenFeats + feat else p.chosenFeats
         val updated = leveled.copy(
             maxHp = p.maxHp + hpGained,
             currentHp = p.currentHp + hpGained,
             currentSpellSlots = newCurrentSlots,
+            chosenFeats = newFeats,
         )
         return IntentResult(
             character.copy(payload = updated),
-            LeveledUp2024Event(classId, className, updated.level, classLevelAfter, hpGained, subclass, abilityIncreases),
+            LeveledUp2024Event(classId, className, updated.level, classLevelAfter, hpGained, subclass, abilityIncreases, feat),
         )
     }
 }

@@ -12,6 +12,9 @@ import au.com.evonet.nat20.dnd5e.ClassEntry
 import au.com.evonet.nat20.dnd5e2024.ClassEntry2024
 import au.com.evonet.nat20.dnd5e2024.DnD5e2024Payload
 import au.com.evonet.nat20.dnd5e2024.DnD5e2024Ruleset
+import au.com.evonet.nat20.dnd5e2024.InventoryItem2024
+import au.com.evonet.nat20.dnd5e2024.ItemKind2024
+import au.com.evonet.nat20.dnd5e2024.Weapons2024
 import au.com.evonet.nat20.dnd5e2024.withFullSpellSlots
 import au.com.evonet.nat20.domain.Character
 import java.time.Instant
@@ -52,9 +55,23 @@ object DemoCharacters {
             skillProficiencies = listOf("stealth", "sleightOfHand", "perception", "investigation"),
             originFeat = "alert",
             weaponMasteries = listOf("vex", "nick"),
+            equippedArmor = "leather",
+            coins = mapOf(Coin.GP to 25, Coin.SP to 8),
+            inventory = listOf(
+                inv2024("shortsword", ItemKind2024.WEAPON),
+                inv2024("dagger", ItemKind2024.WEAPON),
+                InventoryItem2024(InventoryItem2024.newId(), "Thieves' Tools", kind = ItemKind2024.GEAR),
+                InventoryItem2024(InventoryItem2024.newId(), "Potion of Healing", quantity = 2, kind = ItemKind2024.CONSUMABLE, catalogueID = "potion-healing"),
+            ),
         ),
         timestamp = seededAt,
     )
+
+    /** A 2024 weapon line item from the [Weapons2024] catalogue. */
+    private fun inv2024(weaponId: String, kind: ItemKind2024): InventoryItem2024 {
+        val w = Weapons2024.weapon(weaponId)!!
+        return InventoryItem2024(InventoryItem2024.newId(), w.name, kind = kind, catalogueID = w.id)
+    }
 
     /** A D&D 5e (2024) caster — exercises the 2024 Spells tab (slots + prepared + SRD 5.2 library). */
     private fun wisp(): Character = Character.new(

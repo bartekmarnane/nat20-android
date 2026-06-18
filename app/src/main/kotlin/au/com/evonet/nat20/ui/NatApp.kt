@@ -27,6 +27,8 @@ import au.com.evonet.nat20.ui.editor.DnD5e2024WizardScreen
 import au.com.evonet.nat20.ui.editor.DnD5eWizardScreen
 import au.com.evonet.nat20.ui.journal.JournalScreen
 import au.com.evonet.nat20.ui.past.PastAdventuresScreen
+import au.com.evonet.nat20.ui.reference.ItemCatalog2024Screen
+import au.com.evonet.nat20.ui.reference.MonsterCodex2024Screen
 import au.com.evonet.nat20.ui.reference.SpellLibraryScreen
 import au.com.evonet.nat20.ui.roster.RosterScreen
 import au.com.evonet.nat20.ui.settings.CreditsScreen
@@ -52,6 +54,8 @@ private object Routes {
     const val SETTINGS = "settings"
     const val CREDITS = "credits"
     const val SPELL_LIBRARY = "spell-library"
+    const val MONSTER_CODEX = "monster-codex-2024"
+    const val ITEM_CATALOG = "item-catalog-2024"
     const val ARG_ID = "id"
     const val ARG_CAMPAIGN_ID = "campaignId"
     fun sheet(id: UUID) = "sheet/$id"
@@ -98,6 +102,8 @@ fun NatApp() {
             SettingsScreen(
                 appSettings = container.appSettings,
                 onOpenSpellLibrary = { nav.navigate(Routes.SPELL_LIBRARY) },
+                onOpenMonsterCodex = { nav.navigate(Routes.MONSTER_CODEX) },
+                onOpenItemCatalog = { nav.navigate(Routes.ITEM_CATALOG) },
                 onOpenCredits = { nav.navigate(Routes.CREDITS) },
                 onBack = { nav.popBackStack() },
             )
@@ -109,6 +115,14 @@ fun NatApp() {
 
         composable(Routes.SPELL_LIBRARY) {
             SpellLibraryScreen(onBack = { nav.popBackStack() })
+        }
+
+        composable(Routes.MONSTER_CODEX) {
+            MonsterCodex2024Screen(onBack = { nav.popBackStack() })
+        }
+
+        composable(Routes.ITEM_CATALOG) {
+            ItemCatalog2024Screen(onBack = { nav.popBackStack() })
         }
 
         composable(

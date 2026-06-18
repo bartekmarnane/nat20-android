@@ -30,6 +30,8 @@ import au.com.evonet.nat20.dnd5e.core.RollBonus
 import au.com.evonet.nat20.dnd5e.core.RollSpec
 import au.com.evonet.nat20.dnd5e2024.DnD5e2024Catalog
 import au.com.evonet.nat20.dnd5e2024.DnD5e2024Payload
+import au.com.evonet.nat20.dnd5e2024.FeatCategory2024
+import au.com.evonet.nat20.dnd5e2024.Feats2024
 import au.com.evonet.nat20.dnd5e2024.LevelUp2024
 import au.com.evonet.nat20.domain.CharacterIntent
 import au.com.evonet.nat20.ui.roll.RollResultView
@@ -37,6 +39,7 @@ import au.com.evonet.nat20.ui.slugToTitle
 
 private enum class HpMode2024 { AVERAGE, ROLL }
 private enum class AsiKind2024 { ONE, TWO }
+private enum class AdvKind2024 { ASI, FEAT }
 
 /**
  * The D&D 5e (2024) level-up wizard (A21): advance a class (or multiclass),
@@ -63,14 +66,33 @@ internal fun LevelUp2024Wizard(payload: DnD5e2024Payload, onApplyIntent: (Charac
     var subclass by remember(classId) { mutableStateOf<String?>(null) }
 
     val needsAsi = LevelUpMath.grantsAbilityScoreImprovement(classId, newClassLevel)
+    val nextLevel = payload.level + 1
+    val isSpellcaster = payload.classes.any { DnD5e2024Catalog.characterClass(it.classId)?.isCaster == true }
+    var advKind by remember { mutableStateOf(AdvKind2024.ASI) }
     var asiKind by remember { mutableStateOf(AsiKind2024.ONE) }
-    var picks by remember(classId) { mutableStateOf<List<Ability>>(emptyList()) }
-    val asi = when (asiKind) { AsiKind2024.ONE -> picks.take(1).associateWith { 2 }; AsiKind2024.TWO -> picks.take(2).associateWith { 1 } }
+    var picks by remember(classId, advKind) { mutableStateOf<List<Ability>>(emptyList()) }
+    var featId by remember(classId, advKind) { mutableStateOf<String?>(null) }
+    var halfFeatPick by remember(featId) { mutableStateOf<Ability?>(null) }
+
+    // General feats available at the new level (the ASI itself is handled by the ASI branch).
+    val availableFeats = remember(nextLevel, isSpellcaster, payload.abilityScores) {
+        Feats2024.inCategory(FeatCategory2024.GENERAL)
+            .filter { it.id != "ability-score-improvement" && it.isAvailable(nextLevel, payload.abilityScores, isSpellcaster) }
+    }
+    val pickedFeat = featId?.let { Feats2024.feat(it) }
+    val asi = when (advKind) {
+        AdvKind2024.ASI -> when (asiKind) { AsiKind2024.ONE -> picks.take(1).associateWith { 2 }; AsiKind2024.TWO -> picks.take(2).associateWith { 1 } }
+        AdvKind2024.FEAT -> if (pickedFeat?.grantsAbilityIncrease == true) halfFeatPick?.let { mapOf(it to 1) }.orEmpty() else emptyMap()
+    }
+    val advancementReady = when (advKind) {
+        AdvKind2024.ASI -> asi.values.sum() == 2
+        AdvKind2024.FEAT -> pickedFeat != null && (pickedFeat.grantsAbilityIncrease.not() || halfFeatPick != null)
+    }
 
     val ready = klass != null && payload.level < DnD5e2024Payload.MAX_LEVEL &&
         (hpMode == HpMode2024.AVERAGE || rolledDie != null) &&
         (!needsSubclass || subclass != null) &&
-        (!needsAsi || asi.values.sum() == 2)
+        (!needsAsi || advancementReady)
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -103,16 +125,37 @@ internal fun LevelUp2024Wizard(payload: DnD5e2024Payload, onApplyIntent: (Charac
                 }
 
                 if (needsAsi) {
-                    Label2024("Ability Score Improvement")
+                    Label2024("Advancement")
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        FilterChip(asiKind == AsiKind2024.ONE, { asiKind = AsiKind2024.ONE; picks = emptyList() }, label = { Text("+2 to one") })
-                        FilterChip(asiKind == AsiKind2024.TWO, { asiKind = AsiKind2024.TWO; picks = emptyList() }, label = { Text("+1 to two") })
+                        FilterChip(advKind == AdvKind2024.ASI, { advKind = AdvKind2024.ASI }, label = { Text("Ability Scores") })
+                        FilterChip(advKind == AdvKind2024.FEAT, { advKind = AdvKind2024.FEAT }, label = { Text("Feat") })
                     }
-                    val limit = if (asiKind == AsiKind2024.ONE) 1 else 2
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Ability.entries.forEach { a ->
-                            val picked = a in picks
-                            FilterChip(picked, enabled = payload.abilityScores.score(a) < 20 && (picked || picks.size < limit), onClick = { picks = if (picked) picks - a else picks + a }, label = { Text("${a.abbreviation} ${payload.abilityScores.score(a)}") })
+                    if (advKind == AdvKind2024.ASI) {
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            FilterChip(asiKind == AsiKind2024.ONE, { asiKind = AsiKind2024.ONE; picks = emptyList() }, label = { Text("+2 to one") })
+                            FilterChip(asiKind == AsiKind2024.TWO, { asiKind = AsiKind2024.TWO; picks = emptyList() }, label = { Text("+1 to two") })
+                        }
+                        val limit = if (asiKind == AsiKind2024.ONE) 1 else 2
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Ability.entries.forEach { a ->
+                                val picked = a in picks
+                                FilterChip(picked, enabled = payload.abilityScores.score(a) < 20 && (picked || picks.size < limit), onClick = { picks = if (picked) picks - a else picks + a }, label = { Text("${a.abbreviation} ${payload.abilityScores.score(a)}") })
+                            }
+                        }
+                    } else {
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            availableFeats.forEach { f -> FilterChip(featId == f.id, { featId = f.id; halfFeatPick = null }, label = { Text(f.name) }) }
+                        }
+                        pickedFeat?.let { f ->
+                            Text(f.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            if (f.grantsAbilityIncrease) {
+                                Text("+1 ability score:", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Ability.entries.forEach { a ->
+                                        FilterChip(halfFeatPick == a, enabled = payload.abilityScores.score(a) < 20, onClick = { halfFeatPick = a }, label = { Text("${a.abbreviation} ${payload.abilityScores.score(a)}") })
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -120,7 +163,8 @@ internal fun LevelUp2024Wizard(payload: DnD5e2024Payload, onApplyIntent: (Charac
         },
         confirmButton = {
             TextButton(enabled = ready, onClick = {
-                onApplyIntent(LevelUp2024(classId, isNew, if (hpMode == HpMode2024.ROLL) HpChoice.Rolled(rolledDie!!) else HpChoice.Average, subclass, asi, klass?.name ?: classId.slugToTitle()))
+                val chosenFeat = if (needsAsi && advKind == AdvKind2024.FEAT) featId else null
+                onApplyIntent(LevelUp2024(classId, isNew, if (hpMode == HpMode2024.ROLL) HpChoice.Rolled(rolledDie!!) else HpChoice.Average, subclass, asi, chosenFeat, klass?.name ?: classId.slugToTitle()))
                 onDismiss()
             }) { Text("Level Up") }
         },

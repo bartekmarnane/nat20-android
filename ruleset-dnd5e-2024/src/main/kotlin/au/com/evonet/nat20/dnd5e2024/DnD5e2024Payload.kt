@@ -21,9 +21,9 @@ import kotlinx.serialization.Serializable
  *
  * 2024 differences modelled here: **species** (not race; traits only), ability
  * bumps from **background** (`backgroundASI`), the numeric **−2/level**
- * exhaustion track, explicit `originFeat` / `fightingStyle` slots, and
- * `weaponMasteries`. (Inventory, the full feat/advancement system, and the 6-tab
- * codex are follow-up slices — see the README.)
+ * exhaustion track, explicit `originFeat` / `fightingStyle` slots,
+ * `weaponMasteries`, and the lightweight 2024 `inventory` + worn `equippedArmor` /
+ * `hasShield` (the full feat/advancement system is a follow-up slice).
  */
 @Serializable
 data class DnD5e2024Payload(
@@ -46,11 +46,19 @@ data class DnD5e2024Payload(
     /** 2024 exhaustion: a 0–6 numeric track (−2/level to d20 tests, −5 ft/level speed, level 6 = death). */
     val exhaustionLevel: Int = 0,
     val hasInspiration: Boolean = false,
+    /** Orc Relentless Endurance: spent when it keeps the character at 1 HP; resets on a long rest. */
+    val relentlessEnduranceUsed: Boolean = false,
     val concentratingOn: String? = null,
     val currentSpellSlots: Map<Int, Int> = emptyMap(),
     val preparedSpells: Map<String, List<String>> = emptyMap(),
     val cantripsKnown: List<String> = emptyList(),
     val coins: Map<Coin, Int> = emptyMap(),
+    /** The worn armor's catalogue id ([Armors2024]); null = unarmored. Drives AC. */
+    val equippedArmor: String? = null,
+    /** Whether a shield is equipped (+2 AC). */
+    val hasShield: Boolean = false,
+    /** The pack — a flat list of lightweight line items (armor/shield are tracked above). */
+    val inventory: List<InventoryItem2024> = emptyList(),
     /** Skill proficiencies the class granted (background skills fold in via derived stats). */
     val skillProficiencies: List<String> = emptyList(),
     /** The level-1 origin feat granted by the background. */

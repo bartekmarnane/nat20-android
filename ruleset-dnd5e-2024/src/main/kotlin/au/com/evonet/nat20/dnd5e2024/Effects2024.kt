@@ -15,7 +15,30 @@ import au.com.evonet.nat20.dnd5e.core.EffectSource
  */
 
 val DnD5e2024Payload.allEffects: List<ActiveEffect>
-    get() = activeEffects + passiveClassEffects()
+    get() = activeEffects + passiveClassEffects() + SpeciesTraits2024.passiveEffects(species) + passiveFeatEffects()
+
+/** Every feat the character holds — origin + fighting style + advancement-chosen. */
+val DnD5e2024Payload.allFeats: Set<String>
+    get() = (listOfNotNull(originFeat, fightingStyle) + chosenFeats).toSet()
+
+/** Feats with a clean always-on rider that folds into derived stats (currently Defense → +1 AC while armored). */
+fun DnD5e2024Payload.passiveFeatEffects(): List<ActiveEffect> = buildList {
+    if ("defense" in allFeats && equippedArmor != null) {
+        add(
+            ActiveEffect(
+                id = "passive:feat:defense",
+                name = "Defense",
+                source = EffectSource.Feature("feat:defense"),
+                modifiers = listOf(EffectModifier.AcBonus(1)),
+                duration = EffectDuration.UntilCancelled,
+            ),
+        )
+    }
+}
+
+/** Skill proficiencies the character has, including those auto-granted by a species trait (Elf Keen Senses). */
+val DnD5e2024Payload.effectiveSkillProficiencies: List<String>
+    get() = (skillProficiencies + SpeciesTraits2024.grantedSkills(species)).distinct()
 
 /** Barbarian / Monk Unarmored Defense as always-on AC overrides (gated on no armor by the calculator). */
 fun DnD5e2024Payload.passiveClassEffects(): List<ActiveEffect> = buildList {
@@ -46,21 +69,68 @@ val DnD5e2024Payload.effectDamageBonus: Int
     get() = activeEffects.sumOf { e -> e.modifiers.sumOf { if (it is EffectModifier.DamageBonus) it.value else 0 } }
 
 val DnD5e2024Payload.effectiveDamageResistances: Set<String>
-    get() = activeEffects.flatMap { e -> e.modifiers.mapNotNull { (it as? EffectModifier.DamageResistance)?.type?.trim()?.lowercase()?.takeIf { t -> t.isNotEmpty() } } }.toSet()
+    get() = allEffects.flatMap { e -> e.modifiers.mapNotNull { (it as? EffectModifier.DamageResistance)?.type?.trim()?.lowercase()?.takeIf { t -> t.isNotEmpty() } } }.toSet()
 
-/** Armor Class for a 2024 character (no inventory yet): 10 + DEX, beaten by the best AC override, plus flat riders. */
-val DnD5e2024Payload.armorClass: Int
-    get() {
-        val dexMod = AbilityScores.modifier(effectiveScore(Ability.DEXTERITY))
-        var base = 10
-        for (effect in allEffects) for (m in effect.modifiers) {
-            if (m !is EffectModifier.AcOverride) continue
-            val candidate = when (val f = m.formula) {
-                is ACOverrideFormula.BaseDex -> f.base
-                is ACOverrideFormula.BaseDexAbility -> f.base + AbilityScores.modifier(effectiveScore(f.ability))
-            }
-            if (candidate > base) base = candidate
-        }
-        val bonuses = allEffects.sumOf { e -> e.modifiers.sumOf { if (it is EffectModifier.AcBonus) it.value else 0 } }
-        return base + dexMod + bonuses
+/**
+ * Computes a 2024 character's Armor Class from worn armor + shield + active
+ * effects. Rules (mirrors the 2014 `ArmorClassCalculator`, on the 2024 payload):
+ * - **Worn armor** ([DnD5e2024Payload.equippedArmor] resolved in [Armors2024]):
+ *   base + DEX by the category cap (light uncapped / medium +2 / heavy ignores).
+ *   AC overrides (Unarmored Defense, Mage Armor) do **not** apply while armored.
+ * - **Unarmored**: the highest of 10 + DEX and any `.acOverride` (Barbarian
+ *   10+DEX+CON, Monk 10+DEX+WIS gated on no shield), per RAW.
+ * - **Shield** ([DnD5e2024Payload.hasShield]) adds a flat +2.
+ * - Every effect `.acBonus` (Shield spell +5, Shield of Faith +2) stacks on top.
+ */
+object ArmorClass2024 {
+    /** One contributing line in the breakdown — a label and its signed value. */
+    data class Row(val label: String, val value: Int)
+
+    /** The full breakdown; [total] is the sum of all [rows]. */
+    data class Breakdown(val rows: List<Row>) {
+        val total: Int get() = rows.sumOf { it.value }
     }
+
+    fun compute(payload: DnD5e2024Payload): Breakdown {
+        val dexMod = AbilityScores.modifier(payload.effectiveScore(Ability.DEXTERITY))
+        val rows = mutableListOf<Row>()
+
+        val worn = payload.equippedArmor?.let { Armors2024.armor(it) }
+        if (worn != null) {
+            rows += Row(worn.name, worn.baseAC)
+            when (val cap = worn.category.dexCap) {
+                0 -> rows += Row("DEX (ignored by heavy)", 0)
+                null -> rows += Row("DEX", dexMod)
+                else -> {
+                    val label = if (dexMod > cap) "DEX (capped at +$cap)" else "DEX"
+                    rows += Row(label, minOf(cap, dexMod))
+                }
+            }
+        } else {
+            var bestBase = 10
+            var baseLabel = "Unarmored"
+            for (effect in payload.allEffects) for (m in effect.modifiers) {
+                if (m !is EffectModifier.AcOverride) continue
+                if (m.formula.requirement == ACOverrideRequirement.NO_SHIELD && payload.hasShield) continue
+                val candidate = when (val f = m.formula) {
+                    is ACOverrideFormula.BaseDex -> f.base
+                    is ACOverrideFormula.BaseDexAbility -> f.base + AbilityScores.modifier(payload.effectiveScore(f.ability))
+                }
+                if (candidate > bestBase) { bestBase = candidate; baseLabel = effect.name }
+            }
+            rows += Row(baseLabel, bestBase)
+            rows += Row("DEX", dexMod)
+        }
+
+        if (payload.hasShield) rows += Row("Shield", Armors2024.SHIELD_BONUS)
+
+        for (effect in payload.allEffects) for (m in effect.modifiers) {
+            if (m is EffectModifier.AcBonus && m.value != 0) rows += Row(effect.name, m.value)
+        }
+        return Breakdown(rows)
+    }
+}
+
+/** Convenience: just the total AC for a 2024 character. */
+val DnD5e2024Payload.armorClass: Int
+    get() = ArmorClass2024.compute(this).total

@@ -20,6 +20,7 @@ data class DamageTaken2024Event(
     val tempAbsorbed: Int = 0,
     val resistanceApplied: Boolean = false,
     val concentrationCheckDC: Int? = null,
+    val relentlessEndurance: Boolean = false,
 ) : CharacterEvent {
     override val summary: String
         get() {
@@ -27,7 +28,8 @@ data class DamageTaken2024Event(
             val resist = if (resistanceApplied) " (resisted)" else ""
             val temp = if (tempAbsorbed > 0) " ($tempAbsorbed absorbed by temp)" else ""
             val conc = concentrationCheckDC?.let { " · concentration save DC $it" } ?: ""
-            return "Took $amount$type damage$resist (HP $previousHp → $newHp)$temp$conc"
+            val relentless = if (relentlessEndurance) " · Relentless Endurance kept them at 1 HP" else ""
+            return "Took $amount$type damage$resist (HP $previousHp → $newHp)$temp$conc$relentless"
         }
 }
 
@@ -140,6 +142,43 @@ data class Initiative2024Event(val value: Int?) : CharacterEvent {
     override val summary: String get() = if (value != null) "Rolled initiative: $value" else "Cleared initiative"
 }
 
+@Serializable
+data class ItemAcquired2024Event(val itemName: String, val quantity: Int) : CharacterEvent {
+    override val summary: String get() = "Acquired ${if (quantity > 1) "$quantity× " else ""}$itemName"
+}
+
+@Serializable
+data class ItemDropped2024Event(val itemName: String, val quantity: Int) : CharacterEvent {
+    override val summary: String get() = "Dropped ${if (quantity > 1) "$quantity× " else ""}$itemName"
+}
+
+@Serializable
+data class ArmorEquipped2024Event(val armorName: String? = null) : CharacterEvent {
+    override val summary: String get() = armorName?.let { "Donned $it" } ?: "Removed armor"
+}
+
+@Serializable
+data class ShieldChanged2024Event(val equipped: Boolean) : CharacterEvent {
+    override val summary: String get() = if (equipped) "Readied a shield" else "Stowed the shield"
+}
+
+@Serializable
+data class CoinAdjusted2024Event(val coin: au.com.evonet.nat20.dnd5e.core.Coin, val delta: Int, val source: String? = null) : CharacterEvent {
+    override val summary: String
+        get() {
+            val verb = if (delta >= 0) "Gained" else "Spent"
+            val tail = source?.let { " — $it" } ?: ""
+            return "$verb ${kotlin.math.abs(delta)} ${coin.abbreviation}$tail"
+        }
+}
+
+@Serializable
+data class WeaponMasteries2024Event(val masteries: List<String>) : CharacterEvent {
+    override val summary: String
+        get() = if (masteries.isEmpty()) "Cleared weapon masteries"
+        else "Set weapon masteries: " + masteries.joinToString(", ") { it.replaceFirstChar(Char::uppercase) }
+}
+
 private fun ordinal(n: Int): String = when (n) { 1 -> "1st"; 2 -> "2nd"; 3 -> "3rd"; else -> "${n}th" }
 
 @Serializable
@@ -151,6 +190,7 @@ data class LeveledUp2024Event(
     val hpGained: Int,
     val subclass: String? = null,
     val abilityIncreases: Map<au.com.evonet.nat20.dnd5e.core.Ability, Int> = emptyMap(),
+    val feat: String? = null,
 ) : CharacterEvent {
     override val summary: String
         get() {
@@ -158,6 +198,7 @@ data class LeveledUp2024Event(
             val extras = buildList {
                 subclass?.takeIf { it.isNotBlank() }?.let { add(it) }
                 if (abilityIncreases.isNotEmpty()) add(abilityIncreases.entries.joinToString(", ") { "+${it.value} ${it.key.abbreviation}" })
+                feat?.let { add(Feats2024.feat(it)?.name ?: it.replaceFirstChar(Char::uppercase)) }
             }
             val extra = if (extras.isEmpty()) "" else " · ${extras.joinToString(" · ")}"
             return "Leveled up to $label $classLevelAfter — +$hpGained HP$extra"

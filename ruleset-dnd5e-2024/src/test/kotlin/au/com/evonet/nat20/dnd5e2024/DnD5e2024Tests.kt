@@ -243,6 +243,202 @@ class Effects2024Tests {
     }
 }
 
+class SpeciesTraits2024Tests {
+    @Test
+    fun `dwarf poison resistance folds into damage`() {
+        val dwarf = character(DnD5e2024Payload(species = "dwarf", classes = listOf(ClassEntry2024("fighter", 1)), maxHp = 12, currentHp = 12))
+        assertTrue("poison" in dwarf.p().effectiveDamageResistances)
+        val hurt = TakeDamage2024(8, "poison").applyTo(dwarf, ruleset)
+        assertEquals(8, hurt.character.p().currentHp) // 8 poison halved to 4
+        assertTrue(hurt.event.summary.contains("resisted"))
+    }
+
+    @Test
+    fun `elf Keen Senses auto-grants Perception proficiency`() {
+        val elf = DnD5e2024Payload(species = "elf", skillProficiencies = listOf("stealth"))
+        assertTrue("perception" in elf.effectiveSkillProficiencies)
+        assertEquals(listOf("stealth", "perception"), elf.effectiveSkillProficiencies)
+        // A non-elf gets no auto skill.
+        assertFalse("perception" in DnD5e2024Payload(species = "human", skillProficiencies = listOf("stealth")).effectiveSkillProficiencies)
+    }
+
+    @Test
+    fun `orc Relentless Endurance keeps the character at 1 HP once per long rest`() {
+        val orc = character(DnD5e2024Payload(species = "orc", classes = listOf(ClassEntry2024("barbarian", 1)), maxHp = 14, currentHp = 6))
+        val downed = TakeDamage2024(10).applyTo(orc, ruleset) // leftover 4 < max ⇒ not overkill
+        assertEquals(1, downed.character.p().currentHp)
+        assertTrue(downed.character.p().relentlessEnduranceUsed)
+        assertTrue(downed.event.summary.contains("Relentless Endurance"))
+        // Already used → drops to 0 this time.
+        val again = TakeDamage2024(10).applyTo(downed.character.copy(payload = downed.character.p().copy(currentHp = 6)), ruleset)
+        assertEquals(0, again.character.p().currentHp)
+        // Long rest restores the feature.
+        val rested = LongRest2024().applyTo(again.character, ruleset)
+        assertFalse(rested.character.p().relentlessEnduranceUsed)
+    }
+
+    @Test
+    fun `massive overkill kills outright despite Relentless Endurance`() {
+        val orc = character(DnD5e2024Payload(species = "orc", classes = listOf(ClassEntry2024("barbarian", 1)), maxHp = 14, currentHp = 6))
+        val dead = TakeDamage2024(6 + 14).applyTo(orc, ruleset) // current + max ⇒ instant death
+        assertEquals(0, dead.character.p().currentHp)
+        assertFalse(dead.character.p().relentlessEnduranceUsed)
+    }
+
+    @Test
+    fun `every catalogue species has surfaced reminders`() {
+        DnD5e2024Catalog.species.forEach { s ->
+            assertTrue(SpeciesTraits2024.reminders(s.id).isNotEmpty(), "no reminders for ${s.id}")
+        }
+    }
+}
+
+class Feats2024Tests {
+    @Test
+    fun `feats are tiered with the right minimum levels`() {
+        assertEquals(1, FeatCategory2024.ORIGIN.minimumLevel)
+        assertEquals(4, FeatCategory2024.GENERAL.minimumLevel)
+        assertEquals(19, FeatCategory2024.EPIC_BOON.minimumLevel)
+        assertTrue(Feats2024.inCategory(FeatCategory2024.ORIGIN).isNotEmpty())
+        assertEquals(FeatCategory2024.GENERAL, Feats2024.feat("great-weapon-master")!!.category)
+    }
+
+    @Test
+    fun `availability honours level, ability prereqs, and spellcasting`() {
+        val gwm = Feats2024.feat("great-weapon-master")!!
+        // General feat needs level 4 and STR 13.
+        assertFalse(gwm.isAvailable(3, AbilityScores(strength = 16)))
+        assertFalse(gwm.isAvailable(4, AbilityScores(strength = 12)))
+        assertTrue(gwm.isAvailable(4, AbilityScores(strength = 13)))
+        assertTrue(gwm.grantsAbilityIncrease)
+        // War Caster needs spellcasting.
+        val wc = Feats2024.feat("war-caster")!!
+        assertFalse(wc.isAvailable(4, AbilityScores(), isSpellcaster = false))
+        assertTrue(wc.isAvailable(4, AbilityScores(), isSpellcaster = true))
+        // Epic boon gated at 19.
+        assertFalse(Feats2024.feat("boon-of-fate")!!.isAvailable(18, AbilityScores()))
+        assertTrue(Feats2024.feat("boon-of-fate")!!.isAvailable(20, AbilityScores()))
+    }
+
+    @Test
+    fun `advancement choice validity covers ASI and feat`() {
+        val scores = AbilityScores(strength = 19)
+        assertTrue(AdvancementChoice2024.AbilityScoreImprovement(mapOf(Ability.DEXTERITY to 2)).isValid(4, scores))
+        assertTrue(AdvancementChoice2024.AbilityScoreImprovement(mapOf(Ability.DEXTERITY to 1, Ability.WISDOM to 1)).isValid(4, scores))
+        // ASI that overflows past 20 is rejected (not silently clamped).
+        assertFalse(AdvancementChoice2024.AbilityScoreImprovement(mapOf(Ability.STRENGTH to 2)).isValid(4, scores))
+        // Only General feats are valid advancement picks.
+        assertTrue(AdvancementChoice2024.Feat("great-weapon-master").isValid(4, scores))
+        assertFalse(AdvancementChoice2024.Feat("alert").isValid(4, scores)) // origin feat, not a General pick
+    }
+
+    @Test
+    fun `level up records a chosen feat and journals it`() {
+        val fighter = character(DnD5e2024Payload(classes = listOf(ClassEntry2024("fighter", 3)), abilityScores = AbilityScores(strength = 15), maxHp = 28, currentHp = 28))
+        val result = LevelUp2024("fighter", feat = "great-weapon-master", abilityIncreases = mapOf(Ability.STRENGTH to 1), className = "Fighter").applyTo(fighter, ruleset)
+        val p = result.character.p()
+        assertEquals(4, p.level)
+        assertTrue("great-weapon-master" in p.chosenFeats)
+        assertEquals(16, p.abilityScores.strength) // half-feat +1
+        assertTrue(result.event.summary.contains("Great Weapon Master"))
+        assertTrue("great-weapon-master" in p.allFeats)
+    }
+
+    @Test
+    fun `Defense fighting style adds plus one AC only while armored`() {
+        val unarmored = DnD5e2024Payload(classes = listOf(ClassEntry2024("fighter", 1)), abilityScores = AbilityScores(dexterity = 14), fightingStyle = "defense")
+        assertEquals(12, unarmored.armorClass) // no armor → no Defense bonus
+        val armored = unarmored.copy(equippedArmor = "chain-mail")
+        assertEquals(17, armored.armorClass) // 16 base + 0 DEX + 1 Defense
+    }
+}
+
+class MonsterCatalog2024Tests {
+    @Test
+    fun `the SRD 5_2 monster catalogue loads, sorted by CR then name`() {
+        val monsters = MonsterCatalog2024.all
+        assertEquals(330, monsters.size)
+        // sorted ascending by CR
+        assertTrue(monsters.zipWithNext().all { (a, b) -> a.challengeRating <= b.challengeRating })
+        val aboleth = MonsterCatalog2024.monster("aboleth")!!
+        assertEquals("Aboleth", aboleth.name)
+        assertEquals(10.0, aboleth.challengeRating)
+        assertTrue(aboleth.actions.isNotEmpty())
+        assertTrue(aboleth.subtitle.contains("Aberration"))
+    }
+}
+
+class Inventory2024Tests {
+    private fun fighter(dex: Int = 14, armor: String? = null, shield: Boolean = false) = character(
+        DnD5e2024Payload(
+            classes = listOf(ClassEntry2024("fighter", 1)),
+            abilityScores = AbilityScores(dexterity = dex),
+            equippedArmor = armor, hasShield = shield,
+        ),
+    )
+
+    @ParameterizedTest
+    @CsvSource(
+        // armor, dex, shield, expectedAC
+        "null,14,false,12",            // unarmored: 10 + 2 DEX
+        "leather,14,false,13",         // light: 11 + full DEX(2)
+        "scale-mail,16,false,16",      // medium: 14 + DEX capped at +2 (3→2)
+        "scale-mail,10,false,14",      // medium: 14 + DEX(0)
+        "plate,16,false,18",           // heavy: 18 + DEX ignored
+        "plate,16,true,20",            // heavy + shield +2
+        "leather,14,true,15",          // light + shield
+    )
+    fun `armor class folds worn armor, the DEX cap, and a shield`(armor: String, dex: Int, shield: Boolean, expectedAC: Int) {
+        val id = armor.takeIf { it != "null" }
+        assertEquals(expectedAC, fighter(dex = dex, armor = id, shield = shield).p().armorClass)
+    }
+
+    @Test
+    fun `unarmored Barbarian uses Constitution, ignoring overrides once armored`() {
+        val barb = character(DnD5e2024Payload(classes = listOf(ClassEntry2024("barbarian", 1)), abilityScores = AbilityScores(dexterity = 14, constitution = 16)))
+        assertEquals(15, barb.p().armorClass) // 10 + 2 DEX + 3 CON
+        val armored = character((barb.p()).copy(equippedArmor = "chain-mail"))
+        assertEquals(16, armored.p().armorClass) // heavy base only; Unarmored Defense suppressed
+    }
+
+    @Test
+    fun `acquiring stacks consumables by catalogue id but keeps weapons distinct`() {
+        val potion = InventoryItem2024(InventoryItem2024.newId(), "Potion of Healing", kind = ItemKind2024.CONSUMABLE, catalogueID = "potion-healing")
+        var c = AcquireItem2024(potion).applyTo(fighter(), ruleset).character
+        c = AcquireItem2024(potion.copy(id = InventoryItem2024.newId(), quantity = 2)).applyTo(c, ruleset).character
+        assertEquals(1, c.p().inventory.size)
+        assertEquals(3, c.p().inventory.first().quantity)
+    }
+
+    @Test
+    fun `equipping resolves the catalogue and toggling a shield drives AC`() {
+        val equipped = EquipArmor2024("studded-leather").applyTo(fighter(dex = 12), ruleset).character
+        assertEquals("studded-leather", equipped.p().equippedArmor)
+        assertEquals(13, equipped.p().armorClass) // 12 base + DEX 1
+        val shielded = SetShield2024(true).applyTo(equipped, ruleset).character
+        assertEquals(15, shielded.p().armorClass)
+        assertThrows(CharacterIntentError.Invalid::class.java) { EquipArmor2024("nonsense").applyTo(fighter(), ruleset) }
+    }
+
+    @Test
+    fun `weapon mastery progression caps the picks`() {
+        assertEquals(3, WeaponMasteryProgression2024.slots("fighter", 1))
+        assertEquals(6, WeaponMasteryProgression2024.slots("fighter", 16))
+        assertEquals(2, WeaponMasteryProgression2024.slots("rogue", 5))
+        assertEquals(0, WeaponMasteryProgression2024.slots("wizard", 20))
+        // A barbarian (2 slots) keeps only the first two, case-insensitively de-duped.
+        val barb = character(DnD5e2024Payload(classes = listOf(ClassEntry2024("barbarian", 3))))
+        val set = SetWeaponMasteries2024(listOf("Cleave", "topple", "VEX", "cleave")).applyTo(barb, ruleset).character
+        assertEquals(listOf("cleave", "topple"), set.p().weaponMasteries)
+    }
+
+    @Test
+    fun `every 2024 weapon carries a mastery and the catalogue resolves by id`() {
+        assertTrue(Weapons2024.all.all { WeaponMastery2024.entries.contains(it.mastery) })
+        assertEquals(WeaponMastery2024.CLEAVE, Weapons2024.weapon("greataxe")!!.mastery)
+    }
+}
+
 class Codec2024Tests {
     @Test
     fun `a full 2024 payload round-trips, including core sealed effects`() {
@@ -258,6 +454,9 @@ class Codec2024Tests {
             activeConditions = listOf("Poisoned"),
             exhaustionLevel = 2,
             coins = mapOf(Coin.GP to 12),
+            equippedArmor = "studded-leather",
+            hasShield = true,
+            inventory = listOf(InventoryItem2024("i1", "Thieves' Tools", kind = ItemKind2024.GEAR, catalogueID = "thieves-tools")),
             weaponMasteries = listOf("vex", "nick"),
             originFeat = "alert",
         )
@@ -270,6 +469,12 @@ class Codec2024Tests {
             DamageTaken2024Event(8, "piercing", 27, 19),
             ExhaustionChanged2024Event(0, 1),
             LeveledUp2024Event("rogue", "Rogue", 5, 5, 6),
+            ItemAcquired2024Event("Longsword", 1),
+            ItemDropped2024Event("Torch", 2),
+            ArmorEquipped2024Event("Chain Mail"),
+            ShieldChanged2024Event(true),
+            CoinAdjusted2024Event(Coin.GP, -5, "tavern"),
+            WeaponMasteries2024Event(listOf("vex", "nick")),
         )
         for (event in events) {
             val typeId = ruleset.eventTypeId(event)

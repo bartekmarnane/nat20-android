@@ -45,12 +45,29 @@ import au.com.evonet.nat20.dnd5e.core.Proficiency
 import au.com.evonet.nat20.dnd5e.core.EffectModifier
 import au.com.evonet.nat20.dnd5e.core.RollBonus
 import au.com.evonet.nat20.dnd5e.core.RollSpec
+import au.com.evonet.nat20.dnd5e.core.Coin
+import au.com.evonet.nat20.dnd5e2024.AcquireItem2024
+import au.com.evonet.nat20.dnd5e2024.AdjustCoin2024
 import au.com.evonet.nat20.dnd5e2024.ApplyCondition2024
+import au.com.evonet.nat20.dnd5e2024.ArmorClass2024
+import au.com.evonet.nat20.dnd5e2024.Armors2024
 import au.com.evonet.nat20.dnd5e2024.CancelEffect2024
 import au.com.evonet.nat20.dnd5e2024.CastSpell2024
 import au.com.evonet.nat20.dnd5e2024.ClearCondition2024
 import au.com.evonet.nat20.dnd5e2024.ChangeExhaustion2024
+import au.com.evonet.nat20.dnd5e2024.DropItem2024
 import au.com.evonet.nat20.dnd5e2024.EndConcentration2024
+import au.com.evonet.nat20.dnd5e2024.Feats2024
+import au.com.evonet.nat20.dnd5e2024.EquipArmor2024
+import au.com.evonet.nat20.dnd5e2024.InventoryItem2024
+import au.com.evonet.nat20.dnd5e2024.ItemKind2024
+import au.com.evonet.nat20.dnd5e2024.SetShield2024
+import au.com.evonet.nat20.dnd5e2024.SetWeaponMasteries2024
+import au.com.evonet.nat20.dnd5e2024.SpeciesTraits2024
+import au.com.evonet.nat20.dnd5e2024.effectiveSkillProficiencies
+import au.com.evonet.nat20.dnd5e2024.WeaponMastery2024
+import au.com.evonet.nat20.dnd5e2024.WeaponMasteryProgression2024
+import au.com.evonet.nat20.dnd5e2024.Weapons2024
 import au.com.evonet.nat20.dnd5e2024.armorClass
 import au.com.evonet.nat20.dnd5e2024.temporarySaveBonus
 import au.com.evonet.nat20.dnd5e2024.DnD5e2024Catalog
@@ -79,7 +96,7 @@ import kotlinx.coroutines.launch
  * (skills are edition-agnostic), and journals through the same `onApplyIntent`.
  * Inventory + weapon-mastery + the full feat system are follow-up slices.
  */
-private enum class Tab2024(val title: String) { STATS("Stats"), SKILLS("Skills"), COMBAT("Combat"), SPELLS("Spells"), LORE("Lore") }
+private enum class Tab2024(val title: String) { STATS("Stats"), SKILLS("Skills"), COMBAT("Combat"), SPELLS("Spells"), ITEMS("Items"), LORE("Lore") }
 
 @Composable
 fun Codex2024ShellView(
@@ -108,6 +125,7 @@ fun Codex2024ShellView(
                 Tab2024.SKILLS -> Skills2024(payload)
                 Tab2024.COMBAT -> Combat2024(character, payload, onApplyIntent)
                 Tab2024.SPELLS -> Spells2024(character, payload, onApplyIntent, onSave)
+                Tab2024.ITEMS -> Items2024(payload, onApplyIntent)
                 Tab2024.LORE -> Lore2024(character, payload)
             }
         }
@@ -153,7 +171,7 @@ private fun Stats2024(payload: DnD5e2024Payload, onLevelUp: () -> Unit) {
         }
         Card2024("Proficiency & Senses") {
             StatRow("Proficiency Bonus", prof.signed2024())
-            StatRow("Passive Perception", (10 + AbilityScores.modifier(scores.score(Ability.WISDOM)) + if ("perception" in payload.skillProficiencies) prof else 0).toString())
+            StatRow("Passive Perception", (10 + AbilityScores.modifier(scores.score(Ability.WISDOM)) + if ("perception" in payload.effectiveSkillProficiencies) prof else 0).toString())
         }
         Card2024("Saving Throws") {
             Ability.entries.forEach { a ->
@@ -180,11 +198,12 @@ private fun Skills2024(payload: DnD5e2024Payload) {
     val prof = Proficiency.bonus(payload.level)
     val scores = payload.effectiveAbilityScores
     var check by remember { mutableStateOf<Pair<String, List<RollBonus>>?>(null) }
+    val proficiencies = payload.effectiveSkillProficiencies
     Page2024 {
         Card2024("Skills") {
             DnD5eCatalog.skills.forEachIndexed { i, skill ->
                 if (i > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
-                val proficient = skill.id in payload.skillProficiencies
+                val proficient = skill.id in proficiencies
                 val abilityMod = AbilityScores.modifier(scores.score(skill.ability))
                 val mod = abilityMod + if (proficient) prof else 0
                 Row(
@@ -334,6 +353,204 @@ private fun Spells2024(character: Character, payload: DnD5e2024Payload, onApplyI
     if (library) SpellLibrary2024Dialog { library = false }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun Items2024(payload: DnD5e2024Payload, onApplyIntent: (CharacterIntent) -> Unit) {
+    var pickArmor by remember { mutableStateOf(false) }
+    var addItem by remember { mutableStateOf(false) }
+    var editMasteries by remember { mutableStateOf(false) }
+    var adjustCoin by remember { mutableStateOf<Coin?>(null) }
+    val masteryCap = payload.classes.maxOfOrNull { WeaponMasteryProgression2024.slots(it.classId, it.level) } ?: 0
+
+    Page2024 {
+        Card2024("Coins") {
+            Coin.entries.forEach { coin ->
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(coin.fullName, Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+                    Text("${payload.coins[coin] ?: 0} ${coin.abbreviation}", fontWeight = FontWeight.Medium)
+                    TextButton(onClick = { adjustCoin = coin }) { Text("Adjust") }
+                }
+            }
+        }
+
+        Card2024("Armor & Shield") {
+            val breakdown = ArmorClass2024.compute(payload)
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text("Armor Class", Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+                Text(breakdown.total.toString(), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            }
+            Text(breakdown.rows.joinToString("  ·  ") { "${it.label} ${it.value.signed2024()}" }, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(payload.equippedArmor?.let { Armors2024.armor(it)?.name } ?: "Unarmored", Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                OutlinedButton(onClick = { pickArmor = true }) { Text("Change") }
+            }
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(if (payload.hasShield) "Shield equipped (+${Armors2024.SHIELD_BONUS})" else "No shield", Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium, color = if (payload.hasShield) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+                OutlinedButton(onClick = { onApplyIntent(SetShield2024(!payload.hasShield)) }) { Text(if (payload.hasShield) "Stow" else "Equip") }
+            }
+        }
+
+        Card2024("Weapon Masteries") {
+            Text("Your class grants $masteryCap mastery slot${if (masteryCap == 1) "" else "s"}.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (payload.weaponMasteries.isEmpty()) Text("None chosen.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            else payload.weaponMasteries.mapNotNull { WeaponMastery2024.from(it) }.forEach { m ->
+                Column(Modifier.padding(vertical = 2.dp)) {
+                    Text(m.displayName, fontWeight = FontWeight.Medium)
+                    Text(m.summary, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+            if (masteryCap > 0) OutlinedButton(onClick = { editMasteries = true }) { Text("Edit masteries") }
+        }
+
+        val packGroups = payload.inventory.groupBy { it.kind }
+        Card2024("Pack") {
+            if (payload.inventory.isEmpty()) Text("Your pack is empty.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            else ItemKind2024.entries.forEach { kind ->
+                val items = packGroups[kind].orEmpty()
+                if (items.isNotEmpty()) {
+                    Text(kind.displayName, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                    items.forEach { item ->
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text(if (item.quantity > 1) "${item.name} ×${item.quantity}" else item.name, style = MaterialTheme.typography.bodyMedium)
+                                val masteryNote = item.catalogueID?.let { Weapons2024.weapon(it)?.let { w -> "${w.damage} · ${w.mastery.displayName}" } }
+                                (masteryNote ?: item.note.takeIf { it.isNotBlank() })?.let { Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                            }
+                            TextButton(onClick = { onApplyIntent(DropItem2024(item.id, item.quantity)) }) { Text("Drop") }
+                        }
+                    }
+                }
+            }
+            OutlinedButton(onClick = { addItem = true }) { Text("Add item") }
+        }
+    }
+
+    if (pickArmor) ArmorPicker2024Dialog(payload.equippedArmor, onPick = { onApplyIntent(EquipArmor2024(it)); pickArmor = false }, onDismiss = { pickArmor = false })
+    if (addItem) AddItem2024Dialog(onAdd = { onApplyIntent(AcquireItem2024(it)); addItem = false }, onDismiss = { addItem = false })
+    if (editMasteries) MasteryPicker2024Dialog(payload.weaponMasteries, masteryCap, onConfirm = { onApplyIntent(SetWeaponMasteries2024(it)); editMasteries = false }, onDismiss = { editMasteries = false })
+    adjustCoin?.let { coin ->
+        CoinAdjust2024Dialog(coin, payload.coins[coin] ?: 0, onConfirm = { delta -> if (delta != 0) onApplyIntent(AdjustCoin2024(coin, delta)); adjustCoin = null }, onDismiss = { adjustCoin = null })
+    }
+}
+
+@Composable
+private fun ArmorPicker2024Dialog(current: String?, onPick: (String?) -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Choose armor") },
+        text = {
+            LazyColumn(Modifier.heightIn(max = 360.dp)) {
+                item {
+                    ArmorPickRow("Unarmored", "10 + DEX", current == null) { onPick(null) }
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                }
+                items(Armors2024.all, key = { it.id }) { a ->
+                    val cap = when (a.category.dexCap) { null -> "+ full DEX"; 0 -> "no DEX"; else -> "+ DEX (max +${a.category.dexCap})" }
+                    ArmorPickRow(a.name, "${a.category.name.lowercase().replaceFirstChar(Char::uppercase)} · base ${a.baseAC} $cap", current == a.id) { onPick(a.id) }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Done") } },
+    )
+}
+
+@Composable
+private fun ArmorPickRow(name: String, detail: String, selected: Boolean, onClick: () -> Unit) {
+    Row(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(if (selected) "●" else "○", color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline)
+        Column(Modifier.weight(1f).padding(start = 8.dp)) {
+            Text(name, style = MaterialTheme.typography.bodyLarge)
+            Text(detail, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
+private fun AddItem2024Dialog(onAdd: (InventoryItem2024) -> Unit, onDismiss: () -> Unit) {
+    var custom by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Add to pack") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Weapons", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                LazyColumn(Modifier.heightIn(max = 240.dp)) {
+                    items(Weapons2024.all, key = { it.id }) { w ->
+                        Row(Modifier.fillMaxWidth().clickable {
+                            onAdd(InventoryItem2024(InventoryItem2024.newId(), w.name, kind = ItemKind2024.WEAPON, catalogueID = w.id))
+                        }.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text(w.name, style = MaterialTheme.typography.bodyLarge)
+                                Text("${w.damage} · ${w.mastery.displayName}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            Text(w.category.name.lowercase().replaceFirstChar(Char::uppercase), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+                OutlinedTextField(custom, { custom = it }, label = { Text("Custom item (gear)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                if (custom.isNotBlank()) TextButton(onClick = { onAdd(InventoryItem2024(InventoryItem2024.newId(), custom.trim(), kind = ItemKind2024.GEAR)) }) { Text("Add \"${custom.trim()}\"") }
+            }
+        },
+        confirmButton = {},
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Done") } },
+    )
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun MasteryPicker2024Dialog(current: List<String>, cap: Int, onConfirm: (List<String>) -> Unit, onDismiss: () -> Unit) {
+    val selected = remember { mutableStateOf(current.mapNotNull { WeaponMastery2024.from(it)?.name?.lowercase() }.toMutableList()) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Weapon masteries ($cap)") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Pick up to $cap.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    WeaponMastery2024.entries.forEach { m ->
+                        val key = m.name.lowercase()
+                        val on = key in selected.value
+                        AssistChip(
+                            onClick = {
+                                val next = selected.value.toMutableList()
+                                if (on) next.remove(key) else if (next.size < cap) next.add(key)
+                                selected.value = next
+                            },
+                            label = { Text(m.displayName) },
+                            leadingIcon = if (on) ({ Text("✓", style = MaterialTheme.typography.labelMedium) }) else null,
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = { onConfirm(selected.value.toList()) }) { Text("Save") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+    )
+}
+
+@Composable
+private fun CoinAdjust2024Dialog(coin: Coin, current: Int, onConfirm: (Int) -> Unit, onDismiss: () -> Unit) {
+    var delta by remember { mutableIntStateOf(0) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Adjust ${coin.fullName}") },
+        text = {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Have $current ${coin.abbreviation}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    TextButton(enabled = current + delta > 0, onClick = { delta-- }) { Text("−", style = MaterialTheme.typography.headlineSmall) }
+                    Text((if (delta >= 0) "+$delta" else "$delta"), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                    TextButton(onClick = { delta++ }) { Text("+", style = MaterialTheme.typography.headlineSmall) }
+                }
+                Text("New total: ${current + delta}", style = MaterialTheme.typography.labelMedium)
+            }
+        },
+        confirmButton = { TextButton(onClick = { onConfirm(delta) }) { Text("Apply") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+    )
+}
+
 @Composable
 private fun Lore2024(character: Character, payload: DnD5e2024Payload) {
     Page2024 {
@@ -347,9 +564,21 @@ private fun Lore2024(character: Character, payload: DnD5e2024Payload) {
         }
         if (payload.originFeat != null || payload.chosenFeats.isNotEmpty() || payload.fightingStyle != null) {
             Card2024("Feats & Style") {
-                payload.originFeat?.let { StatRow("Origin Feat", it.slugToTitle()) }
-                payload.fightingStyle?.let { StatRow("Fighting Style", it.slugToTitle()) }
-                payload.chosenFeats.forEach { StatRow("Feat", it.slugToTitle()) }
+                payload.originFeat?.let { FeatRow2024("Origin", it) }
+                payload.fightingStyle?.let { FeatRow2024("Fighting Style", it) }
+                payload.chosenFeats.forEach { FeatRow2024("Feat", it) }
+            }
+        }
+        val traits = SpeciesTraits2024.reminders(payload.species)
+        if (traits.isNotEmpty()) {
+            Card2024("Species Traits") {
+                traits.forEachIndexed { i, t ->
+                    if (i > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                    Column(Modifier.padding(vertical = 2.dp)) {
+                        Text(t.title, fontWeight = FontWeight.Medium)
+                        Text(t.detail, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
             }
         }
         if (payload.weaponMasteries.isNotEmpty()) {
@@ -372,6 +601,18 @@ private fun Card2024(title: String, content: @Composable () -> Unit) {
             Text(title.uppercase(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
             content()
         }
+    }
+}
+
+@Composable
+private fun FeatRow2024(category: String, featId: String) {
+    val feat = Feats2024.feat(featId)
+    Column(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(feat?.name ?: featId.slugToTitle(), Modifier.weight(1f), fontWeight = FontWeight.Medium)
+            Text(category, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+        }
+        feat?.description?.let { Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
     }
 }
 
