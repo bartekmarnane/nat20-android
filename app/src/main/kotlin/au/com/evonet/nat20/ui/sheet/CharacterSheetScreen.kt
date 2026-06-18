@@ -29,6 +29,7 @@ import au.com.evonet.nat20.domain.CharacterIntent
 import au.com.evonet.nat20.domain.CharacterPhase
 import au.com.evonet.nat20.dnd5e.DnD5eRuleset
 import au.com.evonet.nat20.ui.actions.DnD5eActionsSheet
+import au.com.evonet.nat20.ui.codex.CodexShellView
 
 /**
  * The character sheet host: universal chrome + per-ruleset body dispatch (the
@@ -81,7 +82,7 @@ fun CharacterSheetScreen(
                 ActiveCampaignBanner(activeCampaign.name, onEnd = { showEnd = true })
             }
             when (character.rulesetId) {
-                DnD5eRuleset.RULESET_ID -> DnD5eSheetView(character, Modifier.fillMaxSize())
+                DnD5eRuleset.RULESET_ID -> CodexShellView(character, Modifier.fillMaxSize())
                 else -> UnsupportedRuleset(character.rulesetId)
             }
         }
