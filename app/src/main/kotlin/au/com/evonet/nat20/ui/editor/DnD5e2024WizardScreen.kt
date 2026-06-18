@@ -51,6 +51,7 @@ import au.com.evonet.nat20.dnd5e2024.ClassEntry2024
 import au.com.evonet.nat20.dnd5e2024.DnD5e2024Catalog
 import au.com.evonet.nat20.dnd5e2024.DnD5e2024Payload
 import au.com.evonet.nat20.dnd5e2024.DnD5e2024Ruleset
+import au.com.evonet.nat20.dnd5e2024.effectiveMaxHp
 import au.com.evonet.nat20.dnd5e2024.withFullSpellSlots
 import au.com.evonet.nat20.domain.Character
 import java.time.Instant
@@ -114,10 +115,9 @@ fun DnD5e2024WizardScreen(onSave: (Character) -> Unit, onCancel: () -> Unit) {
             baseAbilityScores = base,
             backgroundASI = asi,
             maxHp = maxHp,
-            currentHp = maxHp,
             skillProficiencies = (backgroundSkills + chosenSkills).distinct(),
             originFeat = background?.originFeat,
-        ).withFullSpellSlots()
+        ).withFullSpellSlots().let { it.copy(currentHp = it.effectiveMaxHp) } // start at full incl. Tough / Dwarven Toughness
         return Character.new(name.trim(), DnD5e2024Ruleset(), payload, Instant.now())
     }
 

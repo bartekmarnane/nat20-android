@@ -8,6 +8,7 @@ import au.com.evonet.nat20.dnd5e.core.ActiveEffect
 import au.com.evonet.nat20.dnd5e.core.EffectDuration
 import au.com.evonet.nat20.dnd5e.core.EffectModifier
 import au.com.evonet.nat20.dnd5e.core.EffectSource
+import au.com.evonet.nat20.dnd5e.core.Proficiency
 
 /**
  * Folds [DnD5e2024Payload.activeEffects] (+ passive class effects) into live
@@ -20,6 +21,24 @@ val DnD5e2024Payload.allEffects: List<ActiveEffect>
 /** Every feat the character holds — origin + fighting style + advancement-chosen. */
 val DnD5e2024Payload.allFeats: Set<String>
     get() = (listOfNotNull(originFeat, fightingStyle) + chosenFeats).toSet()
+
+/**
+ * Extra max HP per character level from always-on traits/feats: Tough (+2/level)
+ * and the Dwarf's Dwarven Toughness (+1/level). Stored [DnD5e2024Payload.maxHp]
+ * is the *base*; these riders fold in via [effectiveMaxHp] so a single rule drives
+ * every HP clamp + display. Mirrors iOS `TraitFeatEffects2024.bonusHitPoints`.
+ */
+val DnD5e2024Payload.bonusMaxHpPerLevel: Int
+    get() = (if ("tough" in allFeats) 2 else 0) + (if (species.equals("dwarf", ignoreCase = true)) 1 else 0)
+
+/** The character's real max HP — stored base plus the per-level trait/feat riders. */
+val DnD5e2024Payload.effectiveMaxHp: Int
+    get() = maxHp + bonusMaxHpPerLevel * level
+
+/** Initiative modifier: DEX (effective) plus the Alert feat's Proficiency Bonus. */
+val DnD5e2024Payload.initiativeBonus: Int
+    get() = AbilityScores.modifier(effectiveScore(Ability.DEXTERITY)) +
+        (if ("alert" in allFeats) Proficiency.bonus(level) else 0)
 
 /** Feats with a clean always-on rider that folds into derived stats (currently Defense → +1 AC while armored). */
 fun DnD5e2024Payload.passiveFeatEffects(): List<ActiveEffect> = buildList {

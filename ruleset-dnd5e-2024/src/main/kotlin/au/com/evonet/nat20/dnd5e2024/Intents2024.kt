@@ -34,7 +34,7 @@ data class TakeDamage2024(val amount: Int, val damageType: String? = null) : Cha
         // Relentless Endurance (Orc): when reduced to 0 (but not killed outright) the
         // first time per long rest, drop to 1 HP instead. Massive overkill still drops you.
         var relentless = false
-        val overkill = hpDamage >= p.currentHp + p.maxHp // damage ≥ current + max ⇒ instant death (RAW)
+        val overkill = hpDamage >= p.currentHp + p.effectiveMaxHp // damage ≥ current + max ⇒ instant death (RAW)
         if (newHp == 0 && p.currentHp > 0 && !p.relentlessEnduranceUsed && !overkill && SpeciesTraits2024.hasRelentlessEndurance(p.species)) {
             newHp = 1
             relentless = true
@@ -49,7 +49,7 @@ data class Heal2024(val amount: Int) : CharacterIntent {
     override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
         if (amount <= 0) throw CharacterIntentError.Invalid("Heal amount must be positive")
         val p = character.payload2024()
-        val newHp = minOf(p.maxHp, p.currentHp + amount)
+        val newHp = minOf(p.effectiveMaxHp, p.currentHp + amount)
         val revived = p.currentHp == 0 && newHp > 0
         val updated = p.copy(currentHp = newHp, deathSaves = if (revived) au.com.evonet.nat20.dnd5e.core.DeathSaves.cleared else p.deathSaves)
         return IntentResult(character.copy(payload = updated), Healed2024Event(amount, p.currentHp, newHp))
@@ -118,7 +118,7 @@ class LongRest2024 : CharacterIntent {
         val exhaustionAfter = Exhaustion2024.clamp(p.exhaustionLevel - 1)
         val hitDiceRegained = if (p.hitDiceSpent == 0) 0 else maxOf(1, p.hitDiceSpent / 2)
         val updated = p.copy(
-            currentHp = p.maxHp, temporaryHp = 0,
+            currentHp = p.effectiveMaxHp, temporaryHp = 0,
             currentSpellSlots = maxSlots,
             deathSaves = au.com.evonet.nat20.dnd5e.core.DeathSaves.cleared,
             exhaustionLevel = exhaustionAfter,
@@ -133,7 +133,7 @@ class LongRest2024 : CharacterIntent {
         )
         return IntentResult(
             character.copy(payload = updated),
-            LongRested2024Event(maxOf(0, p.maxHp - p.currentHp), maxOf(0, slotsRestored), exhaustionAfter < p.exhaustionLevel),
+            LongRested2024Event(maxOf(0, p.effectiveMaxHp - p.currentHp), maxOf(0, slotsRestored), exhaustionAfter < p.exhaustionLevel),
         )
     }
     override fun equals(other: Any?): Boolean = other is LongRest2024
@@ -146,7 +146,7 @@ data class SpendHitDie2024(val healingRolled: Int) : CharacterIntent {
         if (healingRolled < 0) throw CharacterIntentError.Invalid("Healing cannot be negative")
         val p = character.payload2024()
         if (p.currentHitDice <= 0) throw CharacterIntentError.Invalid("No hit dice remaining")
-        val newHp = minOf(p.maxHp, p.currentHp + healingRolled)
+        val newHp = minOf(p.effectiveMaxHp, p.currentHp + healingRolled)
         val updated = p.copy(hitDiceSpent = p.hitDiceSpent + 1, currentHp = newHp)
         return IntentResult(character.copy(payload = updated), HitDieSpent2024Event(healingRolled, p.currentHp, newHp, updated.currentHitDice))
     }
@@ -407,9 +407,12 @@ data class LevelUp2024(
         }
 
         val newFeats = if (feat != null && feat !in p.chosenFeats) p.chosenFeats + feat else p.chosenFeats
+        // Stored maxHp is the *base*; the new level's share of any existing per-level rider
+        // (Dwarven Toughness, an already-held Tough) tops a full character up too. A feat
+        // taken *this* level boosts only the max (via effectiveMaxHp), not current — RAW.
         val updated = leveled.copy(
             maxHp = p.maxHp + hpGained,
-            currentHp = p.currentHp + hpGained,
+            currentHp = p.currentHp + hpGained + p.bonusMaxHpPerLevel,
             currentSpellSlots = newCurrentSlots,
             chosenFeats = newFeats,
         )

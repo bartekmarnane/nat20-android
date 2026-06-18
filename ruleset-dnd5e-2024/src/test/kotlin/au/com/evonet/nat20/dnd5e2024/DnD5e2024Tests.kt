@@ -345,6 +345,31 @@ class Feats2024Tests {
     }
 
     @Test
+    fun `Tough and Dwarven Toughness raise the effective max HP and Alert boosts initiative`() {
+        // Tough: +2 per level. Level-3 fighter base 28 → 34 effective.
+        val tough = DnD5e2024Payload(classes = listOf(ClassEntry2024("fighter", 3)), maxHp = 28, chosenFeats = listOf("tough"))
+        assertEquals(34, tough.effectiveMaxHp)
+        // Dwarven Toughness: +1 per level, stacking with Tough.
+        val dwarf = tough.copy(species = "dwarf")
+        assertEquals(37, dwarf.effectiveMaxHp) // 28 + (2+1)*3
+        // Healing clamps to the *effective* max, not the stored base.
+        val hurt = character(dwarf.copy(currentHp = 10))
+        assertEquals(37, Heal2024(100).applyTo(hurt, ruleset).character.p().currentHp)
+        // Alert adds the Proficiency Bonus to initiative.
+        val alert = DnD5e2024Payload(classes = listOf(ClassEntry2024("fighter", 5)), abilityScores = AbilityScores(dexterity = 16), originFeat = "alert")
+        assertEquals(3 + 3, alert.initiativeBonus) // +3 DEX, +3 prof at level 5
+        assertEquals(3, DnD5e2024Payload(classes = listOf(ClassEntry2024("fighter", 5)), abilityScores = AbilityScores(dexterity = 16)).initiativeBonus)
+    }
+
+    @Test
+    fun `leveling up keeps a full character at the new effective max`() {
+        // Dwarf fighter at full (28 base + 1*3 = 31). Level 3 → 4 with average HP.
+        val dwarf = character(DnD5e2024Payload(species = "dwarf", classes = listOf(ClassEntry2024("fighter", 3)), maxHp = 28, currentHp = 31))
+        val p = LevelUp2024("fighter", className = "Fighter").applyTo(dwarf, ruleset).character.p()
+        assertEquals(p.effectiveMaxHp, p.currentHp) // stays full: base+6 HP + 1 dwarf share
+    }
+
+    @Test
     fun `Defense fighting style adds plus one AC only while armored`() {
         val unarmored = DnD5e2024Payload(classes = listOf(ClassEntry2024("fighter", 1)), abilityScores = AbilityScores(dexterity = 14), fightingStyle = "defense")
         assertEquals(12, unarmored.armorClass) // no armor → no Defense bonus

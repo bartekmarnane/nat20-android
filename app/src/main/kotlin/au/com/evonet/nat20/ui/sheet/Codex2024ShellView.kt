@@ -69,6 +69,8 @@ import au.com.evonet.nat20.dnd5e2024.WeaponMastery2024
 import au.com.evonet.nat20.dnd5e2024.WeaponMasteryProgression2024
 import au.com.evonet.nat20.dnd5e2024.Weapons2024
 import au.com.evonet.nat20.dnd5e2024.armorClass
+import au.com.evonet.nat20.dnd5e2024.effectiveMaxHp
+import au.com.evonet.nat20.dnd5e2024.initiativeBonus
 import au.com.evonet.nat20.dnd5e2024.temporarySaveBonus
 import au.com.evonet.nat20.dnd5e2024.DnD5e2024Catalog
 import au.com.evonet.nat20.dnd5e2024.DnD5e2024Payload
@@ -231,7 +233,7 @@ private fun Combat2024(character: Character, payload: DnD5e2024Payload, onApplyI
     var addCond by remember { mutableStateOf(false) }
     Page2024 {
         Card2024("Hit Points") {
-            StatRow("Current / Max", "${payload.currentHp} / ${payload.maxHp}" + if (payload.temporaryHp > 0) " (+${payload.temporaryHp})" else "")
+            StatRow("Current / Max", "${payload.currentHp} / ${payload.effectiveMaxHp}" + if (payload.temporaryHp > 0) " (+${payload.temporaryHp})" else "")
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(onClick = { amount = AmountKind.DAMAGE }) { Text("Damage") }
                 OutlinedButton(onClick = { amount = AmountKind.HEAL }) { Text("Heal") }
@@ -251,7 +253,7 @@ private fun Combat2024(character: Character, payload: DnD5e2024Payload, onApplyI
             StatRow("Armor Class", payload.armorClass.toString())
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text("Initiative", Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
-                Text(payload.initiative?.toString() ?: dexMod.signed2024(), fontWeight = FontWeight.Medium, color = if (payload.initiative != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
+                Text(payload.initiative?.toString() ?: payload.initiativeBonus.signed2024(), fontWeight = FontWeight.Medium, color = if (payload.initiative != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
                 TextButton(onClick = { rolling = RollKind.INITIATIVE }) { Text(if (payload.initiative != null) "Reroll" else "Roll") }
                 if (payload.initiative != null) TextButton(onClick = { onApplyIntent(SetInitiative2024(null)) }) { Text("Clear") }
             }
@@ -298,7 +300,10 @@ private fun Combat2024(character: Character, payload: DnD5e2024Payload, onApplyI
         val con = AbilityScores.modifier(payload.effectiveScore(Ability.CONSTITUTION))
         when (kind) {
             RollKind.DEATH_SAVE -> RollDialog("Death save", RollSpec.d(1, 20), allowAdvantageToggle = false, onSettled = { it.naturalD20?.let { d -> onApplyIntent(RollDeathSave2024(d)) } }, onDismiss = { rolling = null })
-            RollKind.INITIATIVE -> RollDialog("Initiative", RollSpec.d(1, 20), bonuses = listOf(RollBonus("DEX", dexMod)), onSettled = { onApplyIntent(SetInitiative2024(it.total)) }, onDismiss = { rolling = null })
+            RollKind.INITIATIVE -> {
+                val alertProf = payload.initiativeBonus - dexMod
+                RollDialog("Initiative", RollSpec.d(1, 20), bonuses = buildList { add(RollBonus("DEX", dexMod)); if (alertProf != 0) add(RollBonus("Alert", alertProf)) }, onSettled = { onApplyIntent(SetInitiative2024(it.total)) }, onDismiss = { rolling = null })
+            }
             RollKind.HIT_DIE -> RollDialog("Spend a hit die", RollSpec.d(1, hitDie2024(payload)), bonuses = if (con != 0) listOf(RollBonus("CON", con)) else emptyList(), allowAdvantageToggle = false, onSettled = { onApplyIntent(SpendHitDie2024(maxOf(1, it.total))) }, onDismiss = { rolling = null })
         }
     }
