@@ -1,10 +1,15 @@
 package au.com.evonet.nat20.ui
 
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavBackStackEntry
@@ -18,6 +23,7 @@ import au.com.evonet.nat20.domain.Campaign
 import au.com.evonet.nat20.domain.Character
 import au.com.evonet.nat20.domain.CharacterPhase
 import au.com.evonet.nat20.store.CharacterStore
+import au.com.evonet.nat20.ui.editor.DnD5e2024WizardScreen
 import au.com.evonet.nat20.ui.editor.DnD5eWizardScreen
 import au.com.evonet.nat20.ui.journal.JournalScreen
 import au.com.evonet.nat20.ui.past.PastAdventuresScreen
@@ -39,6 +45,7 @@ private object Routes {
     const val ROSTER = "roster"
     const val SHEET = "sheet/{id}"
     const val CREATE = "editor"
+    const val CREATE_2024 = "editor2024"
     const val EDIT = "editor/{id}"
     const val JOURNAL = "journal/{id}/{campaignId}"
     const val PAST = "past/{id}"
@@ -71,13 +78,20 @@ fun NatApp() {
 
     NavHost(navController = nav, startDestination = Routes.ROSTER) {
         composable(Routes.ROSTER) {
+            var chooseEdition by remember { mutableStateOf(false) }
             RosterScreen(
                 characters = characters,
                 onSelect = { nav.navigate(Routes.sheet(it.id)) },
-                onNew = { nav.navigate(Routes.CREATE) },
+                onNew = { chooseEdition = true },
                 onDelete = { store.delete(it.id) },
                 onOpenSettings = { nav.navigate(Routes.SETTINGS) },
             )
+            if (chooseEdition) {
+                EditionChooser(
+                    onPick = { route -> chooseEdition = false; nav.navigate(route) },
+                    onDismiss = { chooseEdition = false },
+                )
+            }
         }
 
         composable(Routes.SETTINGS) {
@@ -181,6 +195,13 @@ fun NatApp() {
             )
         }
 
+        composable(Routes.CREATE_2024) {
+            DnD5e2024WizardScreen(
+                onSave = { store.save(it); nav.popBackStack() },
+                onCancel = { nav.popBackStack() },
+            )
+        }
+
         composable(
             Routes.EDIT,
             arguments = listOf(navArgument(Routes.ARG_ID) { type = NavType.StringType }),
@@ -197,6 +218,18 @@ fun NatApp() {
             }
         }
     }
+}
+
+/** Pick which ruleset a new character uses before opening the matching creation wizard (A21). */
+@Composable
+private fun EditionChooser(onPick: (String) -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Choose a ruleset") },
+        text = { Text("Which edition is this character?") },
+        confirmButton = { TextButton(onClick = { onPick(Routes.CREATE_2024) }) { Text("D&D 5e (2024)") } },
+        dismissButton = { TextButton(onClick = { onPick(Routes.CREATE) }) { Text("D&D 5e (2014)") } },
+    )
 }
 
 /** The character's active campaign, if it's committed to one. */

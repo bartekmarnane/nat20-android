@@ -147,6 +147,32 @@ class SpellIntents2024Tests {
     }
 }
 
+class CreationCatalog2024Tests {
+    @Test
+    fun `species carry traits but no ability bonuses`() {
+        val elf = DnD5e2024Catalog.species("elf")!!
+        assertTrue(elf.traits.any { it.contains("Fey Ancestry") })
+    }
+
+    @Test
+    fun `backgrounds grant ability options, an origin feat, and skills`() {
+        val acolyte = DnD5e2024Catalog.background("acolyte")!!
+        assertEquals(listOf(Ability.INTELLIGENCE, Ability.WISDOM, Ability.CHARISMA), acolyte.abilityOptions)
+        assertEquals("magic-initiate-cleric", acolyte.originFeat)
+        assertEquals(listOf("insight", "religion"), acolyte.skills)
+    }
+
+    @Test
+    fun `classes load with hit die, saves, and caster flag`() {
+        val wizard = DnD5e2024Catalog.characterClass("wizard")!!
+        assertEquals(6, wizard.hitDie)
+        assertTrue(wizard.isCaster)
+        assertEquals(12, DnD5e2024Catalog.classes.size)
+        assertEquals(8, DnD5e2024Catalog.species.size)
+        assertEquals(6, DnD5e2024Catalog.backgrounds.size)
+    }
+}
+
 class Codec2024Tests {
     @Test
     fun `a full 2024 payload round-trips, including core sealed effects`() {
