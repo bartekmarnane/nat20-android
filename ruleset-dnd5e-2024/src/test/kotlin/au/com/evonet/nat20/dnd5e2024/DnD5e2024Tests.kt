@@ -100,6 +100,33 @@ class Intents2024Tests {
         assertEquals(5, result.character.p().level)
         assertTrue(result.event.summary.startsWith("Leveled up to Rogue 5"))
     }
+
+    @Test
+    fun `level up applies the subclass, the ASI capped at 20, and new slots`() {
+        // Rogue 2 → 3: pick a subclass + ASI.
+        val rogue = character(DnD5e2024Payload(classes = listOf(ClassEntry2024("rogue", 2)), abilityScores = AbilityScores(dexterity = 19), maxHp = 14, currentHp = 14))
+        val result = LevelUp2024("rogue", subclass = "thief", abilityIncreases = mapOf(Ability.DEXTERITY to 2), className = "Rogue").applyTo(rogue, ruleset)
+        val p = result.character.p()
+        assertEquals("thief", p.classes.first().subclass)
+        assertEquals(20, p.abilityScores.dexterity) // 19 + 2 capped at 20
+        assertTrue(result.event.summary.contains("thief"))
+    }
+
+    @Test
+    fun `leveling a caster grants newly unlocked slots`() {
+        val wiz = character(DnD5e2024Payload(classes = listOf(ClassEntry2024("wizard", 2)), maxHp = 12, currentHp = 12, currentSpellSlots = mapOf(1 to 2)))
+        val p = LevelUp2024("wizard").applyTo(wiz, ruleset).character.p()
+        assertEquals(mapOf(1 to 4, 2 to 2), p.maxSpellSlots) // L3 wizard
+        assertEquals(3, p.currentSpellSlots[1]) // 2 remaining + 1 newly granted
+        assertEquals(2, p.currentSpellSlots[2]) // newly unlocked → full
+    }
+
+    @Test
+    fun `classes carry subclasses chosen at level 3`() {
+        val fighter = DnD5e2024Catalog.characterClass("fighter")!!
+        assertEquals(3, fighter.subclassLevel)
+        assertTrue(fighter.subclasses.any { it.id == "champion" })
+    }
 }
 
 class Catalog2024Tests {

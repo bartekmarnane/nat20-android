@@ -87,6 +87,7 @@ fun Codex2024ShellView(
     val tabs = Tab2024.entries
     val pager = rememberPagerState(pageCount = { tabs.size })
     val scope = rememberCoroutineScope()
+    var levelingUp by remember { mutableStateOf(false) }
 
     Column(modifier.fillMaxSize()) {
         Column(Modifier.fillMaxWidth().padding(16.dp)) {
@@ -98,7 +99,7 @@ fun Codex2024ShellView(
 
         HorizontalPager(state = pager, modifier = Modifier.weight(1f).fillMaxWidth()) { page ->
             when (tabs[page]) {
-                Tab2024.STATS -> Stats2024(payload)
+                Tab2024.STATS -> Stats2024(payload) { levelingUp = true }
                 Tab2024.SKILLS -> Skills2024(payload)
                 Tab2024.COMBAT -> Combat2024(character, payload, onApplyIntent)
                 Tab2024.SPELLS -> Spells2024(character, payload, onApplyIntent, onSave)
@@ -121,12 +122,16 @@ fun Codex2024ShellView(
             }
         }
     }
+
+    if (levelingUp) {
+        LevelUp2024Wizard(payload, onApplyIntent, onDismiss = { levelingUp = false })
+    }
 }
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun Stats2024(payload: DnD5e2024Payload) {
+private fun Stats2024(payload: DnD5e2024Payload, onLevelUp: () -> Unit) {
     val scores = payload.effectiveAbilityScores
     val prof = Proficiency.bonus(payload.level)
     var check by remember { mutableStateOf<Pair<String, List<RollBonus>>?>(null) }
@@ -153,6 +158,9 @@ private fun Stats2024(payload: DnD5e2024Payload) {
                     Text(mod.signed2024(), fontWeight = FontWeight.Medium)
                 }
             }
+        }
+        if (payload.level < DnD5e2024Payload.MAX_LEVEL) {
+            Button(onClick = onLevelUp, modifier = Modifier.fillMaxWidth()) { Text("Level Up") }
         }
     }
     check?.let { (title, bonuses) -> RollDialog(title, RollSpec.d(1, 20), bonuses, onDismiss = { check = null }) }

@@ -130,10 +130,17 @@ data class LeveledUp2024Event(
     val newLevel: Int,
     val classLevelAfter: Int,
     val hpGained: Int,
+    val subclass: String? = null,
+    val abilityIncreases: Map<au.com.evonet.nat20.dnd5e.core.Ability, Int> = emptyMap(),
 ) : CharacterEvent {
     override val summary: String
         get() {
             val label = className.ifEmpty { classId }
-            return "Leveled up to $label $classLevelAfter — +$hpGained HP"
+            val extras = buildList {
+                subclass?.takeIf { it.isNotBlank() }?.let { add(it) }
+                if (abilityIncreases.isNotEmpty()) add(abilityIncreases.entries.joinToString(", ") { "+${it.value} ${it.key.abbreviation}" })
+            }
+            val extra = if (extras.isEmpty()) "" else " · ${extras.joinToString(" · ")}"
+            return "Leveled up to $label $classLevelAfter — +$hpGained HP$extra"
         }
 }

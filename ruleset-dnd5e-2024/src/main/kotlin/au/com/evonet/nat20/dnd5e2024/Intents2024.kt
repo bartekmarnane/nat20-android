@@ -214,6 +214,8 @@ data class LevelUp2024(
     val isNewClass: Boolean = false,
     val hpChoice: HpChoice = HpChoice.Average,
     val subclass: String? = null,
+    /** Ability Score Improvement applied this level (≤ +2 total, capped at 20). */
+    val abilityIncreases: Map<au.com.evonet.nat20.dnd5e.core.Ability, Int> = emptyMap(),
     val className: String = "",
 ) : CharacterIntent {
     override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
@@ -229,6 +231,9 @@ data class LevelUp2024(
         if (hpChoice is HpChoice.Rolled && hpChoice.value !in 1..hitDie) {
             throw CharacterIntentError.Invalid("Rolled HP ${hpChoice.value} outside 1..$hitDie")
         }
+        if (abilityIncreases.values.sum() > 2 || abilityIncreases.values.any { it < 0 }) {
+            throw CharacterIntentError.Invalid("An Ability Score Improvement grants at most +2 total")
+        }
 
         val classes = p.classes.toMutableList()
         if (index >= 0) {
@@ -237,12 +242,28 @@ data class LevelUp2024(
             classes.add(ClassEntry2024(classId, 1, subclass))
         }
         val classLevelAfter = classes.first { it.classId == classId }.level
-        val conMod = AbilityScores.modifier(p.abilityScores.constitution)
+
+        var newScores = p.abilityScores
+        for ((ability, inc) in abilityIncreases) newScores = newScores.with(ability, minOf(20, newScores.score(ability) + inc))
+
+        val conMod = AbilityScores.modifier(newScores.constitution)
         val hpGained = LevelUpMath.levelUpHp(hpChoice, hitDie, conMod)
-        val updated = p.copy(classes = classes, maxHp = p.maxHp + hpGained, currentHp = p.currentHp + hpGained)
+
+        // Grant newly-unlocked spell slots, preserving spent ones.
+        val leveled = p.copy(classes = classes, abilityScores = newScores)
+        val oldMax = p.maxSpellSlots
+        val newCurrentSlots = leveled.maxSpellSlots.mapValues { (lvl, max) ->
+            (p.currentSpellSlots[lvl] ?: 0) + maxOf(0, max - (oldMax[lvl] ?: 0))
+        }
+
+        val updated = leveled.copy(
+            maxHp = p.maxHp + hpGained,
+            currentHp = p.currentHp + hpGained,
+            currentSpellSlots = newCurrentSlots,
+        )
         return IntentResult(
             character.copy(payload = updated),
-            LeveledUp2024Event(classId, className, updated.level, classLevelAfter, hpGained),
+            LeveledUp2024Event(classId, className, updated.level, classLevelAfter, hpGained, subclass, abilityIncreases),
         )
     }
 }
