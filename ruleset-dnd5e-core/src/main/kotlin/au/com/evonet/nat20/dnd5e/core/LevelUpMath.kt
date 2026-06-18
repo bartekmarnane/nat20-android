@@ -1,4 +1,4 @@
-package au.com.evonet.nat20.dnd5e
+package au.com.evonet.nat20.dnd5e.core
 
 import kotlinx.serialization.Serializable
 

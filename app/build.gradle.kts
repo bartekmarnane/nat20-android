@@ -43,7 +43,9 @@ android {
 
 dependencies {
     implementation(project(":domain"))
-    implementation(project(":ruleset-dnd5e"))
+    // The 2014 edition; pulls in :ruleset-dnd5e-core transitively. Additional
+    // editions (2024, PF2e) get added here as their modules land.
+    implementation(project(":ruleset-dnd5e-2014"))
     implementation(project(":data"))
 
     implementation(libs.androidx.core.ktx)

@@ -1,5 +1,8 @@
 package au.com.evonet.nat20.dnd5e
 
+import au.com.evonet.nat20.dnd5e.core.AbilityScores
+import au.com.evonet.nat20.dnd5e.core.HpChoice
+import au.com.evonet.nat20.dnd5e.core.Proficiency
 import au.com.evonet.nat20.domain.Character
 import au.com.evonet.nat20.domain.CharacterIntentError
 import au.com.evonet.nat20.domain.CharacterPhase
@@ -46,7 +49,7 @@ class ProficiencyAndModifierTests {
     @ParameterizedTest
     @CsvSource("1,2", "4,2", "5,3", "8,3", "9,4", "12,4", "13,5", "16,5", "17,6", "20,6")
     fun `proficiency bonus by level`(level: Int, expected: Int) {
-        assertEquals(expected, DnD5eRuleset.proficiencyBonus(level))
+        assertEquals(expected, Proficiency.bonus(level))
     }
 
     @ParameterizedTest
@@ -234,7 +237,7 @@ class MiniCharacterBuildTests {
         character = LevelUp(classId = "fighter").applyTo(character, ruleset).character
         assertEquals(3, character.payload().level)
         assertEquals(31, character.payload().maxHp) // 13 + 9 + 9
-        assertEquals(2, DnD5eRuleset.proficiencyBonus(character.payload().level)) // L3 is still in the +2 band
+        assertEquals(2, Proficiency.bonus(character.payload().level)) // L3 is still in the +2 band
 
         // Take 10, then heal 4.
         character = TakeDamage(amount = 10, damageType = "Slashing").applyTo(character, ruleset).character

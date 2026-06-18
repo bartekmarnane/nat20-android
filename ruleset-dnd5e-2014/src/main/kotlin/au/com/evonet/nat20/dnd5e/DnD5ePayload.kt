@@ -1,5 +1,6 @@
 package au.com.evonet.nat20.dnd5e
 
+import au.com.evonet.nat20.dnd5e.core.AbilityScores
 import au.com.evonet.nat20.domain.CharacterPayload
 import kotlinx.serialization.Serializable
 

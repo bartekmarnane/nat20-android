@@ -9,6 +9,8 @@ kotlin {
 
 dependencies {
     implementation(project(":domain"))
+    // Edition-agnostic 5e machinery (abilities, modifier math, proficiency, HP)
+    implementation(project(":ruleset-dnd5e-core"))
     implementation(libs.kotlinx.serialization.json)
     testImplementation(libs.junit.jupiter)
 }

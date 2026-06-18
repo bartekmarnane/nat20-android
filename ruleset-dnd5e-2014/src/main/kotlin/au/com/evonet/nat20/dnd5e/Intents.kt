@@ -1,5 +1,9 @@
 package au.com.evonet.nat20.dnd5e
 
+import au.com.evonet.nat20.dnd5e.core.AbilityScores
+import au.com.evonet.nat20.dnd5e.core.DnD5eClasses
+import au.com.evonet.nat20.dnd5e.core.HpChoice
+import au.com.evonet.nat20.dnd5e.core.LevelUpMath
 import au.com.evonet.nat20.domain.Character
 import au.com.evonet.nat20.domain.CharacterIntent
 import au.com.evonet.nat20.domain.CharacterIntentError

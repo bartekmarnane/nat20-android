@@ -30,8 +30,10 @@ rootProject.name = "Nat20"
 
 // Ruleset-agnostic core (pure Kotlin/JVM — no Android deps)
 include(":domain")
-// D&D 5e ruleset engine (pure Kotlin/JVM, depends on :domain)
-include(":ruleset-dnd5e")
+// Edition-agnostic 5e machinery shared by every 5e edition (mirrors iOS DnD5eCore)
+include(":ruleset-dnd5e-core")
+// D&D 5e (2014) engine (pure Kotlin/JVM, depends on :ruleset-dnd5e-core)
+include(":ruleset-dnd5e-2014")
 // Persistence + repository (Android library: Room lives here later)
 include(":data")
 // The Android app (Compose UI, entry point)

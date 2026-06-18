@@ -65,11 +65,7 @@ class DnD5eRuleset : Ruleset {
 
     companion object {
         const val RULESET_ID: RulesetId = "dnd-5e-2014"
-
-        /**
-         * 5e proficiency bonus: +2 at L1–4, +3 at L5–8, +4 at L9–12,
-         * +5 at L13–16, +6 at L17–20.
-         */
-        fun proficiencyBonus(level: Int): Int = 2 + (maxOf(level, 1) - 1) / 4
+        // Proficiency-by-level moved to `:ruleset-dnd5e-core` (`Proficiency.bonus`)
+        // at the multi-ruleset split — it's edition-agnostic 5e machinery.
     }
 }

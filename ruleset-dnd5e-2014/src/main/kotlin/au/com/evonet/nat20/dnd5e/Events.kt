@@ -1,5 +1,6 @@
 package au.com.evonet.nat20.dnd5e
 
+import au.com.evonet.nat20.dnd5e.core.HpChoice
 import au.com.evonet.nat20.domain.CharacterEvent
 import kotlinx.serialization.Serializable
 
