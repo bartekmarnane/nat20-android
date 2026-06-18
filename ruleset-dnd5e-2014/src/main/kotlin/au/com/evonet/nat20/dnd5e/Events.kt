@@ -41,11 +41,14 @@ data class HealedEvent(
     val previousHp: Int,
     val newHp: Int,
     val maxHp: Int? = null,
+    /** True when this heal lifted the character off 0 HP and cleared their death saves. */
+    val revived: Boolean = false,
 ) : CharacterEvent {
     override val summary: String
         get() {
             val tail = source?.let { " from $it" } ?: ""
-            return "Healed $amount$tail (HP $previousHp → $newHp)"
+            val revivedNote = if (revived) " — back on their feet" else ""
+            return "Healed $amount$tail (HP $previousHp → $newHp)$revivedNote"
         }
 }
 
@@ -239,12 +242,14 @@ data class LongRestEvent(
     val tempCleared: Int = 0,
     val slotsRestored: Int = 0,
     val hitDiceRegained: Int = 0,
+    val deathSavesCleared: Boolean = false,
 ) : CharacterEvent {
     override val summary: String
         get() {
             val parts = buildList {
                 if (slotsRestored > 0) add("$slotsRestored spell slot${if (slotsRestored == 1) "" else "s"}")
                 if (hitDiceRegained > 0) add("$hitDiceRegained hit di${if (hitDiceRegained == 1) "e" else "ce"}")
+                if (deathSavesCleared) add("death saves")
             }
             val extras = if (parts.isEmpty()) "" else " (${parts.joinToString(" + ")} restored)"
             return "Took a long rest — back to full health$extras"
@@ -282,6 +287,22 @@ data class ClassFeatureUsedEvent(
             val uses = remainingAfter?.let { " ($it left)" } ?: ""
             val tail = note?.let { " — $it" } ?: ""
             return "Used $featureName$uses$tail"
+        }
+}
+
+@Serializable
+data class DeathSaveMarkedEvent(
+    val outcome: au.com.evonet.nat20.dnd5e.core.DeathSaveOutcome,
+    val previous: au.com.evonet.nat20.dnd5e.core.DeathSaves,
+    val newState: au.com.evonet.nat20.dnd5e.core.DeathSaves,
+) : CharacterEvent {
+    override val summary: String
+        get() = when (outcome) {
+            au.com.evonet.nat20.dnd5e.core.DeathSaveOutcome.SUCCESS ->
+                if (newState.isStable) "Stabilized — three death-save successes" else "Death save success (${newState.successes}/3)"
+            au.com.evonet.nat20.dnd5e.core.DeathSaveOutcome.FAILURE ->
+                if (newState.isDead) "Fell — three death-save failures" else "Death save failure (${newState.failures}/3)"
+            au.com.evonet.nat20.dnd5e.core.DeathSaveOutcome.CLEAR -> "Cleared death saves"
         }
 }
 

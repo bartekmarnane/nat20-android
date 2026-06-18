@@ -3,6 +3,8 @@ package au.com.evonet.nat20.dnd5e
 import au.com.evonet.nat20.dnd5e.core.AbilityScores
 import au.com.evonet.nat20.dnd5e.core.Coin
 import au.com.evonet.nat20.dnd5e.core.ClassResourceCatalog
+import au.com.evonet.nat20.dnd5e.core.DeathSaveOutcome
+import au.com.evonet.nat20.dnd5e.core.DeathSaves
 import au.com.evonet.nat20.dnd5e.core.DnD5eClasses
 import au.com.evonet.nat20.dnd5e.core.FeatureRecovery
 import au.com.evonet.nat20.dnd5e.core.FeatureUseEntry
@@ -61,7 +63,7 @@ data class TakeDamage(
     }
 }
 
-/** Restores HP, clamped to max. */
+/** Restores HP, clamped to max. Healing off 0 HP ends the dying state (clears death saves, RAW). */
 data class Heal(
     val amount: Int,
     val source: String? = null,
@@ -71,15 +73,51 @@ data class Heal(
         val payload = character.dnd5ePayload()
 
         val newHp = minOf(payload.maxHp, payload.currentHp + amount)
-        val updated = payload.copy(currentHp = newHp)
+        val revived = payload.currentHp == 0 && newHp > 0 && !payload.deathSaves.isCleared
+        val updated = payload.copy(
+            currentHp = newHp,
+            deathSaves = if (revived) DeathSaves.cleared else payload.deathSaves,
+        )
         val event = HealedEvent(
             amount = amount,
             source = source,
             previousHp = payload.currentHp,
             newHp = newHp,
             maxHp = payload.maxHp,
+            revived = revived,
         )
         return IntentResult(character.copy(payload = updated), event)
+    }
+}
+
+/**
+ * Records one death-save outcome (success / failure / clear). Three successes
+ * stabilizes; three failures is death. Rejected once already stable (success),
+ * already dead (failure), or already cleared (clear). The nat-20 = revive and
+ * nat-1 = two-failures rules are guided in the UI (no die roller yet — A16).
+ */
+data class MarkDeathSave(
+    val outcome: DeathSaveOutcome,
+) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        val payload = character.dnd5ePayload()
+        val previous = payload.deathSaves
+        val next = when (outcome) {
+            DeathSaveOutcome.SUCCESS -> {
+                if (previous.successes >= 3) throw CharacterIntentError.Invalid("Already stable (3 successes)")
+                previous.copy(successes = previous.successes + 1)
+            }
+            DeathSaveOutcome.FAILURE -> {
+                if (previous.failures >= 3) throw CharacterIntentError.Invalid("Already dead (3 failures)")
+                previous.copy(failures = previous.failures + 1)
+            }
+            DeathSaveOutcome.CLEAR -> {
+                if (previous.isCleared) throw CharacterIntentError.Invalid("Death saves already cleared")
+                DeathSaves.cleared
+            }
+        }
+        val updated = payload.copy(deathSaves = next)
+        return IntentResult(character.copy(payload = updated), DeathSaveMarkedEvent(outcome, previous, next))
     }
 }
 
@@ -512,6 +550,7 @@ class LongRest : CharacterIntent {
         val pactRestored = maxOf(0, maxPact - payload.currentPactSlots)
         // 5e: regain up to half your total hit dice (min 1) on a long rest.
         val hitDiceRegained = if (payload.hitDiceSpent == 0) 0 else maxOf(1, payload.hitDiceSpent / 2)
+        val deathSavesCleared = !payload.deathSaves.isCleared
         val updated = payload.copy(
             currentHp = payload.maxHp,
             temporaryHp = 0,
@@ -521,12 +560,14 @@ class LongRest : CharacterIntent {
             // Every class resource (pools + feature counters) refreshes on a long rest.
             resourcePools = emptyMap(),
             classFeatureUses = emptyMap(),
+            deathSaves = DeathSaves.cleared,
         )
         val event = LongRestEvent(
             hpRestored = maxOf(0, hpRestored),
             tempCleared = tempCleared,
             slotsRestored = maxOf(0, regularRestored + pactRestored),
             hitDiceRegained = hitDiceRegained,
+            deathSavesCleared = deathSavesCleared,
         )
         return IntentResult(character.copy(payload = updated), event)
     }

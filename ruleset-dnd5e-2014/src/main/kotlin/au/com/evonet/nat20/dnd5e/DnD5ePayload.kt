@@ -2,6 +2,7 @@ package au.com.evonet.nat20.dnd5e
 
 import au.com.evonet.nat20.dnd5e.core.AbilityScores
 import au.com.evonet.nat20.dnd5e.core.Coin
+import au.com.evonet.nat20.dnd5e.core.DeathSaves
 import au.com.evonet.nat20.dnd5e.core.FeatureUseEntry
 import au.com.evonet.nat20.domain.CharacterPayload
 import kotlinx.serialization.Serializable
@@ -69,6 +70,8 @@ data class DnD5ePayload(
     val classFeatureUses: Map<String, FeatureUseEntry> = emptyMap(),
     /** Whether the character currently holds Inspiration (the DM-granted reroll). */
     val hasInspiration: Boolean = false,
+    /** Death-save tracker; only meaningful while downed at 0 HP. Cleared on a long rest / heal. */
+    val deathSaves: DeathSaves = DeathSaves.cleared,
 ) : CharacterPayload {
 
     /** Total character level = sum of all class entry levels, floored at 1. */
@@ -90,6 +93,14 @@ data class DnD5ePayload(
     /** Hit dice still available to spend (max minus spent, floored at 0). */
     val currentHitDice: Int
         get() = maxOf(0, maxHitDice - hitDiceSpent)
+
+    /** Downed at 0 HP and still rolling death saves (not yet stable or dead). */
+    val isDying: Boolean
+        get() = currentHp == 0 && !deathSaves.isStable && !deathSaves.isDead
+
+    /** Three death-save failures — the character has died. */
+    val isDead: Boolean
+        get() = deathSaves.isDead
 
     companion object {
         const val MIN_LEVEL: Int = 1

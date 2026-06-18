@@ -20,7 +20,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import au.com.evonet.nat20.dnd5e.ArmorClassCalculator
 import au.com.evonet.nat20.dnd5e.DnD5eCatalog
+import au.com.evonet.nat20.dnd5e.MarkDeathSave
 import au.com.evonet.nat20.dnd5e.SetInspiration
+import au.com.evonet.nat20.dnd5e.core.DeathSaveOutcome
 import au.com.evonet.nat20.dnd5e.DnD5ePayload
 import au.com.evonet.nat20.dnd5e.core.Ability
 import au.com.evonet.nat20.dnd5e.core.AbilityScores
@@ -96,6 +98,9 @@ internal fun CombatPage(character: Character, payload: DnD5ePayload, onApplyInte
             StatLine("Current / Max", "${payload.currentHp} / ${payload.maxHp}")
             if (payload.temporaryHp > 0) StatLine("Temporary", "+${payload.temporaryHp}")
         }
+        if (payload.currentHp == 0 || !payload.deathSaves.isCleared) {
+            DeathSavesCard(payload, onApplyIntent)
+        }
         SectionCard("Defense & Movement") {
             StatLine("Armor Class", acBreakdown.total.toString())
             // Spell-out the AC sources so the number is legible (speed defaults to 30).
@@ -133,6 +138,50 @@ internal fun CombatPage(character: Character, payload: DnD5ePayload, onApplyInte
         }
         ClassResourcesSection(payload, onApplyIntent)
         RestSection(onApplyIntent)
+    }
+}
+
+@Composable
+private fun DeathSavesCard(payload: DnD5ePayload, onApplyIntent: (CharacterIntent) -> Unit) {
+    val ds = payload.deathSaves
+    SectionCard("Death Saves") {
+        val status = when {
+            ds.isDead -> "Dead — three failures"
+            ds.isStable -> "Stable — three successes"
+            else -> "Dying — roll a death save each turn"
+        }
+        Text(
+            status,
+            style = MaterialTheme.typography.bodyMedium,
+            color = if (ds.isDead) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text("Successes", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+            Text(
+                "●".repeat(ds.successes) + "○".repeat(3 - ds.successes),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text("Failures", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+            Text(
+                "✕".repeat(ds.failures) + "·".repeat(3 - ds.failures),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
+        val resolved = ds.isStable || ds.isDead
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(enabled = !resolved, onClick = { onApplyIntent(MarkDeathSave(DeathSaveOutcome.SUCCESS)) }) { Text("Success") }
+            OutlinedButton(enabled = !resolved, onClick = { onApplyIntent(MarkDeathSave(DeathSaveOutcome.FAILURE)) }) { Text("Failure") }
+            OutlinedButton(enabled = !ds.isCleared, onClick = { onApplyIntent(MarkDeathSave(DeathSaveOutcome.CLEAR)) }) { Text("Clear") }
+        }
+        Text(
+            "Nat 20 → tap Clear, then heal 1. Nat 1 → tap Failure twice.",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
