@@ -46,4 +46,18 @@ class CatalogueTests {
         assertTrue(DnD5eCatalog.classes.isNotEmpty())
         assertTrue(DnD5eCatalog.backgrounds.isNotEmpty())
     }
+
+    @Test
+    fun `spell library loads the SRD spells, sorted by level then name`() {
+        val spells = DnD5eCatalog.spellLibrary
+        assertEquals(319, spells.size)
+        // Sorted: cantrips (level 0) first.
+        assertEquals(0, spells.first().level)
+
+        val acidArrow = spells.first { it.index == "acid-arrow" }
+        assertEquals("Acid Arrow", acidArrow.name)
+        assertEquals(2, acidArrow.level)
+        assertEquals("Evocation", acidArrow.schoolName)
+        assertTrue(acidArrow.description.isNotEmpty())
+    }
 }

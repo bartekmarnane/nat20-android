@@ -1,6 +1,7 @@
 package au.com.evonet.nat20.dnd5e
 
 import au.com.evonet.nat20.dnd5e.core.Ability
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
@@ -71,3 +72,35 @@ data class Background(
 
 /** A 5e skill and the ability that governs it. Static (no SRD JSON ships skills). */
 data class Skill(val id: String, val name: String, val ability: Ability)
+
+/**
+ * A spell for the read-only Spell Library (A10). Decodes the raw 5e-database
+ * spell shape (nested `school`/`classes` objects, list `desc`); only the
+ * browse-relevant fields are declared, the rest dropped via `ignoreUnknownKeys`.
+ */
+@Serializable
+data class Spell(
+    val index: String,
+    val name: String,
+    val level: Int = 0,
+    val school: NamedRef = NamedRef(),
+    val desc: List<String> = emptyList(),
+    @SerialName("higher_level") val higherLevel: List<String> = emptyList(),
+    @SerialName("casting_time") val castingTime: String = "",
+    val range: String = "",
+    val duration: String = "",
+    val components: List<String> = emptyList(),
+    val concentration: Boolean = false,
+    val ritual: Boolean = false,
+    val classes: List<NamedRef> = emptyList(),
+) {
+    val schoolName: String get() = school.name
+    val description: String get() = desc.joinToString("\n\n")
+    val higherLevelText: String get() = higherLevel.joinToString("\n\n")
+    val classNames: List<String> get() = classes.map { it.name }
+    val levelLabel: String get() = if (level == 0) "Cantrip" else "Level $level"
+}
+
+/** A `{ index, name, url }` reference in the SRD JSON; only [name] is needed. */
+@Serializable
+data class NamedRef(val name: String = "")

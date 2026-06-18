@@ -32,6 +32,7 @@ import au.com.evonet.nat20.settings.AppearanceMode
 @Composable
 fun SettingsScreen(
     appSettings: AppSettings,
+    onOpenSpellLibrary: () -> Unit,
     onOpenCredits: () -> Unit,
     onBack: () -> Unit,
 ) {
@@ -59,6 +60,14 @@ fun SettingsScreen(
                             label = { Text(mode.label()) },
                         )
                     }
+                }
+            }
+
+            SettingSection("Reference") {
+                Row(
+                    Modifier.fillMaxWidth().clickable(onClick = onOpenSpellLibrary).padding(vertical = 8.dp),
+                ) {
+                    Text("Spell Library", style = MaterialTheme.typography.bodyLarge)
                 }
             }
 

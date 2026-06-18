@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -103,6 +104,32 @@ internal fun CombatPage(payload: DnD5ePayload) {
             }
             if (payload.classes.isEmpty()) {
                 Text("—", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    }
+}
+
+@Composable
+internal fun SpellsPage(payload: DnD5ePayload, onBrowseSpells: () -> Unit) {
+    val caster = payload.primaryClass()?.isCaster == true
+    CodexPage {
+        if (caster) {
+            SectionCard("Spellcasting") {
+                Text(
+                    "Known and prepared spells arrive with a later step. For now, browse the full spell list.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Button(onClick = onBrowseSpells) { Text("Browse Spell Library") }
+            }
+        } else {
+            SectionCard("Spellcasting") {
+                Text(
+                    "${payload.primaryClass()?.name ?: "This class"} isn't a spellcaster.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Button(onClick = onBrowseSpells) { Text("Browse Spell Library") }
             }
         }
     }

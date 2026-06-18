@@ -21,6 +21,7 @@ import au.com.evonet.nat20.store.CharacterStore
 import au.com.evonet.nat20.ui.editor.DnD5eWizardScreen
 import au.com.evonet.nat20.ui.journal.JournalScreen
 import au.com.evonet.nat20.ui.past.PastAdventuresScreen
+import au.com.evonet.nat20.ui.reference.SpellLibraryScreen
 import au.com.evonet.nat20.ui.roster.RosterScreen
 import au.com.evonet.nat20.ui.settings.CreditsScreen
 import au.com.evonet.nat20.ui.settings.SettingsScreen
@@ -43,6 +44,7 @@ private object Routes {
     const val PAST = "past/{id}"
     const val SETTINGS = "settings"
     const val CREDITS = "credits"
+    const val SPELL_LIBRARY = "spell-library"
     const val ARG_ID = "id"
     const val ARG_CAMPAIGN_ID = "campaignId"
     fun sheet(id: UUID) = "sheet/$id"
@@ -81,6 +83,7 @@ fun NatApp() {
         composable(Routes.SETTINGS) {
             SettingsScreen(
                 appSettings = container.appSettings,
+                onOpenSpellLibrary = { nav.navigate(Routes.SPELL_LIBRARY) },
                 onOpenCredits = { nav.navigate(Routes.CREDITS) },
                 onBack = { nav.popBackStack() },
             )
@@ -88,6 +91,10 @@ fun NatApp() {
 
         composable(Routes.CREDITS) {
             CreditsScreen(onBack = { nav.popBackStack() })
+        }
+
+        composable(Routes.SPELL_LIBRARY) {
+            SpellLibraryScreen(onBack = { nav.popBackStack() })
         }
 
         composable(
@@ -111,6 +118,7 @@ fun NatApp() {
                     onEndCampaign = { active?.let { c -> store.endCampaign(character, c) } },
                     onOpenJournal = { active?.let { c -> nav.navigate(Routes.journal(character.id, c.id)) } },
                     onOpenPastAdventures = { nav.navigate(Routes.past(character.id)) },
+                    onBrowseSpells = { nav.navigate(Routes.SPELL_LIBRARY) },
                     onApplyIntent = { intent -> active?.let { c -> store.applyIntent(intent, character, c) } },
                 )
             }

@@ -45,7 +45,7 @@ private enum class CodexTab(val title: String) {
 }
 
 @Composable
-fun CodexShellView(character: Character, modifier: Modifier = Modifier) {
+fun CodexShellView(character: Character, onBrowseSpells: () -> Unit, modifier: Modifier = Modifier) {
     val payload = character.payload as? DnD5ePayload ?: return
     val tabs = CodexTab.entries
     val pagerState = rememberPagerState(pageCount = { tabs.size })
@@ -63,7 +63,7 @@ fun CodexShellView(character: Character, modifier: Modifier = Modifier) {
                 CodexTab.STATS -> StatsPage(payload)
                 CodexTab.SKILLS -> SkillsPage(payload)
                 CodexTab.COMBAT -> CombatPage(payload)
-                CodexTab.SPELLS -> EmptyPage("No spells yet", "Spell prep arrives with the content step.")
+                CodexTab.SPELLS -> SpellsPage(payload, onBrowseSpells)
                 CodexTab.ITEMS -> EmptyPage("No equipment yet", "Inventory arrives with the content step.")
                 CodexTab.LORE -> LorePage(character, payload)
             }

@@ -20,6 +20,10 @@ object DnD5eCatalog {
         load("Backgrounds/5e-SRD-Backgrounds.json", Background.serializer())
     }
     val skills: List<Skill> get() = SkillCatalog.all
+    /** SRD 5.1 spells (319) for the read-only Spell Library, level then name. */
+    val spellLibrary: List<Spell> by lazy {
+        load("Spells/5e-SRD-Spells.json", Spell.serializer()).sortedWith(compareBy({ it.level }, { it.name }))
+    }
 
     fun race(id: String): Race? = races.firstOrNull { it.id == id }
     fun characterClass(id: String): CharacterClass? = classes.firstOrNull { it.id == id }
