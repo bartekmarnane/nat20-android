@@ -41,11 +41,13 @@ import au.com.evonet.nat20.ui.actions.DnD5eActionsSheet
 fun CharacterSheetScreen(
     character: Character,
     activeCampaign: Campaign?,
+    hasPastAdventures: Boolean,
     onBack: () -> Unit,
     onEdit: () -> Unit,
     onStartCampaign: (String) -> Unit,
     onEndCampaign: () -> Unit,
     onOpenJournal: () -> Unit,
+    onOpenPastAdventures: () -> Unit,
     onApplyIntent: (CharacterIntent) -> Unit,
 ) {
     val inCampaign = character.phase is CharacterPhase.InCampaign
@@ -64,6 +66,9 @@ fun CharacterSheetScreen(
                         TextButton(onClick = { showActions = true }) { Text("Actions") }
                         TextButton(onClick = onOpenJournal) { Text("Journal") }
                     } else {
+                        if (hasPastAdventures) {
+                            TextButton(onClick = onOpenPastAdventures) { Text("Past") }
+                        }
                         TextButton(onClick = onEdit) { Text("Edit") }
                         TextButton(onClick = { showStart = true }) { Text("Start") }
                     }
