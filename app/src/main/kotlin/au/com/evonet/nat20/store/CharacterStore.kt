@@ -5,8 +5,10 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import au.com.evonet.nat20.chronicle.ChronicleService
 import au.com.evonet.nat20.data.CampaignRepository
 import au.com.evonet.nat20.data.CharacterRepository
+import au.com.evonet.nat20.dnd5e.DnD5ePayload
 import au.com.evonet.nat20.domain.Campaign
 import au.com.evonet.nat20.domain.Character
 import au.com.evonet.nat20.domain.CharacterIntent
@@ -14,10 +16,14 @@ import au.com.evonet.nat20.domain.CharacterPhase
 import au.com.evonet.nat20.domain.RulesetRegistry
 import au.com.evonet.nat20.domain.apply
 import au.com.evonet.nat20.domain.end
+import au.com.evonet.nat20.ui.slugToTitle
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.util.UUID
@@ -36,10 +42,18 @@ class CharacterStore(
     private val characters: CharacterRepository,
     private val campaigns: CampaignRepository,
     private val registry: RulesetRegistry,
+    private val chronicleService: ChronicleService,
 ) : ViewModel() {
 
     val roster: StateFlow<List<Character>> = characters.characters
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    private val _generatingChronicles = MutableStateFlow<Set<UUID>>(emptySet())
+    /** Campaigns whose chronicle is currently being (re)generated — drives the journal's indicator. */
+    val generatingChronicles: StateFlow<Set<UUID>> = _generatingChronicles.asStateFlow()
+
+    /** Whether on-device chronicle generation is available (single AI flag). */
+    val isChronicleAvailable: Boolean get() = chronicleService.isAvailable
 
     /** Look a character up by id (the sheet/journal routes carry the id). */
     fun character(id: UUID): Character? = roster.value.firstOrNull { it.id == id }
@@ -97,14 +111,67 @@ class CharacterStore(
         }
     }
 
+    /**
+     * Generate any missing per-session chronicle paragraphs for [campaign] and
+     * persist them. No-op when on-device AI is unavailable, the campaign is
+     * already generating, or every session already has prose — so it's safe to
+     * call on every journal open. Generates oldest-session-first so each
+     * paragraph can see the prior ones for tone/continuity.
+     */
+    fun generateChronicles(campaign: Campaign) {
+        if (!chronicleService.isAvailable) return
+        if (campaign.id in _generatingChronicles.value) return
+        val sessions = campaign.sessions.sortedBy { it.number }
+        if (sessions.all { campaign.chronicle(it.id) != null }) return
+
+        _generatingChronicles.update { it + campaign.id }
+        viewModelScope.launch {
+            try {
+                val context = characterContext(campaign.startSnapshot)
+                val produced = campaign.chronicleParagraphs.toMutableList()
+                for (session in sessions) {
+                    if (produced.any { it.sessionId == session.id }) continue
+                    val prior = sessions
+                        .filter { it.number < session.number }
+                        .mapNotNull { s -> produced.firstOrNull { it.sessionId == s.id }?.paragraph }
+                    val chronicle = chronicleService.chronicle(
+                        session = session,
+                        campaignName = campaign.name,
+                        character = context,
+                        priorParagraphs = prior,
+                        now = Instant.now(),
+                    ) ?: continue
+                    produced.add(chronicle)
+                }
+                // Persist against the latest campaign so we don't clobber new log entries.
+                val latest = campaigns.campaign(campaign.id) ?: return@launch
+                campaigns.upsert(latest.copy(chronicleParagraphs = produced))
+            } finally {
+                _generatingChronicles.update { it - campaign.id }
+            }
+        }
+    }
+
+    /** Ground-truth context for the chronicler, derived from the 5e snapshot. */
+    private fun characterContext(snapshot: Character): ChronicleService.CharacterContext {
+        val payload = snapshot.payload as? DnD5ePayload
+        val descriptor = payload?.let {
+            val race = it.race.takeIf { r -> r.isNotEmpty() }?.slugToTitle()
+            val cls = it.characterClass.takeIf { c -> c.isNotEmpty() }?.slugToTitle()
+            listOfNotNull("Level ${it.level}", race, cls).joinToString(" ")
+        }.orEmpty()
+        return ChronicleService.CharacterContext(name = snapshot.name, descriptor = descriptor)
+    }
+
     companion object {
-        /** Factory that injects the repositories + registry from the app's container. */
+        /** Factory that injects the repositories + registry + chronicler from the container. */
         fun factory(
             characters: CharacterRepository,
             campaigns: CampaignRepository,
             registry: RulesetRegistry,
+            chronicleService: ChronicleService,
         ): ViewModelProvider.Factory = viewModelFactory {
-            initializer { CharacterStore(characters, campaigns, registry) }
+            initializer { CharacterStore(characters, campaigns, registry, chronicleService) }
         }
     }
 }

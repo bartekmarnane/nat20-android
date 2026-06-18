@@ -26,4 +26,11 @@ internal object Migrations {
             )
         }
     }
+
+    /** v2 → v3 (A7d): additive — chronicle prose column on campaigns. */
+    val MIGRATION_2_3 = object : Migration(2, 3) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE `campaigns` ADD COLUMN `chronicleJson` TEXT NOT NULL DEFAULT '[]'")
+        }
+    }
 }

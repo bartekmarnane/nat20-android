@@ -24,9 +24,22 @@ data class Campaign(
     val startSnapshot: Character,
     val endSnapshot: Character?,
     val log: List<LoggedEvent>,
+    /**
+     * Generated per-session narrative prose (A7d), keyed by session id. Empty
+     * until the on-device model produces them; best-effort, never load-bearing
+     * for play.
+     */
+    val chronicleParagraphs: List<SessionChronicle> = emptyList(),
 ) {
     /** Active until it's ended. */
     val isActive: Boolean get() = endedAt == null
+
+    /** Derived play sessions (newest first), the unit a chronicle paragraph covers. */
+    val sessions: List<CampaignSession> get() = CampaignSession.derive(log)
+
+    /** The stored chronicle for [sessionId], if one has been generated. */
+    fun chronicle(sessionId: Instant): SessionChronicle? =
+        chronicleParagraphs.firstOrNull { it.sessionId == sessionId }
 
     companion object {
         /** A fresh, active campaign for [character], capturing it as the start snapshot. */

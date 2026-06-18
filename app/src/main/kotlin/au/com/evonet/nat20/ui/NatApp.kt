@@ -1,6 +1,7 @@
 package au.com.evonet.nat20.ui
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -54,6 +55,7 @@ fun NatApp() {
             container.characterRepository,
             container.campaignRepository,
             container.rulesetRegistry,
+            container.chronicleService,
         ),
     )
     val nav = rememberNavController()
@@ -111,9 +113,16 @@ fun NatApp() {
             } else {
                 val campaigns by remember(character.id) { store.campaignsForCharacter(character.id) }
                     .collectAsState(initial = emptyList())
+                val generating by store.generatingChronicles.collectAsState()
+                val campaign = campaigns.firstOrNull { it.id == campaignId }
+                LaunchedEffect(campaign?.id, campaign?.log?.size) {
+                    if (campaign != null) store.generateChronicles(campaign)
+                }
                 JournalScreen(
-                    campaign = campaigns.firstOrNull { it.id == campaignId },
+                    campaign = campaign,
                     characterName = character.name,
+                    chronicleAvailable = store.isChronicleAvailable,
+                    chronicling = campaignId in generating,
                     onBack = { nav.popBackStack() },
                 )
             }

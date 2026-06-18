@@ -6,6 +6,7 @@ import au.com.evonet.nat20.domain.LoggedEvent
 import au.com.evonet.nat20.domain.NoteKind
 import au.com.evonet.nat20.domain.Ruleset
 import au.com.evonet.nat20.domain.RulesetRegistry
+import au.com.evonet.nat20.domain.SessionChronicle
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
@@ -24,6 +25,7 @@ class CampaignCodec(
 ) {
     private val json = Json { ignoreUnknownKeys = true }
     private val logSerializer = ListSerializer(LoggedEventEnvelope.serializer())
+    private val chronicleSerializer = ListSerializer(ChronicleEnvelope.serializer())
 
     fun toEntity(campaign: Campaign): PersistentCampaign {
         val rulesetId = campaign.startSnapshot.rulesetId
@@ -40,6 +42,10 @@ class CampaignCodec(
             startSnapshotJson = characterCodec.encodeToJson(campaign.startSnapshot),
             endSnapshotJson = campaign.endSnapshot?.let(characterCodec::encodeToJson),
             logJson = json.encodeToString(logSerializer, envelopes),
+            chronicleJson = json.encodeToString(
+                chronicleSerializer,
+                campaign.chronicleParagraphs.map { it.toEnvelope() },
+            ),
         )
     }
 
@@ -56,6 +62,8 @@ class CampaignCodec(
             startSnapshot = characterCodec.decodeFromJson(row.startSnapshotJson),
             endSnapshot = row.endSnapshotJson?.let(characterCodec::decodeFromJson),
             log = log,
+            chronicleParagraphs = json.decodeFromString(chronicleSerializer, row.chronicleJson)
+                .map { it.toDomain() },
         )
     }
 
@@ -75,6 +83,18 @@ class CampaignCodec(
         summaryOverride = summaryOverride,
         iconKindOverride = iconKindOverride?.let(NoteKind::valueOf),
     )
+
+    private fun SessionChronicle.toEnvelope() = ChronicleEnvelope(
+        sessionId = sessionId.toString(),
+        paragraph = paragraph,
+        generatedAt = generatedAt.toString(),
+    )
+
+    private fun ChronicleEnvelope.toDomain() = SessionChronicle(
+        sessionId = Instant.parse(sessionId),
+        paragraph = paragraph,
+        generatedAt = Instant.parse(generatedAt),
+    )
 }
 
 /** Serializable mirror of a [LoggedEvent]; the event is stored as type id + JSON. */
@@ -86,4 +106,12 @@ internal data class LoggedEventEnvelope(
     val eventJson: String,
     val summaryOverride: String? = null,
     val iconKindOverride: String? = null,
+)
+
+/** Serializable mirror of a [SessionChronicle]. */
+@Serializable
+internal data class ChronicleEnvelope(
+    val sessionId: String,
+    val paragraph: String,
+    val generatedAt: String,
 )

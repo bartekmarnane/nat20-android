@@ -1,5 +1,6 @@
 package au.com.evonet.nat20.data
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -26,4 +27,10 @@ data class PersistentCampaign(
     val endSnapshotJson: String?,
     /** JSON array of logged-event envelopes (event encoded via the ruleset). */
     val logJson: String,
+    /**
+     * JSON array of session-chronicle envelopes (A7d). Added in DB v3 with a
+     * `'[]'` default so the v2→v3 migration matches the generated schema.
+     */
+    @ColumnInfo(defaultValue = "[]")
+    val chronicleJson: String = "[]",
 )

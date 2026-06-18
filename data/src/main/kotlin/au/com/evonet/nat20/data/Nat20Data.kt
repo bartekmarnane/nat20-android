@@ -24,7 +24,7 @@ object Nat20Data {
             Nat20Database::class.java,
             DATABASE_NAME,
         )
-            .addMigrations(Migrations.MIGRATION_1_2)
+            .addMigrations(Migrations.MIGRATION_1_2, Migrations.MIGRATION_2_3)
             .build()
 
         val characterCodec = CharacterCodec(registry)

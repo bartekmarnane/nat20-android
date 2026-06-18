@@ -1,6 +1,8 @@
 package au.com.evonet.nat20.app
 
 import android.content.Context
+import au.com.evonet.nat20.chronicle.ChronicleService
+import au.com.evonet.nat20.chronicle.GeminiNanoChronicleGenerator
 import au.com.evonet.nat20.data.CampaignRepository
 import au.com.evonet.nat20.data.CharacterRepository
 import au.com.evonet.nat20.data.Nat20Data
@@ -23,4 +25,8 @@ class AppContainer(context: Context) {
     private val repositories = Nat20Data.create(context, rulesetRegistry)
     val characterRepository: CharacterRepository = repositories.characters
     val campaignRepository: CampaignRepository = repositories.campaigns
+
+    /** On-device chronicler. Gemini Nano is hardware-gated, so this is inert
+     *  (isAvailable == false) until run on supported hardware — see the generator. */
+    val chronicleService: ChronicleService = ChronicleService(GeminiNanoChronicleGenerator(context))
 }

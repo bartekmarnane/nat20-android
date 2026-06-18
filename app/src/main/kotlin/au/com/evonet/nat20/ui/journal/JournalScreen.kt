@@ -19,9 +19,11 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import au.com.evonet.nat20.domain.Campaign
+import au.com.evonet.nat20.domain.CampaignSession
 import au.com.evonet.nat20.domain.LoggedEvent
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -29,13 +31,20 @@ import java.time.format.FormatStyle
 import java.util.Locale
 
 /**
- * The campaign journal (A7b): the active campaign's log, newest entry first.
- * Reads the `LoggedEvent.displaySummary` so user overrides (editable entries,
- * a later step) render correctly. Sessions/chronicle prose are A7d.
+ * The campaign journal (A7b), now grouped into play sessions with per-session
+ * AI chronicle prose (A7d). Sessions newest-first; within a session, entries in
+ * the order they happened (the chronicle reads chronologically). When on-device
+ * AI is unavailable the prose simply doesn't appear — the entries stand alone.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun JournalScreen(campaign: Campaign?, characterName: String, onBack: () -> Unit) {
+fun JournalScreen(
+    campaign: Campaign?,
+    characterName: String,
+    chronicleAvailable: Boolean,
+    chronicling: Boolean,
+    onBack: () -> Unit,
+) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
@@ -45,8 +54,8 @@ fun JournalScreen(campaign: Campaign?, characterName: String, onBack: () -> Unit
             )
         },
     ) { inner ->
-        val entries = campaign?.log?.sortedByDescending { it.timestamp }.orEmpty()
-        if (entries.isEmpty()) {
+        val sessions = campaign?.sessions.orEmpty()
+        if (sessions.isEmpty()) {
             EmptyJournal(characterName, Modifier.padding(inner))
         } else {
             LazyColumn(
@@ -59,8 +68,44 @@ fun JournalScreen(campaign: Campaign?, characterName: String, onBack: () -> Unit
                 ),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                items(entries, key = { it.id }) { entry -> JournalRow(entry) }
+                sessions.forEach { session ->
+                    item(key = "session-${session.id}") {
+                        SessionHeader(
+                            session = session,
+                            chronicle = campaign?.chronicle(session.id)?.paragraph,
+                            chronicling = chronicling && chronicleAvailable,
+                        )
+                    }
+                    items(session.events, key = { it.id }) { entry -> JournalRow(entry) }
+                }
             }
+        }
+    }
+}
+
+@Composable
+private fun SessionHeader(session: CampaignSession, chronicle: String?, chronicling: Boolean) {
+    Column(
+        Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 2.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text(
+            "Session ${session.number} · ${session.startedAt.formattedDate()}",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        when {
+            chronicle != null -> Text(
+                chronicle,
+                style = MaterialTheme.typography.bodyLarge,
+                fontStyle = FontStyle.Italic,
+            )
+            chronicling -> Text(
+                "Chronicling this session…",
+                style = MaterialTheme.typography.bodyMedium,
+                fontStyle = FontStyle.Italic,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
@@ -71,7 +116,7 @@ private fun JournalRow(entry: LoggedEvent) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(entry.displaySummary, style = MaterialTheme.typography.bodyLarge)
             Text(
-                entry.timestamp.formatted(),
+                entry.timestamp.formattedTime(),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -91,9 +136,14 @@ private fun EmptyJournal(characterName: String, modifier: Modifier) {
     }
 }
 
-private val journalFormatter: DateTimeFormatter =
+private val timeFormatter: DateTimeFormatter =
     DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)
         .withLocale(Locale.getDefault())
+private val dateFormatter: DateTimeFormatter =
+    DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(Locale.getDefault())
 
-private fun java.time.Instant.formatted(): String =
-    atZone(ZoneId.systemDefault()).format(journalFormatter)
+private fun java.time.Instant.formattedTime(): String =
+    atZone(ZoneId.systemDefault()).format(timeFormatter)
+
+private fun java.time.Instant.formattedDate(): String =
+    atZone(ZoneId.systemDefault()).format(dateFormatter)
