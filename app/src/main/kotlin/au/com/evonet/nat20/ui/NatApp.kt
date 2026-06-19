@@ -23,7 +23,11 @@ import au.com.evonet.nat20.domain.Campaign
 import au.com.evonet.nat20.domain.Character
 import au.com.evonet.nat20.domain.CharacterPhase
 import au.com.evonet.nat20.store.CharacterStore
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import au.com.evonet.nat20.ui.editor.DnD5e2024WizardScreen
+import au.com.evonet.nat20.ui.editor.PathfinderWizardScreen
 import au.com.evonet.nat20.ui.editor.DnD5eWizardScreen
 import au.com.evonet.nat20.ui.journal.JournalScreen
 import au.com.evonet.nat20.ui.past.PastAdventuresScreen
@@ -48,6 +52,7 @@ private object Routes {
     const val SHEET = "sheet/{id}"
     const val CREATE = "editor"
     const val CREATE_2024 = "editor2024"
+    const val CREATE_PF2E = "editorPf2e"
     const val EDIT = "editor/{id}"
     const val JOURNAL = "journal/{id}/{campaignId}"
     const val PAST = "past/{id}"
@@ -216,6 +221,13 @@ fun NatApp() {
             )
         }
 
+        composable(Routes.CREATE_PF2E) {
+            PathfinderWizardScreen(
+                onSave = { store.save(it); nav.popBackStack() },
+                onCancel = { nav.popBackStack() },
+            )
+        }
+
         composable(
             Routes.EDIT,
             arguments = listOf(navArgument(Routes.ARG_ID) { type = NavType.StringType }),
@@ -234,16 +246,29 @@ fun NatApp() {
     }
 }
 
-/** Pick which ruleset a new character uses before opening the matching creation wizard (A21). */
+/** Pick which ruleset a new character uses before opening the matching creation wizard (A21/A22). */
 @Composable
 private fun EditionChooser(onPick: (String) -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Choose a ruleset") },
-        text = { Text("Which edition is this character?") },
-        confirmButton = { TextButton(onClick = { onPick(Routes.CREATE_2024) }) { Text("D&D 5e (2024)") } },
-        dismissButton = { TextButton(onClick = { onPick(Routes.CREATE) }) { Text("D&D 5e (2014)") } },
+        text = {
+            androidx.compose.foundation.layout.Column(
+                verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(4.dp),
+            ) {
+                RulesetOption("D&D 5e (2014)") { onPick(Routes.CREATE) }
+                RulesetOption("D&D 5e (2024)") { onPick(Routes.CREATE_2024) }
+                RulesetOption("Pathfinder 2e (Remaster)") { onPick(Routes.CREATE_PF2E) }
+            }
+        },
+        confirmButton = {},
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
     )
+}
+
+@Composable
+private fun RulesetOption(label: String, onClick: () -> Unit) {
+    androidx.compose.material3.OutlinedButton(onClick = onClick, modifier = Modifier.fillMaxWidth()) { Text(label) }
 }
 
 /** The character's active campaign, if it's committed to one. */
