@@ -442,3 +442,15 @@ class PathfinderRunesWealthTests {
         assertTrue(PfRemoveInventoryItem("Rope").applyTo(c, ruleset).character.p().inventory.none { it.name == "Rope" })
     }
 }
+
+class PfActionsTests {
+    @org.junit.jupiter.api.Test
+    fun `the actions glossary covers basics and skill actions with costs`() {
+        assertTrue(PfActions.basics.any { it.id == "stride" })
+        assertTrue(PfActions.skills.any { it.id == "demoralize" })
+        assertEquals(au.com.evonet.nat20.pf2e.PfActionCost.ONE, PfActions.by("strike")!!.cost)
+        assertEquals(au.com.evonet.nat20.pf2e.PfActionCost.REACTION, PfActions.by("aid")!!.cost)
+        assertEquals("◆◆", au.com.evonet.nat20.pf2e.PfActionCost.TWO.glyph)
+        assertTrue(PfActions.all.size >= 25)
+    }
+}

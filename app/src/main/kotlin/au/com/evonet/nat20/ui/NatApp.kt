@@ -33,6 +33,7 @@ import au.com.evonet.nat20.ui.journal.JournalScreen
 import au.com.evonet.nat20.ui.past.PastAdventuresScreen
 import au.com.evonet.nat20.ui.reference.ItemCatalog2024Screen
 import au.com.evonet.nat20.ui.reference.MonsterCodex2024Screen
+import au.com.evonet.nat20.ui.reference.PathfinderActionsScreen
 import au.com.evonet.nat20.ui.reference.PathfinderItemCatalogScreen
 import au.com.evonet.nat20.ui.reference.PathfinderMonsterCodexScreen
 import au.com.evonet.nat20.ui.reference.SpellLibraryScreen
@@ -65,6 +66,7 @@ private object Routes {
     const val ITEM_CATALOG = "item-catalog-2024"
     const val PF_MONSTER_CODEX = "monster-codex-pf2e"
     const val PF_ITEM_CATALOG = "item-catalog-pf2e"
+    const val PF_ACTIONS = "actions-pf2e"
     const val ARG_ID = "id"
     const val ARG_CAMPAIGN_ID = "campaignId"
     fun sheet(id: UUID) = "sheet/$id"
@@ -115,6 +117,7 @@ fun NatApp() {
                 onOpenItemCatalog = { nav.navigate(Routes.ITEM_CATALOG) },
                 onOpenPfMonsterCodex = { nav.navigate(Routes.PF_MONSTER_CODEX) },
                 onOpenPfItemCatalog = { nav.navigate(Routes.PF_ITEM_CATALOG) },
+                onOpenPfActions = { nav.navigate(Routes.PF_ACTIONS) },
                 onOpenCredits = { nav.navigate(Routes.CREDITS) },
                 onBack = { nav.popBackStack() },
             )
@@ -142,6 +145,10 @@ fun NatApp() {
 
         composable(Routes.PF_ITEM_CATALOG) {
             PathfinderItemCatalogScreen(onBack = { nav.popBackStack() })
+        }
+
+        composable(Routes.PF_ACTIONS) {
+            PathfinderActionsScreen(onBack = { nav.popBackStack() })
         }
 
         composable(

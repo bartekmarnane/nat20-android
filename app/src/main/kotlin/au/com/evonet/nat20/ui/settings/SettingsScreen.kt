@@ -37,6 +37,7 @@ fun SettingsScreen(
     onOpenItemCatalog: () -> Unit,
     onOpenPfMonsterCodex: () -> Unit,
     onOpenPfItemCatalog: () -> Unit,
+    onOpenPfActions: () -> Unit,
     onOpenCredits: () -> Unit,
     onBack: () -> Unit,
 ) {
@@ -82,6 +83,9 @@ fun SettingsScreen(
                 }
                 Row(Modifier.fillMaxWidth().clickable(onClick = onOpenPfItemCatalog).padding(vertical = 8.dp)) {
                     Text("Item Catalog (PF2e)", style = MaterialTheme.typography.bodyLarge)
+                }
+                Row(Modifier.fillMaxWidth().clickable(onClick = onOpenPfActions).padding(vertical = 8.dp)) {
+                    Text("Actions (PF2e)", style = MaterialTheme.typography.bodyLarge)
                 }
             }
 
