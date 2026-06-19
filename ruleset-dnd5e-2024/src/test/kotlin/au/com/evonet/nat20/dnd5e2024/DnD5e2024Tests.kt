@@ -370,6 +370,31 @@ class Feats2024Tests {
     }
 
     @Test
+    fun `the feat catalogue spans every tier and resolves consistently`() {
+        FeatCategory2024.entries.forEach { c -> assertTrue(Feats2024.inCategory(c).isNotEmpty(), "no feats in $c") }
+        // Every feat resolves by id and a representative half-feat / prereq is honoured.
+        assertTrue(Feats2024.all.all { Feats2024.feat(it.id) === it })
+        assertTrue(Feats2024.feat("polearm-master")!!.grantsAbilityIncrease)
+        assertTrue(Feats2024.feat("crossbow-expert")!!.isAvailable(4, AbilityScores(dexterity = 14)))
+        assertFalse(Feats2024.feat("crossbow-expert")!!.isAvailable(4, AbilityScores(dexterity = 10)))
+        // Expanded General pool is sizeable.
+        assertTrue(Feats2024.inCategory(FeatCategory2024.GENERAL).size >= 12)
+        assertTrue(Feats2024.inCategory(FeatCategory2024.FIGHTING_STYLE).size >= 6)
+    }
+
+    @Test
+    fun `spell-effect producers resolve and apply on cast`() {
+        // The catalogue grew to cover more buffs; each resolves to a named effect.
+        listOf("bless", "haste", "barkskin", "death-ward", "greater-invisibility", "enlargereduce").forEach {
+            assertTrue(SpellEffectCatalog2024.template(it) != null, "no template for $it")
+        }
+        // Barkskin sets an AC floor of 16 when cast on self.
+        val druid = character(DnD5e2024Payload(classes = listOf(ClassEntry2024("druid", 5)), abilityScores = AbilityScores(dexterity = 10)).withFullSpellSlots())
+        val cast = CastSpell2024("barkskin", "Barkskin", 2, 2, applyToSelf = true, requiresConcentration = true).applyTo(druid, ruleset)
+        assertEquals(16, cast.character.p().armorClass) // override floor beats 10 + 0 DEX
+    }
+
+    @Test
     fun `Defense fighting style adds plus one AC only while armored`() {
         val unarmored = DnD5e2024Payload(classes = listOf(ClassEntry2024("fighter", 1)), abilityScores = AbilityScores(dexterity = 14), fightingStyle = "defense")
         assertEquals(12, unarmored.armorClass) // no armor → no Defense bonus
