@@ -28,7 +28,9 @@ import androidx.compose.ui.unit.dp
 import au.com.evonet.nat20.dnd5e.ArmorClassCalculator
 import au.com.evonet.nat20.dnd5e.DnD5eCatalog
 import au.com.evonet.nat20.dnd5e.MarkDeathSave
+import au.com.evonet.nat20.dnd5e.RaceTraits
 import au.com.evonet.nat20.dnd5e.RollDeathSave
+import au.com.evonet.nat20.dnd5e.effectiveSkillProficiencies
 import au.com.evonet.nat20.dnd5e.SetInitiative
 import au.com.evonet.nat20.dnd5e.SetInspiration
 import au.com.evonet.nat20.dnd5e.SpendHitDie
@@ -56,7 +58,7 @@ import au.com.evonet.nat20.ui.slugToTitle
 internal fun StatsPage(payload: DnD5ePayload, onLevelUp: () -> Unit) {
     val prof = Proficiency.bonus(payload.level)
     val proficientSaves = payload.primaryClass()?.savingThrowAbilities()?.toSet().orEmpty()
-    val perceptionProficient = "perception" in payload.selectedSkills
+    val perceptionProficient = "perception" in payload.effectiveSkillProficiencies
     var check by remember { mutableStateOf<CheckRoll?>(null) }
     val effectiveScores = payload.effectiveAbilityScores
     CodexPage {
@@ -113,7 +115,7 @@ internal fun SkillsPage(payload: DnD5ePayload) {
         SectionCard("Skills") {
             DnD5eCatalog.skills.forEachIndexed { index, skill ->
                 if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
-                val proficient = skill.id in payload.selectedSkills
+                val proficient = skill.id in payload.effectiveSkillProficiencies
                 val abilityMod = effectiveScores.modifier(skill.ability)
                 val effectBonus = payload.temporarySkillBonus(skill.id) + anySkillBonus
                 val mod = abilityMod + (if (proficient) prof else 0) + effectBonus
@@ -344,6 +346,18 @@ internal fun LorePage(character: Character, payload: DnD5ePayload) {
             )
             StatLine("Background", payload.background.takeIf { it.isNotEmpty() }?.let { DnD5eCatalog.background(it)?.name ?: it.slugToTitle() } ?: "—")
             StatLine("Level", payload.level.toString())
+        }
+        val traits = RaceTraits.reminders(payload.race)
+        if (traits.isNotEmpty()) {
+            SectionCard("Race Traits") {
+                traits.forEachIndexed { i, t ->
+                    if (i > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                    Column(Modifier.padding(vertical = 2.dp)) {
+                        Text(t.title, fontWeight = FontWeight.Medium)
+                        Text(t.detail, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
         }
         SectionCard("Backstory") {
             Text(

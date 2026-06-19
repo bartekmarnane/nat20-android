@@ -15,9 +15,13 @@ import au.com.evonet.nat20.dnd5e.core.EffectSource
  * `DnD5ePayload` effect accessors + `PassiveClassEffectCatalog`.
  */
 
-/** Every effect that contributes to derived stats: the live ones plus passive class effects. */
+/** Every effect that contributes to derived stats: the live ones plus passive class + race effects. */
 val DnD5ePayload.allEffects: List<ActiveEffect>
-    get() = activeEffects + passiveClassEffects()
+    get() = activeEffects + passiveClassEffects() + RaceTraits.passiveEffects(race)
+
+/** Skill proficiencies the character has, including those auto-granted by a race trait (Elf Keen Senses). */
+val DnD5ePayload.effectiveSkillProficiencies: List<String>
+    get() = (selectedSkills + RaceTraits.grantedSkills(race)).distinct()
 
 /**
  * Synthesises the always-on class effects that ride the same modifier pipeline:
@@ -92,9 +96,9 @@ val DnD5ePayload.effectAttackBonus: Int
 val DnD5ePayload.effectDamageBonus: Int
     get() = activeEffects.sumOf { e -> e.modifiers.sumOf { if (it is EffectModifier.DamageBonus) it.value else 0 } }
 
-/** Damage types the character resists, lower-cased (from effects; race/item resistances arrive with A19). */
+/** Damage types the character resists, lower-cased — from active effects **and** innate race traits (A19). */
 val DnD5ePayload.effectiveDamageResistances: Set<String>
-    get() = activeEffects.flatMap { e -> e.modifiers.mapNotNull { (it as? EffectModifier.DamageResistance)?.type?.trim()?.lowercase()?.takeIf { t -> t.isNotEmpty() } } }.toSet()
+    get() = allEffects.flatMap { e -> e.modifiers.mapNotNull { (it as? EffectModifier.DamageResistance)?.type?.trim()?.lowercase()?.takeIf { t -> t.isNotEmpty() } } }.toSet()
 
 /** Free-text advantage descriptors from effects, for display (Rage: "STR checks and saves"). */
 val DnD5ePayload.advantageDescriptors: List<String>

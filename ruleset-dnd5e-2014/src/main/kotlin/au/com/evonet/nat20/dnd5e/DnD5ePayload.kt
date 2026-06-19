@@ -84,6 +84,10 @@ data class DnD5ePayload(
     val activeEffects: List<ActiveEffect> = emptyList(),
     /** The spell/feature the character is concentrating on; null = not concentrating. */
     val concentratingOn: String? = null,
+    /** Half-Orc Relentless Endurance: spent when it keeps the character at 1 HP; resets on a long rest. */
+    val relentlessEnduranceUsed: Boolean = false,
+    /** Optional content sources enabled for this character (supplement toggles, A19). Empty = SRD/PHB only. */
+    val enabledSources: List<String> = emptyList(),
 ) : CharacterPayload {
 
     /** Total character level = sum of all class entry levels, floored at 1. */

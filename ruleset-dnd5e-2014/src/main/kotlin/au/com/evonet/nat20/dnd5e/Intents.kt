@@ -58,17 +58,26 @@ data class TakeDamage(
         val tempAbsorbed = minOf(payload.temporaryHp, effectiveAmount)
         val hpDamage = effectiveAmount - tempAbsorbed
         val newTempHp = payload.temporaryHp - tempAbsorbed
-        val newHp = maxOf(0, payload.currentHp - hpDamage)
+        var newHp = maxOf(0, payload.currentHp - hpDamage)
+
+        // Relentless Endurance (Half-Orc): the first time per long rest the character is reduced to 0
+        // but not killed outright (overkill ≥ HP max), drop to 1 HP instead.
+        var relentless = false
+        val overkill = hpDamage >= payload.currentHp + payload.maxHp
+        if (newHp == 0 && payload.currentHp > 0 && !payload.relentlessEnduranceUsed && !overkill && RaceTraits.hasRelentlessEndurance(payload.race)) {
+            newHp = 1
+            relentless = true
+        }
 
         // Concentration: damage prompts a CON save (DC = max of 10 and half the damage taken).
         // The player resolves it manually (rolls the save, ends concentration on a fail).
         val concentrationDc = if (payload.concentratingOn != null && hpDamage > 0) maxOf(10, hpDamage / 2) else null
 
-        val updated = payload.copy(currentHp = newHp, temporaryHp = newTempHp)
+        val updated = payload.copy(currentHp = newHp, temporaryHp = newTempHp, relentlessEnduranceUsed = payload.relentlessEnduranceUsed || relentless)
         val event = DamageTakenEvent(
             amount = amount,
             damageType = damageType,
-            note = note,
+            note = if (relentless) (note?.let { "$it · " } ?: "") + "Relentless Endurance kept them at 1 HP" else note,
             previousHp = payload.currentHp,
             newHp = newHp,
             tempAbsorbed = tempAbsorbed,
@@ -807,6 +816,7 @@ class LongRest : CharacterIntent {
             classFeatureUses = emptyMap(),
             deathSaves = DeathSaves.cleared,
             exhaustionLevel = exhaustionAfter,
+            relentlessEnduranceUsed = false,
             // End concentration and clear timed/concentration effects (Until-Cancelled buffs persist).
             concentratingOn = null,
             activeEffects = payload.activeEffects.filterNot {
