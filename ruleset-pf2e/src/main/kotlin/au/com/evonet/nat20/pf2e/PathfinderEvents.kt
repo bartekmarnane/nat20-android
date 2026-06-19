@@ -64,6 +64,25 @@ data class PfHeroPointsChangedEvent(val previous: Int, val newValue: Int) : Char
 }
 
 @Serializable
+data class PfSpellCastEvent(val spellName: String, val slotRank: Int, val heightened: Boolean, val focus: Boolean = false) : CharacterEvent {
+    override val summary: String
+        get() {
+            val at = when {
+                focus -> " (focus)"
+                slotRank == 0 -> ""
+                heightened -> " (heightened to rank $slotRank)"
+                else -> ""
+            }
+            return "Cast $spellName$at"
+        }
+}
+
+@Serializable
+data class PfDailyPrepEvent(val slotsRestored: Int) : CharacterEvent {
+    override val summary: String get() = "Daily preparations — ${if (slotsRestored > 0) "$slotsRestored spell slot${if (slotsRestored == 1) "" else "s"} + focus restored" else "rested and refocused"}"
+}
+
+@Serializable
 data class PfStrikeEvent(val weaponName: String, val attackNumber: Int, val total: Int, val target: String? = null) : CharacterEvent {
     override val summary: String
         get() {

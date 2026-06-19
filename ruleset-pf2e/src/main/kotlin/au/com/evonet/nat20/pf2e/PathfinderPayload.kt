@@ -6,6 +6,7 @@ import au.com.evonet.nat20.pf2e.core.PfAbilityScores
 import au.com.evonet.nat20.pf2e.core.PfSkill
 import au.com.evonet.nat20.pf2e.core.Proficiency
 import au.com.evonet.nat20.pf2e.core.Save
+import au.com.evonet.nat20.pf2e.core.SpellTradition
 import au.com.evonet.nat20.pf2e.core.ValuedCondition
 import kotlinx.serialization.Serializable
 
@@ -69,6 +70,21 @@ data class PathfinderPayload(
     val armorProficiencies: Map<ArmorCategory, Proficiency> = emptyMap(),
     /** Attack proficiency per weapon category. */
     val weaponProficiencies: Map<WeaponCategory, Proficiency> = emptyMap(),
+    // ── Spellcasting (A22 slice 4) ──
+    /** The caster's tradition; null for a non-caster. */
+    val spellTradition: SpellTradition? = null,
+    /** The ability the class casts with (Wizard INT, Cleric WIS, Sorcerer/Bard CHA). */
+    val castingAbility: PfAbility? = null,
+    val spellProficiency: Proficiency = Proficiency.UNTRAINED,
+    /** Remaining spell slots per rank (1..10); the daily prep refills to [maxSpellSlots]. */
+    val currentSpellSlots: Map<Int, Int> = emptyMap(),
+    /** Cantrips known/prepared (rank 0, at-will). */
+    val cantrips: List<String> = emptyList(),
+    /** Known spells per rank — the spontaneous caster's repertoire or the prepared list. */
+    val knownSpells: Map<Int, List<String>> = emptyMap(),
+    val focusPoints: Int = 0,
+    val maxFocusPoints: Int = 0,
+    val focusSpells: List<String> = emptyList(),
 ) : CharacterPayload {
 
     val isDying: Boolean get() = dying in 1 until DYING_MAX

@@ -192,3 +192,58 @@ class PathfinderEquipmentTests {
         assertEquals(struck.event, ruleset.decodeEvent(ruleset.encodeEvent(struck.event), typeId))
     }
 }
+
+class PathfinderSpellTests {
+    private fun sorcerer(level: Int = 3) = PathfinderPayload(
+        className = "sorcerer", level = level, keyAbility = PfAbility.CHARISMA,
+        abilityScores = PfAbilityScores(charisma = 18),
+        spellTradition = au.com.evonet.nat20.pf2e.core.SpellTradition.ARCANE,
+        castingAbility = PfAbility.CHARISMA, spellProficiency = Proficiency.TRAINED,
+        cantrips = listOf("electric-arc"), knownSpells = mapOf(1 to listOf("magic-missile")),
+    ).withFullSpellSlots()
+
+    @org.junit.jupiter.api.Test
+    fun `slot table, spell attack, and DC follow the full-caster maths`() {
+        val s = sorcerer(3)
+        // Level 3 full caster: rank 1 = 3 slots, rank 2 = 2 (just unlocked).
+        assertEquals(mapOf(1 to 3, 2 to 2), s.maxSpellSlots)
+        // Spell attack: CHA 4 + (3 + 2 trained) = 9; DC = 19.
+        assertEquals(9, s.spellAttack)
+        assertEquals(19, s.spellDc)
+    }
+
+    @org.junit.jupiter.api.Test
+    fun `casting consumes a slot of the chosen rank and heightening uses a higher slot`() {
+        val c = character(sorcerer(3))
+        val cast = PfCastSpell("magic-missile", "Magic Missile", 1, 1).applyTo(c, ruleset)
+        assertEquals(2, cast.character.p().currentSpellSlots[1]) // 3 -> 2
+        // Heighten Magic Missile into a rank-2 slot.
+        val up = PfCastSpell("magic-missile", "Magic Missile", 1, 2).applyTo(cast.character, ruleset)
+        assertEquals(1, up.character.p().currentSpellSlots[2]) // 2 -> 1
+        assertTrue(up.event.summary.contains("heightened to rank 2"))
+        // Cantrips never consume a slot.
+        val cantrip = PfCastSpell("electric-arc", "Electric Arc", 0, 0).applyTo(up.character, ruleset)
+        assertEquals(up.character.p().currentSpellSlots, cantrip.character.p().currentSpellSlots)
+    }
+
+    @org.junit.jupiter.api.Test
+    fun `daily preparations refill slots and the focus pool, refocus caps at max`() {
+        val spent = sorcerer(3).copy(currentSpellSlots = mapOf(1 to 0), focusPoints = 0, maxFocusPoints = 1)
+        val prepped = PfDailyPreparations().applyTo(character(spent), ruleset).character.p()
+        assertEquals(3, prepped.currentSpellSlots[1])
+        assertEquals(1, prepped.focusPoints)
+        // Refocus is rejected when the pool is full.
+        assertThrows(CharacterIntentError.Invalid::class.java) { PfRefocus().applyTo(character(prepped), ruleset) }
+    }
+
+    @org.junit.jupiter.api.Test
+    fun `a built caster gets a tradition, casting ability, and full slots`() {
+        val choices = PathfinderBuilder.Choices("Ezren", "human", null, "scholar", "wizard", PfAbility.INTELLIGENCE,
+            freeBoosts = listOf(PfAbility.INTELLIGENCE, PfAbility.DEXTERITY, PfAbility.CONSTITUTION, PfAbility.WISDOM))
+        val p = PathfinderBuilder.build(choices)
+        assertTrue(p.isCaster)
+        assertEquals(au.com.evonet.nat20.pf2e.core.SpellTradition.ARCANE, p.spellTradition)
+        assertEquals(PfAbility.INTELLIGENCE, p.castingAbility)
+        assertEquals(p.maxSpellSlots, p.currentSpellSlots) // seeded full
+    }
+}

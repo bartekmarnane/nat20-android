@@ -87,6 +87,11 @@ object PathfinderBuilder {
             speed = ancestry?.speed ?: 25,
             armorProficiencies = cls?.armorProf.orEmpty(),
             weaponProficiencies = cls?.weaponProf.orEmpty(),
-        )
+            // Casters: tradition + the casting ability (= the class key ability for the seed classes),
+            // trained spell proficiency, full level-1 slots + cantrips.
+            spellTradition = cls?.tradition,
+            castingAbility = if (cls?.tradition != null) choices.keyAbility else null,
+            spellProficiency = if (cls?.tradition != null) Proficiency.TRAINED else Proficiency.UNTRAINED,
+        ).let { if (it.isCaster) it.withFullSpellSlots() else it }
     }
 }

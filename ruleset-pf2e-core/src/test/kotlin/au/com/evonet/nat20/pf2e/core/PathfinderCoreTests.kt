@@ -71,6 +71,15 @@ class AbilityAndSkillTests {
     }
 
     @Test
+    fun `full-caster slot progression unlocks a rank at every odd level`() {
+        assertEquals(emptyMap<Int, Int>(), SpellcastingProgression.fullCasterSlots(0))
+        assertEquals(mapOf(1 to 2), SpellcastingProgression.fullCasterSlots(1))     // rank 1 unlocks at 2 slots
+        assertEquals(mapOf(1 to 3, 2 to 2), SpellcastingProgression.fullCasterSlots(3)) // rank 1 → 3, rank 2 unlocks
+        assertEquals(10, SpellcastingProgression.maxSpellRank(19))
+        assertEquals(1, SpellcastingProgression.fullCasterSlots(20)[10]) // capstone rank = single slot
+    }
+
+    @Test
     fun `valued conditions label with their number`() {
         assertEquals("Frightened 2", ValuedCondition("frightened", 2).label("Frightened"))
         assertEquals("Prone", ValuedCondition("prone").label("Prone"))

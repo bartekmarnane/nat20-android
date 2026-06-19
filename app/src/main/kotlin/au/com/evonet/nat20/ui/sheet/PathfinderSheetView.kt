@@ -43,7 +43,13 @@ import au.com.evonet.nat20.pf2e.PfAddWeapon
 import au.com.evonet.nat20.pf2e.PfAdjustHeroPoints
 import au.com.evonet.nat20.pf2e.PfApplyCondition
 import au.com.evonet.nat20.pf2e.PfArmors
+import au.com.evonet.nat20.pf2e.PfCastFocusSpell
+import au.com.evonet.nat20.pf2e.PfCastSpell
 import au.com.evonet.nat20.pf2e.PfClearCondition
+import au.com.evonet.nat20.pf2e.PfDailyPreparations
+import au.com.evonet.nat20.pf2e.PfLearnSpell
+import au.com.evonet.nat20.pf2e.PfRefocus
+import au.com.evonet.nat20.pf2e.PfSpells
 import au.com.evonet.nat20.pf2e.PfEquipArmor
 import au.com.evonet.nat20.pf2e.PfEquipShield
 import au.com.evonet.nat20.pf2e.PfGainTempHp
@@ -57,6 +63,10 @@ import au.com.evonet.nat20.pf2e.PfWeapons
 import au.com.evonet.nat20.pf2e.armorClass
 import au.com.evonet.nat20.pf2e.armorClassRaised
 import au.com.evonet.nat20.pf2e.classDcValue
+import au.com.evonet.nat20.pf2e.isCaster
+import au.com.evonet.nat20.pf2e.maxSpellSlots
+import au.com.evonet.nat20.pf2e.spellAttack
+import au.com.evonet.nat20.pf2e.spellDc
 import au.com.evonet.nat20.pf2e.strikes
 import au.com.evonet.nat20.pf2e.core.PfAbility
 import au.com.evonet.nat20.pf2e.core.PfAbilityScores
@@ -77,7 +87,7 @@ import kotlinx.coroutines.launch
  * the dying/wounded track, Hero Points, and valued conditions. Spells, equipment,
  * feats, and the action economy are follow-up slices.
  */
-private enum class PfTab(val title: String) { STATS("Stats"), SKILLS("Skills"), COMBAT("Combat"), LORE("Lore") }
+private enum class PfTab(val title: String) { STATS("Stats"), SKILLS("Skills"), COMBAT("Combat"), SPELLS("Spells"), LORE("Lore") }
 
 @Composable
 fun PathfinderSheetView(character: Character, onApplyIntent: (CharacterIntent) -> Unit, modifier: Modifier = Modifier) {
@@ -98,6 +108,7 @@ fun PathfinderSheetView(character: Character, onApplyIntent: (CharacterIntent) -
                 PfTab.STATS -> PfStats(payload)
                 PfTab.SKILLS -> PfSkills(payload)
                 PfTab.COMBAT -> PfCombat(payload, onApplyIntent)
+                PfTab.SPELLS -> PfSpellsTab(payload, onApplyIntent)
                 PfTab.LORE -> PfLore(character, payload, onApplyIntent)
             }
         }
@@ -247,6 +258,72 @@ private fun PfCombat(payload: PathfinderPayload, onApplyIntent: (CharacterIntent
         }, onDismiss = { amount = null })
     }
     if (addCond) PfConditionPicker(payload.conditions.map { it.id }.toSet(), onPick = { id, value -> onApplyIntent(PfApplyCondition(id, value)); addCond = false }, onDismiss = { addCond = false })
+}
+
+@Composable
+private fun PfSpellsTab(payload: PathfinderPayload, onApplyIntent: (CharacterIntent) -> Unit) {
+    var browse by remember { mutableStateOf<Int?>(null) } // rank to add (0 = cantrip); null = closed
+    PfPage {
+        if (!payload.isCaster) {
+            PfCard("Spellcasting") { Text("${payload.className.takeIf { it.isNotEmpty() }?.slugToTitle() ?: "This class"} isn't a spellcaster.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        } else {
+            PfCard("${payload.spellTradition?.displayName} Spellcasting") {
+                PfStatRow("Spell Attack", payload.spellAttack.signedPf())
+                PfStatRow("Spell DC", payload.spellDc.toString())
+            }
+            PfCard("Spell Slots") {
+                val max = payload.maxSpellSlots
+                if (max.isEmpty()) Text("No spell slots yet.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                else max.keys.sorted().forEach { rank ->
+                    val rem = payload.currentSpellSlots[rank] ?: 0
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text("Rank $rank", Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                        Text("●".repeat(rem) + "○".repeat((max.getValue(rank) - rem).coerceAtLeast(0)), color = MaterialTheme.colorScheme.primary)
+                    }
+                }
+                OutlinedButton(onClick = { onApplyIntent(PfDailyPreparations()) }) { Text("Daily preparations") }
+            }
+            if (payload.maxFocusPoints > 0) {
+                PfCard("Focus Pool") {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text("●".repeat(payload.focusPoints) + "○".repeat((payload.maxFocusPoints - payload.focusPoints).coerceAtLeast(0)), Modifier.weight(1f), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.titleMedium)
+                        payload.focusSpells.mapNotNull { PfSpells.by(it) }.forEach { s ->
+                            TextButton(enabled = payload.focusPoints > 0, onClick = { onApplyIntent(PfCastFocusSpell(s.name)) }) { Text(s.name) }
+                        }
+                        OutlinedButton(onClick = { onApplyIntent(PfRefocus()) }) { Text("Refocus") }
+                    }
+                }
+            }
+            SpellListCard("Cantrips", payload.cantrips, payload, onCast = { onApplyIntent(PfCastSpell(it.id, it.name, 0, 0)) }, onAdd = { browse = 0 })
+            payload.knownSpells.keys.sorted().forEach { rank ->
+                SpellListCard("Rank $rank", payload.knownSpells[rank].orEmpty(), payload, onCast = { onApplyIntent(PfCastSpell(it.id, it.name, it.rank, rank)) }, onAdd = { browse = rank })
+            }
+            OutlinedButton(onClick = { browse = 1 }, modifier = Modifier.fillMaxWidth()) { Text("Add a spell") }
+        }
+    }
+    browse?.let { rank ->
+        val tradition = payload.spellTradition
+        val pool = PfSpells.all.filter { (tradition == null || tradition in it.traditions) && (if (rank == 0) it.rank == 0 else it.rank in 1..rank) }
+        PfChoiceDialog("Add a spell", pool.map { it.id as String? to "${it.name} · ${it.rankLabel}" }, onPick = { id -> id?.let { onApplyIntent(PfLearnSpell(it, if (rank == 0) 0 else PfSpells.by(it)!!.rank)) }; browse = null }, onDismiss = { browse = null })
+    }
+}
+
+@Composable
+private fun SpellListCard(title: String, ids: List<String>, payload: PathfinderPayload, onCast: (au.com.evonet.nat20.pf2e.PfSpell) -> Unit, onAdd: () -> Unit) {
+    val spells = ids.mapNotNull { PfSpells.by(it) }.sortedWith(compareBy({ it.rank }, { it.name }))
+    PfCard(title) {
+        if (spells.isEmpty()) Text("Nothing yet.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        else spells.forEachIndexed { i, s ->
+            if (i > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(s.name, fontWeight = FontWeight.Medium)
+                    Text("${s.actions} · ${s.traits.joinToString(", ")}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                TextButton(onClick = { onCast(s) }) { Text("Cast") }
+            }
+        }
+    }
 }
 
 @Composable

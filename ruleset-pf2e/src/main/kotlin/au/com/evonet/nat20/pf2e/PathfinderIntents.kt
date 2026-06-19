@@ -174,3 +174,75 @@ data class PfStrike(val weaponId: String, val attackNumber: Int, val total: Int,
         return IntentResult(character, PfStrikeEvent(weapon.name, attackNumber, total, target?.trim()?.takeIf { it.isNotEmpty() }))
     }
 }
+
+// ── Spellcasting (A22 slice 4) ──────────────────────────────────────────────────
+
+/** Casts a spell at [slotRank] (0 = cantrip, no slot). Heightened when slotRank > spellRank. */
+data class PfCastSpell(val spellId: String, val spellName: String, val spellRank: Int, val slotRank: Int) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        if (slotRank < spellRank) throw CharacterIntentError.Invalid("A slot can't be lower than the spell's rank")
+        val p = character.pf()
+        var updated = p
+        if (slotRank > 0) {
+            val remaining = p.currentSpellSlots[slotRank] ?: 0
+            if (remaining <= 0) throw CharacterIntentError.Invalid("No rank $slotRank spell slots remaining")
+            updated = p.copy(currentSpellSlots = p.currentSpellSlots.withSlot(slotRank, remaining - 1))
+        }
+        return IntentResult(character.copy(payload = updated), PfSpellCastEvent(spellName, slotRank, heightened = slotRank > spellRank && spellRank > 0))
+    }
+}
+
+/** Casts a focus spell, spending one Focus Point. */
+data class PfCastFocusSpell(val spellName: String) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        val p = character.pf()
+        if (p.focusPoints <= 0) throw CharacterIntentError.Invalid("No Focus Points remaining")
+        return IntentResult(character.copy(payload = p.copy(focusPoints = p.focusPoints - 1)), PfSpellCastEvent(spellName, 0, heightened = false, focus = true))
+    }
+}
+
+/** Refocus — regain one Focus Point (capped at the pool maximum). */
+class PfRefocus : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        val p = character.pf()
+        if (p.focusPoints >= p.maxFocusPoints) throw CharacterIntentError.Invalid("Focus pool already full")
+        return IntentResult(character.copy(payload = p.copy(focusPoints = minOf(p.maxFocusPoints, p.focusPoints + 1))), PfNoteEvent("Refocused — regained a Focus Point"))
+    }
+    override fun equals(other: Any?): Boolean = other is PfRefocus
+    override fun hashCode(): Int = javaClass.hashCode()
+}
+
+/** Daily Preparations / a full night's rest — restore all spell slots and the focus pool to maximum. */
+class PfDailyPreparations : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        val p = character.pf()
+        val max = p.maxSpellSlots
+        val slotsRestored = max.values.sum() - p.currentSpellSlots.values.sum()
+        val updated = p.copy(currentSpellSlots = max, focusPoints = p.maxFocusPoints)
+        return IntentResult(character.copy(payload = updated), PfDailyPrepEvent(maxOf(0, slotsRestored)))
+    }
+    override fun equals(other: Any?): Boolean = other is PfDailyPreparations
+    override fun hashCode(): Int = javaClass.hashCode()
+}
+
+/** Adds a spell to the repertoire/prepared list (rank ≥ 1) or the cantrip list (rank 0). */
+data class PfLearnSpell(val spellId: String, val rank: Int) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        val spell = PfSpells.by(spellId) ?: throw CharacterIntentError.Invalid("Unknown spell $spellId")
+        val p = character.pf()
+        val updated = if (rank == 0) {
+            if (spellId in p.cantrips) p else p.copy(cantrips = p.cantrips + spellId)
+        } else {
+            val bucket = p.knownSpells[rank].orEmpty()
+            if (spellId in bucket) p else p.copy(knownSpells = p.knownSpells + (rank to (bucket + spellId)))
+        }
+        return IntentResult(character.copy(payload = updated), PfNoteEvent("Learned ${spell.name}"))
+    }
+}
+
+/** Sets a rank's remaining slots, dropping the key at zero. */
+private fun Map<Int, Int>.withSlot(rank: Int, remaining: Int): Map<Int, Int> =
+    if (remaining <= 0) this - rank else this + (rank to remaining)
+
+/** A copy with all spell slots reset to full — used at creation + on Daily Preparations. */
+fun PathfinderPayload.withFullSpellSlots(): PathfinderPayload = copy(currentSpellSlots = maxSpellSlots)

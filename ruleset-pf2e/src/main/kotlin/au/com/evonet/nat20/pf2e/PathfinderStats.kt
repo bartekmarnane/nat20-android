@@ -5,6 +5,7 @@ import au.com.evonet.nat20.pf2e.core.PfAbilityScores
 import au.com.evonet.nat20.pf2e.core.PfSkill
 import au.com.evonet.nat20.pf2e.core.Proficiency
 import au.com.evonet.nat20.pf2e.core.Save
+import au.com.evonet.nat20.pf2e.core.SpellcastingProgression
 
 /**
  * Derived Pathfinder 2e statistics (A22). Every check in PF2e is
@@ -87,3 +88,19 @@ fun PathfinderPayload.strike(weapon: PfWeapon): Strike {
     val damage = weapon.damageDie + if (dmgBonus != 0) (if (dmgBonus > 0) "+$dmgBonus" else "$dmgBonus") else ""
     return Strike(weapon, attackMods, damage, weapon.damageType)
 }
+
+// ── Spellcasting (A22 slice 4) ──────────────────────────────────────────────────
+
+/** True if the character has a spellcasting tradition. */
+val PathfinderPayload.isCaster: Boolean get() = spellTradition != null
+
+/** The full-caster spell-slot table at this level (rank → count); empty for a non-caster. */
+val PathfinderPayload.maxSpellSlots: Map<Int, Int>
+    get() = if (isCaster) SpellcastingProgression.fullCasterSlots(level) else emptyMap()
+
+/** Spell attack modifier = casting-ability modifier + spell proficiency(level) − Frightened. */
+val PathfinderPayload.spellAttack: Int
+    get() = (castingAbility?.let { modifier(it) } ?: 0) + spellProficiency.bonus(level) - frightenedPenalty
+
+/** Spell DC = 10 + the spell attack modifier (the Frightened penalty already folded in). */
+val PathfinderPayload.spellDc: Int get() = 10 + spellAttack

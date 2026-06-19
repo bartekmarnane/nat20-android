@@ -17,6 +17,7 @@ import au.com.evonet.nat20.dnd5e2024.InventoryItem2024
 import au.com.evonet.nat20.dnd5e2024.ItemKind2024
 import au.com.evonet.nat20.dnd5e2024.Weapons2024
 import au.com.evonet.nat20.dnd5e2024.withFullSpellSlots
+import au.com.evonet.nat20.pf2e.withFullSpellSlots
 import au.com.evonet.nat20.domain.Character
 import au.com.evonet.nat20.domain.SummonLifecycle
 import au.com.evonet.nat20.domain.SummonOrigin
@@ -73,7 +74,12 @@ object DemoCharacters {
             loreSkills = mapOf("Genealogy Lore" to au.com.evonet.nat20.pf2e.core.Proficiency.TRAINED),
             weaponProficiencies = mapOf(au.com.evonet.nat20.pf2e.WeaponCategory.SIMPLE to au.com.evonet.nat20.pf2e.core.Proficiency.TRAINED),
             weapons = listOf("dagger", "crossbow"),
-        ),
+            spellTradition = au.com.evonet.nat20.pf2e.core.SpellTradition.ARCANE,
+            castingAbility = au.com.evonet.nat20.pf2e.core.PfAbility.CHARISMA,
+            spellProficiency = au.com.evonet.nat20.pf2e.core.Proficiency.TRAINED,
+            cantrips = listOf("electric-arc", "daze", "shield", "light", "prestidigitation"),
+            knownSpells = mapOf(1 to listOf("magic-missile", "fear", "grease"), 2 to listOf("mirror-image", "invisibility")),
+        ).withFullSpellSlots(),
         timestamp = seededAt,
     )
 
