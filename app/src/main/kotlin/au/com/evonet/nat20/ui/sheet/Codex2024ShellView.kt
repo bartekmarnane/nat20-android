@@ -70,6 +70,7 @@ import au.com.evonet.nat20.dnd5e2024.WeaponMasteryProgression2024
 import au.com.evonet.nat20.dnd5e2024.Weapons2024
 import au.com.evonet.nat20.dnd5e2024.armorClass
 import au.com.evonet.nat20.dnd5e2024.effectiveMaxHp
+import au.com.evonet.nat20.dnd5e2024.weapons
 import au.com.evonet.nat20.dnd5e2024.initiativeBonus
 import au.com.evonet.nat20.dnd5e2024.temporarySaveBonus
 import au.com.evonet.nat20.dnd5e2024.DnD5e2024Catalog
@@ -231,6 +232,7 @@ private fun Combat2024(character: Character, payload: DnD5e2024Payload, onApplyI
     var amount by remember { mutableStateOf<AmountKind?>(null) }
     var rolling by remember { mutableStateOf<RollKind?>(null) }
     var addCond by remember { mutableStateOf(false) }
+    var attacking by remember { mutableStateOf(false) }
     Page2024 {
         Card2024("Hit Points") {
             StatRow("Current / Max", "${payload.currentHp} / ${payload.effectiveMaxHp}" + if (payload.temporaryHp > 0) " (+${payload.temporaryHp})" else "")
@@ -257,6 +259,7 @@ private fun Combat2024(character: Character, payload: DnD5e2024Payload, onApplyI
                 TextButton(onClick = { rolling = RollKind.INITIATIVE }) { Text(if (payload.initiative != null) "Reroll" else "Roll") }
                 if (payload.initiative != null) TextButton(onClick = { onApplyIntent(SetInitiative2024(null)) }) { Text("Clear") }
             }
+            OutlinedButton(enabled = payload.weapons.isNotEmpty(), onClick = { attacking = true }, modifier = Modifier.fillMaxWidth()) { Text("Attack") }
         }
         Card2024("Hit Dice") {
             StatRow("Available", "${payload.currentHitDice} / ${payload.maxHitDice}")
@@ -308,6 +311,7 @@ private fun Combat2024(character: Character, payload: DnD5e2024Payload, onApplyI
         }
     }
     if (addCond) ConditionPickerDialog(payload.activeConditions, onPick = { onApplyIntent(ApplyCondition2024(it)); addCond = false }, onDismiss = { addCond = false })
+    if (attacking) AttackSheet2024(payload, onApplyIntent = { onApplyIntent(it); attacking = false }, onDismiss = { attacking = false })
 }
 
 @Composable

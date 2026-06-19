@@ -276,6 +276,28 @@ data class SetInitiative2024(val value: Int?) : CharacterIntent {
     }
 }
 
+/** Logs a resolved weapon attack (rolled in the UI). Mutates nothing — purely a journal entry. */
+data class MakeAttack2024(
+    val weaponName: String,
+    val attackTotal: Int,
+    val outcome: au.com.evonet.nat20.dnd5e.core.AttackOutcome,
+    val damage: Int? = null,
+    val damageType: String? = null,
+    val mastery: String? = null,
+    val target: String? = null,
+) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        if (weaponName.isBlank()) throw CharacterIntentError.Invalid("Attack needs a weapon")
+        character.payload2024() // type guard
+        val event = Attack2024Event(
+            weaponName, attackTotal, outcome,
+            damage?.takeIf { outcome != au.com.evonet.nat20.dnd5e.core.AttackOutcome.MISS },
+            damageType, mastery, target?.trim()?.takeIf { it.isNotEmpty() },
+        )
+        return IntentResult(character, event)
+    }
+}
+
 // ── Inventory + equipment (A21) ─────────────────────────────────────────────────
 
 /** Adds a line item to the pack; stackable kinds (gear/consumable/treasure) merge by catalogue id. */

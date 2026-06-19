@@ -54,6 +54,7 @@ class DnD5e2024Ruleset : Ruleset {
         is ShieldChanged2024Event -> "dnd5e2024.shield"
         is CoinAdjusted2024Event -> "dnd5e2024.coin"
         is WeaponMasteries2024Event -> "dnd5e2024.weaponMasteries"
+        is Attack2024Event -> "dnd5e2024.attack"
         else -> "dnd5e2024.unknown"
     }
 
@@ -82,6 +83,7 @@ class DnD5e2024Ruleset : Ruleset {
         is ShieldChanged2024Event -> json.encodeToString(ShieldChanged2024Event.serializer(), event)
         is CoinAdjusted2024Event -> json.encodeToString(CoinAdjusted2024Event.serializer(), event)
         is WeaponMasteries2024Event -> json.encodeToString(WeaponMasteries2024Event.serializer(), event)
+        is Attack2024Event -> json.encodeToString(Attack2024Event.serializer(), event)
         else -> throw CharacterCodecError.UnknownEventType(event::class.simpleName ?: "unknown")
     }
 
@@ -110,6 +112,7 @@ class DnD5e2024Ruleset : Ruleset {
         "dnd5e2024.shield" -> this.json.decodeFromString(ShieldChanged2024Event.serializer(), json)
         "dnd5e2024.coin" -> this.json.decodeFromString(CoinAdjusted2024Event.serializer(), json)
         "dnd5e2024.weaponMasteries" -> this.json.decodeFromString(WeaponMasteries2024Event.serializer(), json)
+        "dnd5e2024.attack" -> this.json.decodeFromString(Attack2024Event.serializer(), json)
         else -> throw CharacterCodecError.UnknownEventType(typeId)
     }
 

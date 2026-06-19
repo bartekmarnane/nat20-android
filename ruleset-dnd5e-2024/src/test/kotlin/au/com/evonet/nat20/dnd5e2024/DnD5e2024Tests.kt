@@ -378,6 +378,58 @@ class Feats2024Tests {
     }
 }
 
+class Attacks2024Tests {
+    private fun fighter(str: Int = 16, dex: Int = 12, level: Int = 5, feats: List<String> = emptyList()) = DnD5e2024Payload(
+        classes = listOf(ClassEntry2024("fighter", level)),
+        abilityScores = AbilityScores(strength = str, dexterity = dex),
+        chosenFeats = feats,
+    )
+
+    @Test
+    fun `melee attack uses STR plus proficiency, damage adds STR`() {
+        val atk = AttackMath2024.forWeapon(Weapons2024.weapon("longsword")!!, fighter())
+        assertEquals("STR", atk.abilityLabel)
+        assertEquals(3 + 3, atk.attackBonuses.sumOf { it.value }) // +3 STR, +3 prof (level 5)
+        assertEquals(3, atk.damageBonuses.sumOf { it.value })
+        assertEquals("slashing", atk.damageType)
+        assertEquals(WeaponMastery2024.SAP, atk.mastery)
+    }
+
+    @Test
+    fun `ranged uses DEX and finesse takes the better mod`() {
+        val ranged = AttackMath2024.forWeapon(Weapons2024.weapon("shortbow")!!, fighter(str = 16, dex = 18))
+        assertEquals("DEX", ranged.abilityLabel)
+        val finesse = AttackMath2024.forWeapon(Weapons2024.weapon("rapier")!!, fighter(str = 10, dex = 18))
+        assertEquals("DEX", finesse.abilityLabel) // DEX 18 (+4) beats STR 10 (0)
+    }
+
+    @Test
+    fun `Great Weapon Master adds proficiency to a heavy weapon's damage`() {
+        val withGwm = AttackMath2024.forWeapon(Weapons2024.weapon("greatsword")!!, fighter(feats = listOf("great-weapon-master")))
+        assertTrue(withGwm.damageBonuses.any { it.label == "Great Weapon Master" && it.value == 3 })
+        // Not a heavy weapon → no GWM rider even with the feat.
+        val dagger = AttackMath2024.forWeapon(Weapons2024.weapon("dagger")!!, fighter(feats = listOf("great-weapon-master")))
+        assertFalse(dagger.damageBonuses.any { it.label == "Great Weapon Master" })
+    }
+
+    @Test
+    fun `MakeAttack journals without mutating the character`() {
+        val c = character(fighter())
+        val result = MakeAttack2024("Greatsword", 18, au.com.evonet.nat20.dnd5e.core.AttackOutcome.CRITICAL, 21, "slashing", "graze", "the ogre").applyTo(c, ruleset)
+        assertEquals(c.payload, result.character.payload) // unchanged
+        assertTrue(result.event.summary.startsWith("Critical hit the ogre with Greatsword for 21 slashing damage"))
+    }
+
+    @Test
+    fun `the weapons accessor resolves catalogue-linked pack weapons`() {
+        val p = fighter().copy(inventory = listOf(
+            InventoryItem2024("a", "Longsword", kind = ItemKind2024.WEAPON, catalogueID = "longsword"),
+            InventoryItem2024("b", "Apple", kind = ItemKind2024.CONSUMABLE),
+        ))
+        assertEquals(listOf("longsword"), p.weapons.map { it.id })
+    }
+}
+
 class MonsterCatalog2024Tests {
     @Test
     fun `the SRD 5_2 monster catalogue loads, sorted by CR then name`() {
@@ -500,6 +552,7 @@ class Codec2024Tests {
             ShieldChanged2024Event(true),
             CoinAdjusted2024Event(Coin.GP, -5, "tavern"),
             WeaponMasteries2024Event(listOf("vex", "nick")),
+            Attack2024Event("Greatsword", 18, au.com.evonet.nat20.dnd5e.core.AttackOutcome.CRITICAL, 21, "slashing", "graze", "ogre"),
         )
         for (event in events) {
             val typeId = ruleset.eventTypeId(event)

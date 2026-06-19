@@ -173,6 +173,29 @@ data class CoinAdjusted2024Event(val coin: au.com.evonet.nat20.dnd5e.core.Coin, 
 }
 
 @Serializable
+data class Attack2024Event(
+    val weaponName: String,
+    val attackTotal: Int,
+    val outcome: au.com.evonet.nat20.dnd5e.core.AttackOutcome,
+    val damage: Int? = null,
+    val damageType: String? = null,
+    val mastery: String? = null,
+    val target: String? = null,
+) : CharacterEvent {
+    override val summary: String
+        get() {
+            val tgt = target?.takeIf { it.isNotBlank() }?.let { " $it" } ?: ""
+            val dmg = damage?.let { " for $it" + (damageType?.takeIf { t -> t.isNotBlank() }?.let { t -> " ${t.lowercase()}" } ?: "") + " damage" } ?: ""
+            val mast = mastery?.takeIf { it.isNotBlank() }?.let { " · ${it.replaceFirstChar(Char::uppercase)}" } ?: ""
+            return when (outcome) {
+                au.com.evonet.nat20.dnd5e.core.AttackOutcome.MISS -> "Attacked$tgt with $weaponName — missed (rolled $attackTotal)"
+                au.com.evonet.nat20.dnd5e.core.AttackOutcome.HIT -> "Hit$tgt with $weaponName$dmg (rolled $attackTotal)$mast"
+                au.com.evonet.nat20.dnd5e.core.AttackOutcome.CRITICAL -> "Critical hit$tgt with $weaponName$dmg!$mast"
+            }
+        }
+}
+
+@Serializable
 data class WeaponMasteries2024Event(val masteries: List<String>) : CharacterEvent {
     override val summary: String
         get() = if (masteries.isEmpty()) "Cleared weapon masteries"
