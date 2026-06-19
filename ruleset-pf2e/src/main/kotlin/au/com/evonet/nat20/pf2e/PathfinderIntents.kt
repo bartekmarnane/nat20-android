@@ -11,6 +11,7 @@ import au.com.evonet.nat20.pf2e.core.PfAbility
 import au.com.evonet.nat20.pf2e.core.PfAbilityScores
 import au.com.evonet.nat20.pf2e.core.PfSkill
 import au.com.evonet.nat20.pf2e.core.Proficiency
+import au.com.evonet.nat20.pf2e.core.Save
 import au.com.evonet.nat20.pf2e.core.ValuedCondition
 
 /** The Pathfinder 2e foundation-slice intents (A22) — vitals + the dying track + Hero Points + conditions. */
@@ -315,12 +316,41 @@ data class PfLevelUp(
         val conMod = PfAbilityScores.modifier(scores.constitution)
         val hpGained = (PathfinderCatalog.pfClass(p.className)?.hpPerLevel ?: 8) + conMod
 
+        // Class proficiency-rank jumps earned at this level (weapon mastery, save
+        // expertise, spell proficiency, …) — bumping the level alone scales the
+        // bonus; these raise the rank itself.
+        var perception = p.perception
+        var saveMap = p.saves
+        var classDc = p.classDC
+        var spellProf = p.spellProficiency
+        var unarmored = p.unarmoredProficiency
+        var armorMap = p.armorProficiencies
+        var weaponMap = p.weaponProficiencies
+        fun raise(a: Proficiency, b: Proficiency) = if (b.rank > a.rank) b else a
+        for (bump in ClassProgression.increasesAt(p.className, newLevel)) {
+            when (bump.track) {
+                ProfTrack.PERCEPTION -> perception = raise(perception, bump.rank)
+                ProfTrack.FORTITUDE -> saveMap = saveMap + (Save.FORTITUDE to raise(saveMap[Save.FORTITUDE] ?: Proficiency.UNTRAINED, bump.rank))
+                ProfTrack.REFLEX -> saveMap = saveMap + (Save.REFLEX to raise(saveMap[Save.REFLEX] ?: Proficiency.UNTRAINED, bump.rank))
+                ProfTrack.WILL -> saveMap = saveMap + (Save.WILL to raise(saveMap[Save.WILL] ?: Proficiency.UNTRAINED, bump.rank))
+                ProfTrack.CLASS_DC -> classDc = raise(classDc, bump.rank)
+                ProfTrack.SPELL -> spellProf = raise(spellProf, bump.rank)
+                ProfTrack.DEFENSE -> {
+                    unarmored = raise(unarmored, bump.rank)
+                    armorMap = armorMap.mapValues { (_, r) -> raise(r, bump.rank) }
+                }
+                ProfTrack.WEAPONS -> weaponMap = weaponMap.mapValues { (_, r) -> raise(r, bump.rank) }
+            }
+        }
+
         val leveled = p.copy(
             level = newLevel,
             abilityScores = scores,
             skills = skills,
             maxHp = p.maxHp + maxOf(1, hpGained),
             currentHp = p.currentHp + maxOf(1, hpGained),
+            perception = perception, saves = saveMap, classDC = classDc, spellProficiency = spellProf,
+            unarmoredProficiency = unarmored, armorProficiencies = armorMap, weaponProficiencies = weaponMap,
         )
         // Newly-unlocked spell slots top up (caster ranks scale with level), preserving spent ones.
         val updated = if (leveled.isCaster) {

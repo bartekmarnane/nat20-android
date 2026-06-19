@@ -46,6 +46,7 @@ import au.com.evonet.nat20.pf2e.PfApplyCondition
 import au.com.evonet.nat20.pf2e.PfArmors
 import au.com.evonet.nat20.pf2e.PfCastFocusSpell
 import au.com.evonet.nat20.pf2e.PfCastSpell
+import au.com.evonet.nat20.pf2e.ClassProgression
 import au.com.evonet.nat20.pf2e.FeatSlots
 import au.com.evonet.nat20.pf2e.PfClearCondition
 import au.com.evonet.nat20.pf2e.PfDailyPreparations
@@ -181,6 +182,10 @@ private fun PfLevelUpDialog(payload: PathfinderPayload, onApply: (PfLevelUp) -> 
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text("HP and every proficiency-scaled statistic improve automatically.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                val jumps = ClassProgression.increasesAt(payload.className, newLevel)
+                if (jumps.isNotEmpty()) {
+                    Text("Class advances: " + jumps.joinToString(", ") { "${it.track.name.lowercase().replaceFirstChar(Char::uppercase)} → ${it.rank.displayName}" }, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                }
                 if (grantsSkill) {
                     PfSectionLabel("Skill increase (to ≤ ${maxRank.displayName})")
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {

@@ -356,3 +356,40 @@ class PFMonsterCatalogTests {
         assertTrue(broom.statblock.isNotEmpty())
     }
 }
+
+class PathfinderClassProgressionTests {
+    private fun fighter(level: Int) = character(PathfinderPayload(
+        className = "fighter", level = level, abilityScores = PfAbilityScores(constitution = 12),
+        maxHp = 50, currentHp = 50, perception = Proficiency.EXPERT, classDC = Proficiency.TRAINED,
+        saves = mapOf(Save.FORTITUDE to Proficiency.EXPERT, Save.REFLEX to Proficiency.EXPERT, Save.WILL to Proficiency.TRAINED),
+        weaponProficiencies = mapOf(WeaponCategory.SIMPLE to Proficiency.EXPERT, WeaponCategory.MARTIAL to Proficiency.EXPERT),
+    ))
+
+    @org.junit.jupiter.api.Test
+    fun `leveling raises the class's proficiency ranks at the right levels`() {
+        // Fighter Will: Trained → Expert at level 3.
+        assertEquals(Proficiency.EXPERT, PfLevelUp().applyTo(fighter(2), ruleset).character.p().saves[Save.WILL])
+        // Fighter weapons: Expert → Master at level 13.
+        assertEquals(Proficiency.MASTER, PfLevelUp().applyTo(fighter(12), ruleset).character.p().weaponProficiencies[WeaponCategory.MARTIAL])
+        // Class DC: Trained → Expert at 11.
+        assertEquals(Proficiency.EXPERT, PfLevelUp().applyTo(fighter(10), ruleset).character.p().classDC)
+        // A non-jump level leaves ranks untouched.
+        assertEquals(Proficiency.TRAINED, PfLevelUp().applyTo(fighter(3), ruleset).character.p().classDC)
+    }
+
+    @org.junit.jupiter.api.Test
+    fun `a caster's spell proficiency advances on its schedule`() {
+        val wiz = character(PathfinderPayload(className = "wizard", level = 6, abilityScores = PfAbilityScores(intelligence = 18),
+            spellTradition = au.com.evonet.nat20.pf2e.core.SpellTradition.ARCANE, castingAbility = PfAbility.INTELLIGENCE,
+            spellProficiency = Proficiency.TRAINED, maxHp = 30, currentHp = 30))
+        // Wizard spell: Trained → Expert at level 7.
+        assertEquals(Proficiency.EXPERT, PfLevelUp().applyTo(wiz, ruleset).character.p().spellProficiency)
+    }
+
+    @org.junit.jupiter.api.Test
+    fun `the progression table covers every seed class`() {
+        listOf("fighter", "rogue", "ranger", "champion", "wizard", "cleric", "sorcerer", "bard").forEach {
+            assertTrue(ClassProgression.increases(it).isNotEmpty(), "no progression for $it")
+        }
+    }
+}
