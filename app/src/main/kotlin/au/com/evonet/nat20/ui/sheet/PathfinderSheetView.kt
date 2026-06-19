@@ -39,15 +39,25 @@ import au.com.evonet.nat20.domain.CharacterIntent
 import au.com.evonet.nat20.pf2e.PathfinderConditions
 import au.com.evonet.nat20.pf2e.PathfinderPayload
 import au.com.evonet.nat20.pf2e.PfAddNote
+import au.com.evonet.nat20.pf2e.PfAddWeapon
 import au.com.evonet.nat20.pf2e.PfAdjustHeroPoints
 import au.com.evonet.nat20.pf2e.PfApplyCondition
+import au.com.evonet.nat20.pf2e.PfArmors
 import au.com.evonet.nat20.pf2e.PfClearCondition
+import au.com.evonet.nat20.pf2e.PfEquipArmor
+import au.com.evonet.nat20.pf2e.PfEquipShield
 import au.com.evonet.nat20.pf2e.PfGainTempHp
 import au.com.evonet.nat20.pf2e.PfHeal
+import au.com.evonet.nat20.pf2e.PfRaiseShield
+import au.com.evonet.nat20.pf2e.PfRemoveWeapon
 import au.com.evonet.nat20.pf2e.PfSetDying
+import au.com.evonet.nat20.pf2e.PfShields
 import au.com.evonet.nat20.pf2e.PfTakeDamage
+import au.com.evonet.nat20.pf2e.PfWeapons
 import au.com.evonet.nat20.pf2e.armorClass
+import au.com.evonet.nat20.pf2e.armorClassRaised
 import au.com.evonet.nat20.pf2e.classDcValue
+import au.com.evonet.nat20.pf2e.strikes
 import au.com.evonet.nat20.pf2e.core.PfAbility
 import au.com.evonet.nat20.pf2e.core.PfAbilityScores
 import au.com.evonet.nat20.pf2e.core.PfSkill
@@ -159,6 +169,9 @@ private fun PfSkills(payload: PathfinderPayload) {
 private fun PfCombat(payload: PathfinderPayload, onApplyIntent: (CharacterIntent) -> Unit) {
     var amount by remember { mutableStateOf<PfAmount?>(null) }
     var addCond by remember { mutableStateOf(false) }
+    var pickArmor by remember { mutableStateOf(false) }
+    var pickShield by remember { mutableStateOf(false) }
+    var addWeapon by remember { mutableStateOf(false) }
     PfPage {
         PfCard("Hit Points") {
             PfStatRow("Current / Max", "${payload.currentHp} / ${payload.maxHp}" + if (payload.temporaryHp > 0) " (+${payload.temporaryHp})" else "")
@@ -187,6 +200,33 @@ private fun PfCombat(payload: PathfinderPayload, onApplyIntent: (CharacterIntent
                 TextButton(enabled = payload.heroPoints < PathfinderPayload.HERO_POINT_MAX, onClick = { onApplyIntent(PfAdjustHeroPoints(1)) }) { Text("Gain") }
             }
         }
+        PfCard("Armor & Shield") {
+            val worn = payload.armor?.let { PfArmors.by(it) }
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(worn?.let { "${it.name} (AC +${it.acBonus}, Dex cap ${it.dexCap})" } ?: "Unarmored", Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                OutlinedButton(onClick = { pickArmor = true }) { Text("Change") }
+            }
+            val shield = payload.shield?.let { PfShields.by(it) }
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(shield?.let { "${it.name} (+${it.raisedAcBonus} raised)" + if (payload.shieldRaised) " · Raised → AC ${payload.armorClassRaised}" else "" } ?: "No shield", Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium, color = if (payload.shieldRaised) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
+                if (shield != null) OutlinedButton(onClick = { onApplyIntent(PfRaiseShield(!payload.shieldRaised)) }) { Text(if (payload.shieldRaised) "Lower" else "Raise") }
+                OutlinedButton(onClick = { pickShield = true }) { Text(if (shield == null) "Hold" else "Stow") }
+            }
+        }
+        PfCard("Strikes") {
+            if (payload.strikes.isEmpty()) Text("No weapons.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            else payload.strikes.forEachIndexed { i, s ->
+                if (i > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(s.weapon.name, fontWeight = FontWeight.Medium)
+                        Text("Atk " + s.attackMods.joinToString(" / ") { it.signedPf() } + "  ·  ${s.damage} ${s.damageType}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    TextButton(onClick = { onApplyIntent(PfRemoveWeapon(s.weapon.id)) }) { Text("✕") }
+                }
+            }
+            OutlinedButton(onClick = { addWeapon = true }) { Text("Add weapon") }
+        }
         PfCard("Conditions") {
             if (payload.conditions.isEmpty()) Text("No conditions.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             else FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -197,6 +237,9 @@ private fun PfCombat(payload: PathfinderPayload, onApplyIntent: (CharacterIntent
             OutlinedButton(onClick = { addCond = true }) { Text("Add condition") }
         }
     }
+    if (pickArmor) PfChoiceDialog("Choose armor", listOf(null to "Unarmored") + PfArmors.all.map { it.id to "${it.name} · ${it.category.displayName} +${it.acBonus}" }, onPick = { onApplyIntent(PfEquipArmor(it)); pickArmor = false }, onDismiss = { pickArmor = false })
+    if (pickShield) PfChoiceDialog("Choose shield", listOf(null to "None") + PfShields.all.map { it.id to "${it.name} (+${it.raisedAcBonus})" }, onPick = { onApplyIntent(PfEquipShield(it)); pickShield = false }, onDismiss = { pickShield = false })
+    if (addWeapon) PfChoiceDialog("Add weapon", PfWeapons.all.map { it.id as String? to "${it.name} · ${it.category.displayName} ${it.damageDie}${it.damageType}" }, onPick = { it?.let { id -> onApplyIntent(PfAddWeapon(id)) }; addWeapon = false }, onDismiss = { addWeapon = false })
     amount?.let { kind ->
         PfAmountDialog(kind.label, onConfirm = { n ->
             onApplyIntent(when (kind) { PfAmount.DAMAGE -> PfTakeDamage(n); PfAmount.HEAL -> PfHeal(n); PfAmount.TEMP -> PfGainTempHp(n) })
@@ -297,6 +340,23 @@ private fun PfConditionPicker(active: Set<String>, onPick: (String, Int?) -> Uni
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 PathfinderConditions.all.filter { it.id !in active }.forEach { c ->
                     AssistChip(onClick = { onPick(c.id, if (c.valued) 1 else null) }, label = { Text(c.displayName + if (c.valued) " 1" else "") })
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Done") } },
+    )
+}
+
+@Composable
+private fun PfChoiceDialog(title: String, options: List<Pair<String?, String>>, onPick: (String?) -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                options.forEach { (id, label) ->
+                    Text(label, Modifier.fillMaxWidth().clickable { onPick(id) }.padding(vertical = 10.dp), style = MaterialTheme.typography.bodyLarge)
                 }
             }
         },

@@ -40,6 +40,50 @@ fun PathfinderPayload.loreBonus(subtype: String): Int =
 val PathfinderPayload.classDcValue: Int
     get() = 10 + (keyAbility?.let { modifier(it) } ?: 0) + classDC.bonus(level)
 
-/** Unarmored Armor Class = 10 + DEX modifier + unarmored proficiency(level) − Frightened. */
+/**
+ * Armor Class. Worn armor: `10 + min(DEX, dexCap) + armor-category proficiency
+ * (level) + armor item bonus`. Unarmored: `10 + DEX + unarmored proficiency`.
+ * Frightened folds a blanket status penalty either way.
+ */
 val PathfinderPayload.armorClass: Int
-    get() = 10 + modifier(PfAbility.DEXTERITY) + unarmoredProficiency.bonus(level) - frightenedPenalty
+    get() {
+        val dexMod = modifier(PfAbility.DEXTERITY)
+        val worn = armor?.let { PfArmors.by(it) }
+        val base = if (worn != null) {
+            val prof = armorProficiencies[worn.category] ?: Proficiency.UNTRAINED
+            10 + minOf(dexMod, worn.dexCap) + prof.bonus(level) + worn.acBonus
+        } else {
+            10 + dexMod + unarmoredProficiency.bonus(level)
+        }
+        return base - frightenedPenalty
+    }
+
+/** AC while the held shield is Raised (its circumstance bonus on top of [armorClass]); null if no shield. */
+val PathfinderPayload.armorClassRaised: Int?
+    get() = shield?.let { PfShields.by(it) }?.let { armorClass + it.raisedAcBonus }
+
+/** A weapon's Strike — the attack modifiers for the 1st/2nd/3rd attack (MAP) + the damage line. */
+data class Strike(val weapon: PfWeapon, val attackMods: List<Int>, val damage: String, val damageType: String)
+
+/** The character's Strikes, derived from their carried [weapons]. */
+val PathfinderPayload.strikes: List<Strike>
+    get() = weapons.mapNotNull { PfWeapons.by(it) }.map { strike(it) }
+
+/** Build a [Strike] for one weapon: attack = ability mod + weapon-category proficiency(level); MAP −5/−10 (−4/−8 agile). */
+fun PathfinderPayload.strike(weapon: PfWeapon): Strike {
+    val str = modifier(PfAbility.STRENGTH)
+    val dex = modifier(PfAbility.DEXTERITY)
+    val attackAbility = when {
+        weapon.ranged -> dex
+        weapon.finesse -> maxOf(str, dex)
+        else -> str
+    }
+    val prof = (weaponProficiencies[weapon.category] ?: Proficiency.UNTRAINED).bonus(level)
+    val first = attackAbility + prof - frightenedPenalty
+    val map = if (weapon.agile) 4 else 5
+    val attackMods = listOf(first, first - map, first - map * 2)
+    // Damage adds STR for melee strikes (including finesse); ranged adds nothing (no propulsive/thrown modelled yet).
+    val dmgBonus = if (weapon.ranged) 0 else str
+    val damage = weapon.damageDie + if (dmgBonus != 0) (if (dmgBonus > 0) "+$dmgBonus" else "$dmgBonus") else ""
+    return Strike(weapon, attackMods, damage, weapon.damageType)
+}

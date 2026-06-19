@@ -64,6 +64,16 @@ data class PfHeroPointsChangedEvent(val previous: Int, val newValue: Int) : Char
 }
 
 @Serializable
+data class PfStrikeEvent(val weaponName: String, val attackNumber: Int, val total: Int, val target: String? = null) : CharacterEvent {
+    override val summary: String
+        get() {
+            val tgt = target?.takeIf { it.isNotBlank() }?.let { " on $it" } ?: ""
+            val which = when (attackNumber) { 1 -> "Strike"; 2 -> "2nd Strike"; else -> "3rd Strike" }
+            return "$which$tgt with $weaponName (total $total)"
+        }
+}
+
+@Serializable
 data class PfConditionChangedEvent(val name: String, val value: Int? = null, val applied: Boolean) : CharacterEvent {
     override val summary: String
         get() {

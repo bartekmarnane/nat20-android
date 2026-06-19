@@ -135,3 +135,60 @@ class PathfinderCodecTests {
         }
     }
 }
+
+class PathfinderEquipmentTests {
+    private fun fighter(str: Int = 18, dex: Int = 14, level: Int = 1) = PathfinderPayload(
+        className = "fighter", level = level,
+        abilityScores = PfAbilityScores(strength = str, dexterity = dex),
+        unarmoredProficiency = Proficiency.TRAINED,
+        armorProficiencies = mapOf(ArmorCategory.UNARMORED to Proficiency.TRAINED, ArmorCategory.HEAVY to Proficiency.TRAINED, ArmorCategory.MEDIUM to Proficiency.TRAINED),
+        weaponProficiencies = mapOf(WeaponCategory.SIMPLE to Proficiency.EXPERT, WeaponCategory.MARTIAL to Proficiency.EXPERT),
+    )
+
+    @org.junit.jupiter.api.Test
+    fun `worn armor caps DEX and adds the category proficiency`() {
+        // Unarmored L1 fighter: 10 + DEX 2 + (1 + 2 trained) = 15.
+        assertEquals(15, fighter().armorClass)
+        // Breastplate (medium, +4, dex cap 1): 10 + min(2,1)=1 + (1+2) + 4 = 18.
+        assertEquals(18, fighter().copy(armor = "breastplate").armorClass)
+        // Full plate (heavy, +6, dex cap 0): 10 + 0 + 3 + 6 = 19.
+        assertEquals(19, fighter().copy(armor = "full-plate").armorClass)
+    }
+
+    @org.junit.jupiter.api.Test
+    fun `a raised shield adds its circumstance bonus`() {
+        val withShield = fighter().copy(shield = "steel-shield")
+        assertEquals(withShield.armorClass + 2, withShield.armorClassRaised)
+        assertEquals(null, fighter().armorClassRaised)
+    }
+
+    @org.junit.jupiter.api.Test
+    fun `a Strike uses the weapon category proficiency, the right ability, and the MAP`() {
+        // Longsword (martial, expert): STR 4 + (1 + 4) = 9; MAP −5/−10 → 9 / 4 / −1. Damage 1d8+4.
+        val s = fighter().strike(PfWeapons.by("longsword")!!)
+        assertEquals(listOf(9, 4, -1), s.attackMods)
+        assertEquals("1d8+4", s.damage)
+        // Agile shortsword: −4/−8 MAP. STR 4 + (1+4) = 9 → 9 / 5 / 1.
+        assertEquals(listOf(9, 5, 1), fighter().strike(PfWeapons.by("shortsword")!!).attackMods)
+        // Ranged longbow uses DEX and adds no STR to damage.
+        val bow = fighter().strike(PfWeapons.by("longbow")!!)
+        assertEquals(2 + 5, bow.attackMods.first()) // DEX 2 + (1+4)
+        assertEquals("1d8", bow.damage)
+    }
+
+    @org.junit.jupiter.api.Test
+    fun `equip and strike intents work and the strike event round-trips`() {
+        val c = character(fighter())
+        val armed = PfAddWeapon("longsword").applyTo(c, ruleset).character
+        assertTrue("longsword" in armed.p().weapons)
+        assertEquals(1, armed.p().strikes.size)
+        val armored = PfEquipArmor("breastplate").applyTo(armed, ruleset).character
+        assertEquals("breastplate", armored.p().armor)
+        val raised = PfRaiseShield(true).applyTo(armored.copy(payload = armored.p().copy(shield = "buckler")), ruleset).character
+        assertTrue(raised.p().shieldRaised)
+        val struck = PfStrike("longsword", 2, 14, "the goblin").applyTo(armed, ruleset)
+        assertTrue(struck.event.summary.contains("2nd Strike"))
+        val typeId = ruleset.eventTypeId(struck.event)
+        assertEquals(struck.event, ruleset.decodeEvent(ruleset.encodeEvent(struck.event), typeId))
+    }
+}

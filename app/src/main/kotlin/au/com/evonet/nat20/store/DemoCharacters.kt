@@ -71,6 +71,8 @@ object DemoCharacters {
                 au.com.evonet.nat20.pf2e.core.PfSkill.SOCIETY to au.com.evonet.nat20.pf2e.core.Proficiency.TRAINED,
             ),
             loreSkills = mapOf("Genealogy Lore" to au.com.evonet.nat20.pf2e.core.Proficiency.TRAINED),
+            weaponProficiencies = mapOf(au.com.evonet.nat20.pf2e.WeaponCategory.SIMPLE to au.com.evonet.nat20.pf2e.core.Proficiency.TRAINED),
+            weapons = listOf("dagger", "crossbow"),
         ),
         timestamp = seededAt,
     )

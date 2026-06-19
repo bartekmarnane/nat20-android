@@ -85,6 +85,8 @@ object PathfinderBuilder {
             skills = skills,
             loreSkills = background?.let { mapOf(it.lore to Proficiency.TRAINED) }.orEmpty(),
             speed = ancestry?.speed ?: 25,
+            armorProficiencies = cls?.armorProf.orEmpty(),
+            weaponProficiencies = cls?.weaponProf.orEmpty(),
         )
     }
 }

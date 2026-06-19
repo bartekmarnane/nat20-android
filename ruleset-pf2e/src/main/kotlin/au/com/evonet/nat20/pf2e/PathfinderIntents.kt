@@ -118,3 +118,59 @@ data class PfClearCondition(val id: String) : CharacterIntent {
         return IntentResult(character.copy(payload = updated), PfConditionChangedEvent(PathfinderConditions.displayName(slug), null, applied = false))
     }
 }
+
+// ── Equipment + Strikes (A22 slice 3) ───────────────────────────────────────────
+
+/** Dons or doffs armor (drives AC); null = unarmored. The id must resolve in [PfArmors]. */
+data class PfEquipArmor(val armorId: String?) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        val p = character.pf()
+        val resolved = armorId?.let { PfArmors.by(it) ?: throw CharacterIntentError.Invalid("Unknown armor $it") }
+        return IntentResult(character.copy(payload = p.copy(armor = resolved?.id)), PfNoteEvent(resolved?.let { "Donned ${it.name}" } ?: "Removed armor"))
+    }
+}
+
+/** Holds or stows a shield (also lowers it). */
+data class PfEquipShield(val shieldId: String?) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        val p = character.pf()
+        val resolved = shieldId?.let { PfShields.by(it) ?: throw CharacterIntentError.Invalid("Unknown shield $it") }
+        return IntentResult(character.copy(payload = p.copy(shield = resolved?.id, shieldRaised = false)), PfNoteEvent(resolved?.let { "Drew the ${it.name}" } ?: "Stowed the shield"))
+    }
+}
+
+/** Raises or lowers the held shield (the Raise a Shield action), adding its circumstance bonus to AC. */
+data class PfRaiseShield(val raised: Boolean) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        val p = character.pf()
+        if (p.shield == null) throw CharacterIntentError.Invalid("No shield held")
+        return IntentResult(character.copy(payload = p.copy(shieldRaised = raised)), PfNoteEvent(if (raised) "Raised a Shield" else "Lowered the shield"))
+    }
+}
+
+/** Adds a weapon to the carried set (drives the Strikes). */
+data class PfAddWeapon(val weaponId: String) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        val weapon = PfWeapons.by(weaponId) ?: throw CharacterIntentError.Invalid("Unknown weapon $weaponId")
+        val p = character.pf()
+        val updated = if (weaponId in p.weapons) p else p.copy(weapons = p.weapons + weaponId)
+        return IntentResult(character.copy(payload = updated), PfNoteEvent("Acquired ${weapon.name}"))
+    }
+}
+
+data class PfRemoveWeapon(val weaponId: String) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        val p = character.pf()
+        val weapon = PfWeapons.by(weaponId)
+        return IntentResult(character.copy(payload = p.copy(weapons = p.weapons - weaponId)), PfNoteEvent("Dropped ${weapon?.name ?: weaponId}"))
+    }
+}
+
+/** Logs a resolved Strike (the player rolls; this journals the attack number + total against an optional DC/AC). */
+data class PfStrike(val weaponId: String, val attackNumber: Int, val total: Int, val target: String? = null) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        val weapon = PfWeapons.by(weaponId) ?: throw CharacterIntentError.Invalid("Unknown weapon $weaponId")
+        character.pf()
+        return IntentResult(character, PfStrikeEvent(weapon.name, attackNumber, total, target?.trim()?.takeIf { it.isNotEmpty() }))
+    }
+}

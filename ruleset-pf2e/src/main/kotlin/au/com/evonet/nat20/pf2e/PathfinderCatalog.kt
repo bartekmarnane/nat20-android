@@ -52,7 +52,24 @@ data class PfClass(
     val trainedSkills: Int,
     val classSkills: List<PfSkill>,
     val tradition: SpellTradition? = null,
+    /** Level-1 defense proficiency per armor category. */
+    val armorProf: Map<ArmorCategory, Proficiency> = mapOf(ArmorCategory.UNARMORED to Proficiency.TRAINED),
+    /** Level-1 attack proficiency per weapon category. */
+    val weaponProf: Map<WeaponCategory, Proficiency> = mapOf(WeaponCategory.SIMPLE to Proficiency.TRAINED),
 )
+
+/** Defense ranks for a martial class: trained in all worn armor categories. */
+private val MARTIAL_ARMOR = mapOf(
+    ArmorCategory.UNARMORED to Proficiency.TRAINED, ArmorCategory.LIGHT to Proficiency.TRAINED,
+    ArmorCategory.MEDIUM to Proficiency.TRAINED, ArmorCategory.HEAVY to Proficiency.TRAINED,
+)
+private val LIGHT_MEDIUM_ARMOR = mapOf(
+    ArmorCategory.UNARMORED to Proficiency.TRAINED, ArmorCategory.LIGHT to Proficiency.TRAINED, ArmorCategory.MEDIUM to Proficiency.TRAINED,
+)
+private val CASTER_ARMOR = mapOf(ArmorCategory.UNARMORED to Proficiency.TRAINED)
+private val ALL_WEAPONS = mapOf(WeaponCategory.SIMPLE to Proficiency.TRAINED, WeaponCategory.MARTIAL to Proficiency.TRAINED)
+private val FIGHTER_WEAPONS = mapOf(WeaponCategory.SIMPLE to Proficiency.EXPERT, WeaponCategory.MARTIAL to Proficiency.EXPERT)
+private val SIMPLE_WEAPONS = mapOf(WeaponCategory.SIMPLE to Proficiency.TRAINED)
 
 object PathfinderCatalog {
     val ancestries: List<PfAncestry> = listOf(
@@ -76,14 +93,14 @@ object PathfinderCatalog {
     )
 
     val classes: List<PfClass> = listOf(
-        PfClass("fighter", "Fighter", listOf(PfAbility.STRENGTH, PfAbility.DEXTERITY), 10, Proficiency.EXPERT, mapOf(Save.FORTITUDE to Proficiency.EXPERT, Save.REFLEX to Proficiency.EXPERT, Save.WILL to Proficiency.TRAINED), Proficiency.TRAINED, Proficiency.TRAINED, 3, listOf(PfSkill.ATHLETICS, PfSkill.ACROBATICS, PfSkill.INTIMIDATION, PfSkill.SURVIVAL)),
-        PfClass("rogue", "Rogue", listOf(PfAbility.DEXTERITY), 8, Proficiency.EXPERT, mapOf(Save.FORTITUDE to Proficiency.TRAINED, Save.REFLEX to Proficiency.EXPERT, Save.WILL to Proficiency.EXPERT), Proficiency.TRAINED, Proficiency.TRAINED, 7, PfSkill.entries),
-        PfClass("cleric", "Cleric", listOf(PfAbility.WISDOM), 8, Proficiency.TRAINED, mapOf(Save.FORTITUDE to Proficiency.TRAINED, Save.REFLEX to Proficiency.TRAINED, Save.WILL to Proficiency.EXPERT), Proficiency.TRAINED, Proficiency.TRAINED, 2, listOf(PfSkill.RELIGION, PfSkill.DIPLOMACY, PfSkill.MEDICINE), SpellTradition.DIVINE),
-        PfClass("wizard", "Wizard", listOf(PfAbility.INTELLIGENCE), 6, Proficiency.TRAINED, mapOf(Save.FORTITUDE to Proficiency.TRAINED, Save.REFLEX to Proficiency.TRAINED, Save.WILL to Proficiency.EXPERT), Proficiency.TRAINED, Proficiency.TRAINED, 2, listOf(PfSkill.ARCANA, PfSkill.CRAFTING, PfSkill.SOCIETY), SpellTradition.ARCANE),
-        PfClass("sorcerer", "Sorcerer", listOf(PfAbility.CHARISMA), 6, Proficiency.TRAINED, mapOf(Save.FORTITUDE to Proficiency.TRAINED, Save.REFLEX to Proficiency.TRAINED, Save.WILL to Proficiency.EXPERT), Proficiency.TRAINED, Proficiency.TRAINED, 2, listOf(PfSkill.ARCANA, PfSkill.DECEPTION, PfSkill.DIPLOMACY, PfSkill.INTIMIDATION), SpellTradition.ARCANE),
-        PfClass("ranger", "Ranger", listOf(PfAbility.STRENGTH, PfAbility.DEXTERITY), 10, Proficiency.EXPERT, mapOf(Save.FORTITUDE to Proficiency.EXPERT, Save.REFLEX to Proficiency.EXPERT, Save.WILL to Proficiency.TRAINED), Proficiency.TRAINED, Proficiency.TRAINED, 4, listOf(PfSkill.NATURE, PfSkill.SURVIVAL, PfSkill.ATHLETICS, PfSkill.STEALTH)),
-        PfClass("champion", "Champion", listOf(PfAbility.STRENGTH, PfAbility.DEXTERITY), 10, Proficiency.TRAINED, mapOf(Save.FORTITUDE to Proficiency.EXPERT, Save.REFLEX to Proficiency.TRAINED, Save.WILL to Proficiency.EXPERT), Proficiency.TRAINED, Proficiency.TRAINED, 2, listOf(PfSkill.RELIGION, PfSkill.DIPLOMACY, PfSkill.INTIMIDATION)),
-        PfClass("bard", "Bard", listOf(PfAbility.CHARISMA), 8, Proficiency.EXPERT, mapOf(Save.FORTITUDE to Proficiency.TRAINED, Save.REFLEX to Proficiency.TRAINED, Save.WILL to Proficiency.EXPERT), Proficiency.TRAINED, Proficiency.TRAINED, 4, listOf(PfSkill.OCCULTISM, PfSkill.PERFORMANCE, PfSkill.DIPLOMACY, PfSkill.ACROBATICS), SpellTradition.OCCULT),
+        PfClass("fighter", "Fighter", listOf(PfAbility.STRENGTH, PfAbility.DEXTERITY), 10, Proficiency.EXPERT, mapOf(Save.FORTITUDE to Proficiency.EXPERT, Save.REFLEX to Proficiency.EXPERT, Save.WILL to Proficiency.TRAINED), Proficiency.TRAINED, Proficiency.TRAINED, 3, listOf(PfSkill.ATHLETICS, PfSkill.ACROBATICS, PfSkill.INTIMIDATION, PfSkill.SURVIVAL), armorProf = MARTIAL_ARMOR, weaponProf = FIGHTER_WEAPONS),
+        PfClass("rogue", "Rogue", listOf(PfAbility.DEXTERITY), 8, Proficiency.EXPERT, mapOf(Save.FORTITUDE to Proficiency.TRAINED, Save.REFLEX to Proficiency.EXPERT, Save.WILL to Proficiency.EXPERT), Proficiency.TRAINED, Proficiency.TRAINED, 7, PfSkill.entries, armorProf = LIGHT_MEDIUM_ARMOR, weaponProf = SIMPLE_WEAPONS),
+        PfClass("cleric", "Cleric", listOf(PfAbility.WISDOM), 8, Proficiency.TRAINED, mapOf(Save.FORTITUDE to Proficiency.TRAINED, Save.REFLEX to Proficiency.TRAINED, Save.WILL to Proficiency.EXPERT), Proficiency.TRAINED, Proficiency.TRAINED, 2, listOf(PfSkill.RELIGION, PfSkill.DIPLOMACY, PfSkill.MEDICINE), SpellTradition.DIVINE, armorProf = CASTER_ARMOR, weaponProf = SIMPLE_WEAPONS),
+        PfClass("wizard", "Wizard", listOf(PfAbility.INTELLIGENCE), 6, Proficiency.TRAINED, mapOf(Save.FORTITUDE to Proficiency.TRAINED, Save.REFLEX to Proficiency.TRAINED, Save.WILL to Proficiency.EXPERT), Proficiency.TRAINED, Proficiency.TRAINED, 2, listOf(PfSkill.ARCANA, PfSkill.CRAFTING, PfSkill.SOCIETY), SpellTradition.ARCANE, armorProf = CASTER_ARMOR, weaponProf = SIMPLE_WEAPONS),
+        PfClass("sorcerer", "Sorcerer", listOf(PfAbility.CHARISMA), 6, Proficiency.TRAINED, mapOf(Save.FORTITUDE to Proficiency.TRAINED, Save.REFLEX to Proficiency.TRAINED, Save.WILL to Proficiency.EXPERT), Proficiency.TRAINED, Proficiency.TRAINED, 2, listOf(PfSkill.ARCANA, PfSkill.DECEPTION, PfSkill.DIPLOMACY, PfSkill.INTIMIDATION), SpellTradition.ARCANE, armorProf = CASTER_ARMOR, weaponProf = SIMPLE_WEAPONS),
+        PfClass("ranger", "Ranger", listOf(PfAbility.STRENGTH, PfAbility.DEXTERITY), 10, Proficiency.EXPERT, mapOf(Save.FORTITUDE to Proficiency.EXPERT, Save.REFLEX to Proficiency.EXPERT, Save.WILL to Proficiency.TRAINED), Proficiency.TRAINED, Proficiency.TRAINED, 4, listOf(PfSkill.NATURE, PfSkill.SURVIVAL, PfSkill.ATHLETICS, PfSkill.STEALTH), armorProf = MARTIAL_ARMOR, weaponProf = ALL_WEAPONS),
+        PfClass("champion", "Champion", listOf(PfAbility.STRENGTH, PfAbility.DEXTERITY), 10, Proficiency.TRAINED, mapOf(Save.FORTITUDE to Proficiency.EXPERT, Save.REFLEX to Proficiency.TRAINED, Save.WILL to Proficiency.EXPERT), Proficiency.TRAINED, Proficiency.TRAINED, 2, listOf(PfSkill.RELIGION, PfSkill.DIPLOMACY, PfSkill.INTIMIDATION), armorProf = MARTIAL_ARMOR, weaponProf = ALL_WEAPONS),
+        PfClass("bard", "Bard", listOf(PfAbility.CHARISMA), 8, Proficiency.EXPERT, mapOf(Save.FORTITUDE to Proficiency.TRAINED, Save.REFLEX to Proficiency.TRAINED, Save.WILL to Proficiency.EXPERT), Proficiency.TRAINED, Proficiency.TRAINED, 4, listOf(PfSkill.OCCULTISM, PfSkill.PERFORMANCE, PfSkill.DIPLOMACY, PfSkill.ACROBATICS), SpellTradition.OCCULT, armorProf = CASTER_ARMOR, weaponProf = SIMPLE_WEAPONS),
     )
 
     fun ancestry(id: String): PfAncestry? = ancestries.firstOrNull { it.id == id }

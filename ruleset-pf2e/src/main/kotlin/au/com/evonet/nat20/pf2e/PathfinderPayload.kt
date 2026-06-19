@@ -56,6 +56,19 @@ data class PathfinderPayload(
     val conditions: List<ValuedCondition> = emptyList(),
     val speed: Int = 25,
     val alignmentOrEdicts: String? = null,
+    // ── Equipment (A22 slice 3) ──
+    /** Worn armor's catalogue id ([PfArmors]); null = unarmored. */
+    val armor: String? = null,
+    /** Held shield's catalogue id ([PfShields]); null = none. */
+    val shield: String? = null,
+    /** Whether the shield is currently Raised (adds its circumstance bonus to AC). */
+    val shieldRaised: Boolean = false,
+    /** Carried weapons by catalogue id ([PfWeapons]) — drive the Strikes. */
+    val weapons: List<String> = emptyList(),
+    /** Defense proficiency per armor category (worn armor's category selects the AC rank). */
+    val armorProficiencies: Map<ArmorCategory, Proficiency> = emptyMap(),
+    /** Attack proficiency per weapon category. */
+    val weaponProficiencies: Map<WeaponCategory, Proficiency> = emptyMap(),
 ) : CharacterPayload {
 
     val isDying: Boolean get() = dying in 1 until DYING_MAX

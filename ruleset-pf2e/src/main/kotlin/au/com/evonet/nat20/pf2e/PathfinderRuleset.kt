@@ -39,6 +39,7 @@ class PathfinderRuleset : Ruleset {
         is PfWoundedChangedEvent -> "pf2e.wounded"
         is PfHeroPointsChangedEvent -> "pf2e.heroPoints"
         is PfConditionChangedEvent -> "pf2e.condition"
+        is PfStrikeEvent -> "pf2e.strike"
         else -> "pf2e.unknown"
     }
 
@@ -51,6 +52,7 @@ class PathfinderRuleset : Ruleset {
         is PfWoundedChangedEvent -> json.encodeToString(PfWoundedChangedEvent.serializer(), event)
         is PfHeroPointsChangedEvent -> json.encodeToString(PfHeroPointsChangedEvent.serializer(), event)
         is PfConditionChangedEvent -> json.encodeToString(PfConditionChangedEvent.serializer(), event)
+        is PfStrikeEvent -> json.encodeToString(PfStrikeEvent.serializer(), event)
         else -> throw CharacterCodecError.UnknownEventType(event::class.simpleName ?: "unknown")
     }
 
@@ -63,6 +65,7 @@ class PathfinderRuleset : Ruleset {
         "pf2e.wounded" -> this.json.decodeFromString(PfWoundedChangedEvent.serializer(), json)
         "pf2e.heroPoints" -> this.json.decodeFromString(PfHeroPointsChangedEvent.serializer(), json)
         "pf2e.condition" -> this.json.decodeFromString(PfConditionChangedEvent.serializer(), json)
+        "pf2e.strike" -> this.json.decodeFromString(PfStrikeEvent.serializer(), json)
         else -> throw CharacterCodecError.UnknownEventType(typeId)
     }
 
