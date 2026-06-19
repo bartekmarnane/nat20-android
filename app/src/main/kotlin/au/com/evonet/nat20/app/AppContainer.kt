@@ -7,6 +7,7 @@ import au.com.evonet.nat20.data.CampaignRepository
 import au.com.evonet.nat20.data.CharacterRepository
 import au.com.evonet.nat20.data.Nat20Data
 import au.com.evonet.nat20.domain.RulesetRegistry
+import au.com.evonet.nat20.patron.PatronStore
 import au.com.evonet.nat20.settings.AppSettings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -25,6 +26,10 @@ class AppContainer(context: Context) {
 
     /** Persisted app preferences (appearance, …). */
     val appSettings: AppSettings = AppSettings(context)
+
+    /** The Patron unlock (Play Billing). `isPatron` is the single gate every
+     *  premium feature keys off (A14). */
+    val patronStore: PatronStore = PatronStore(context, applicationScope)
 
     private val repositories = Nat20Data.create(context, rulesetRegistry)
     val characterRepository: CharacterRepository = repositories.characters

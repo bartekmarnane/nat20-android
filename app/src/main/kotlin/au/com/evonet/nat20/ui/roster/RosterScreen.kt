@@ -38,15 +38,18 @@ import au.com.evonet.nat20.ui.slugToTitle
 
 /**
  * The character roster — the app's home screen. Port of the iOS
- * `CharacterListView`. A6 adds a New-Character action and swipe-to-delete with
- * a confirmation dialog. (The free-tier "Upgrade" CTA swap is A14.)
+ * `CharacterListView`. A6 added a New-Character action and swipe-to-delete with
+ * a confirmation dialog; A14 swaps the create CTA to "Upgrade" once a non-Patron
+ * hits the free character limit ([canCreate] is false), opening the paywall.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RosterScreen(
     characters: List<Character>,
+    canCreate: Boolean,
     onSelect: (Character) -> Unit,
     onNew: () -> Unit,
+    onUpgrade: () -> Unit,
     onDelete: (Character) -> Unit,
     onOpenSettings: () -> Unit,
 ) {
@@ -61,7 +64,11 @@ fun RosterScreen(
             )
         },
         floatingActionButton = {
-            ExtendedFloatingActionButton(onClick = onNew) { Text("New Character") }
+            if (canCreate) {
+                ExtendedFloatingActionButton(onClick = onNew) { Text("New Character") }
+            } else {
+                ExtendedFloatingActionButton(onClick = onUpgrade) { Text("Upgrade") }
+            }
         },
     ) { inner ->
         LazyColumn(

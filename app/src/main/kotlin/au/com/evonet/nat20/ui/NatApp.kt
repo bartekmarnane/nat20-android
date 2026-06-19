@@ -36,6 +36,8 @@ import au.com.evonet.nat20.ui.reference.MonsterCodex2024Screen
 import au.com.evonet.nat20.ui.reference.PathfinderActionsScreen
 import au.com.evonet.nat20.ui.reference.PathfinderItemCatalogScreen
 import au.com.evonet.nat20.ui.reference.PathfinderMonsterCodexScreen
+import au.com.evonet.nat20.ui.patron.PatronScreen
+import au.com.evonet.nat20.patron.PatronStore
 import au.com.evonet.nat20.ui.reference.SpellLibraryScreen
 import au.com.evonet.nat20.ui.roster.RosterScreen
 import au.com.evonet.nat20.ui.settings.CreditsScreen
@@ -67,6 +69,7 @@ private object Routes {
     const val PF_MONSTER_CODEX = "monster-codex-pf2e"
     const val PF_ITEM_CATALOG = "item-catalog-pf2e"
     const val PF_ACTIONS = "actions-pf2e"
+    const val PATRON = "patron"
     const val ARG_ID = "id"
     const val ARG_CAMPAIGN_ID = "campaignId"
     fun sheet(id: UUID) = "sheet/$id"
@@ -88,6 +91,8 @@ fun NatApp() {
     )
     val nav = rememberNavController()
     val characters by store.roster.collectAsState()
+    val patron = container.patronStore
+    val isPatron by patron.isPatron.collectAsState()
 
     fun find(id: UUID?): Character? = id?.let { wanted -> characters.firstOrNull { it.id == wanted } }
 
@@ -96,8 +101,10 @@ fun NatApp() {
             var chooseEdition by remember { mutableStateOf(false) }
             RosterScreen(
                 characters = characters,
+                canCreate = PatronStore.canCreateMore(characters.size, isPatron),
                 onSelect = { nav.navigate(Routes.sheet(it.id)) },
                 onNew = { chooseEdition = true },
+                onUpgrade = { nav.navigate(Routes.PATRON) },
                 onDelete = { store.delete(it.id) },
                 onOpenSettings = { nav.navigate(Routes.SETTINGS) },
             )
@@ -112,6 +119,8 @@ fun NatApp() {
         composable(Routes.SETTINGS) {
             SettingsScreen(
                 appSettings = container.appSettings,
+                isPatron = isPatron,
+                onOpenPatron = { nav.navigate(Routes.PATRON) },
                 onOpenSpellLibrary = { nav.navigate(Routes.SPELL_LIBRARY) },
                 onOpenMonsterCodex = { nav.navigate(Routes.MONSTER_CODEX) },
                 onOpenItemCatalog = { nav.navigate(Routes.ITEM_CATALOG) },
@@ -125,6 +134,10 @@ fun NatApp() {
 
         composable(Routes.CREDITS) {
             CreditsScreen(onBack = { nav.popBackStack() })
+        }
+
+        composable(Routes.PATRON) {
+            PatronScreen(patron = patron, onBack = { nav.popBackStack() })
         }
 
         composable(Routes.SPELL_LIBRARY) {

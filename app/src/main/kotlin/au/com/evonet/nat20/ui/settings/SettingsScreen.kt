@@ -32,6 +32,8 @@ import au.com.evonet.nat20.settings.AppearanceMode
 @Composable
 fun SettingsScreen(
     appSettings: AppSettings,
+    isPatron: Boolean,
+    onOpenPatron: () -> Unit,
     onOpenSpellLibrary: () -> Unit,
     onOpenMonsterCodex: () -> Unit,
     onOpenItemCatalog: () -> Unit,
@@ -56,6 +58,31 @@ fun SettingsScreen(
             Modifier.padding(inner).fillMaxSize().padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
+            SettingSection("Patron") {
+                if (isPatron) {
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text("Nat20 Patron", style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            "Unlimited characters unlocked — thank you.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                } else {
+                    Column(
+                        Modifier.fillMaxWidth().clickable(onClick = onOpenPatron).padding(vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                    ) {
+                        Text("Become a Patron", style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            "Unlock unlimited characters and perks to come",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+
             SettingSection("Appearance") {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     AppearanceMode.entries.forEach { mode ->
