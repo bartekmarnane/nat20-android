@@ -252,6 +252,26 @@ private fun Map<Int, Int>.withSlot(rank: Int, remaining: Int): Map<Int, Int> =
 /** A copy with all spell slots reset to full — used at creation + on Daily Preparations. */
 fun PathfinderPayload.withFullSpellSlots(): PathfinderPayload = copy(currentSpellSlots = maxSpellSlots)
 
+// ── Feats (A22 slice 6) ─────────────────────────────────────────────────────────
+
+/** Takes a feat (de-duped). The picker filters by type/level/ancestry/class so the choice is legal. */
+data class PfTakeFeat(val featId: String) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        val feat = PfFeats.by(featId) ?: throw CharacterIntentError.Invalid("Unknown feat $featId")
+        val p = character.pf()
+        val updated = if (featId in p.feats) p else p.copy(feats = p.feats + featId)
+        return IntentResult(character.copy(payload = updated), PfFeatChangedEvent(feat.name, feat.type.displayName, taken = true))
+    }
+}
+
+data class PfRemoveFeat(val featId: String) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        val p = character.pf()
+        val feat = PfFeats.by(featId)
+        return IntentResult(character.copy(payload = p.copy(feats = p.feats - featId)), PfFeatChangedEvent(feat?.name ?: featId, feat?.type?.displayName ?: "", taken = false))
+    }
+}
+
 // ── Level-up / advancement (A22 slice 5) ────────────────────────────────────────
 
 /**

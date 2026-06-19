@@ -46,8 +46,13 @@ import au.com.evonet.nat20.pf2e.PfApplyCondition
 import au.com.evonet.nat20.pf2e.PfArmors
 import au.com.evonet.nat20.pf2e.PfCastFocusSpell
 import au.com.evonet.nat20.pf2e.PfCastSpell
+import au.com.evonet.nat20.pf2e.FeatSlots
 import au.com.evonet.nat20.pf2e.PfClearCondition
 import au.com.evonet.nat20.pf2e.PfDailyPreparations
+import au.com.evonet.nat20.pf2e.PfFeatType
+import au.com.evonet.nat20.pf2e.PfFeats
+import au.com.evonet.nat20.pf2e.PfRemoveFeat
+import au.com.evonet.nat20.pf2e.PfTakeFeat
 import au.com.evonet.nat20.pf2e.PfLearnSpell
 import au.com.evonet.nat20.pf2e.PfRefocus
 import au.com.evonet.nat20.pf2e.PfSpells
@@ -90,7 +95,7 @@ import kotlinx.coroutines.launch
  * the dying/wounded track, Hero Points, and valued conditions. Spells, equipment,
  * feats, and the action economy are follow-up slices.
  */
-private enum class PfTab(val title: String) { STATS("Stats"), SKILLS("Skills"), COMBAT("Combat"), SPELLS("Spells"), LORE("Lore") }
+private enum class PfTab(val title: String) { STATS("Stats"), SKILLS("Skills"), COMBAT("Combat"), SPELLS("Spells"), FEATS("Feats"), LORE("Lore") }
 
 @Composable
 fun PathfinderSheetView(character: Character, onApplyIntent: (CharacterIntent) -> Unit, modifier: Modifier = Modifier) {
@@ -112,6 +117,7 @@ fun PathfinderSheetView(character: Character, onApplyIntent: (CharacterIntent) -
                 PfTab.SKILLS -> PfSkills(payload)
                 PfTab.COMBAT -> PfCombat(payload, onApplyIntent)
                 PfTab.SPELLS -> PfSpellsTab(payload, onApplyIntent)
+                PfTab.FEATS -> PfFeatsTab(payload, onApplyIntent)
                 PfTab.LORE -> PfLore(character, payload, onApplyIntent)
             }
         }
@@ -374,6 +380,42 @@ private fun SpellListCard(title: String, ids: List<String>, payload: PathfinderP
                 TextButton(onClick = { onCast(s) }) { Text("Cast") }
             }
         }
+    }
+}
+
+@Composable
+private fun PfFeatsTab(payload: PathfinderPayload, onApplyIntent: (CharacterIntent) -> Unit) {
+    var adding by remember { mutableStateOf<PfFeatType?>(null) }
+    val taken = payload.feats.mapNotNull { PfFeats.by(it) }
+    val isRogue = payload.className.equals("rogue", ignoreCase = true)
+    PfPage {
+        PfFeatType.entries.forEach { type ->
+            val have = taken.filter { it.type == type }
+            val slots = when (type) {
+                PfFeatType.ANCESTRY -> FeatSlots.ancestry(payload.level)
+                PfFeatType.CLASS -> FeatSlots.classFeat(payload.level, payload.className)
+                PfFeatType.SKILL -> FeatSlots.skill(payload.level, isRogue)
+                PfFeatType.GENERAL -> FeatSlots.general(payload.level)
+            }
+            PfCard("${type.displayName} Feats (${have.size}/$slots)") {
+                if (have.isEmpty()) Text("None taken.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                else have.forEachIndexed { i, f ->
+                    if (i > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text("${f.name} · Lv ${f.level}", fontWeight = FontWeight.Medium)
+                            Text(f.summary, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        TextButton(onClick = { onApplyIntent(PfRemoveFeat(f.id)) }) { Text("✕") }
+                    }
+                }
+                OutlinedButton(onClick = { adding = type }) { Text("Add ${type.displayName.lowercase()} feat") }
+            }
+        }
+    }
+    adding?.let { type ->
+        val pool = PfFeats.available(type, payload.ancestry, payload.className, payload.level).filter { it.id !in payload.feats }
+        PfChoiceDialog("Add ${type.displayName} feat", pool.map { it.id as String? to "${it.name} · Lv ${it.level} — ${it.summary}" }, onPick = { id -> id?.let { onApplyIntent(PfTakeFeat(it)) }; adding = null }, onDismiss = { adding = null })
     }
 }
 

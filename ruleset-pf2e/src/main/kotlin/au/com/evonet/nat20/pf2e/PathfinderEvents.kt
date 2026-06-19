@@ -78,6 +78,11 @@ data class PfSpellCastEvent(val spellName: String, val slotRank: Int, val height
 }
 
 @Serializable
+data class PfFeatChangedEvent(val name: String, val type: String, val taken: Boolean) : CharacterEvent {
+    override val summary: String get() = if (taken) "Took the $name $type feat" else "Removed the $name feat"
+}
+
+@Serializable
 data class PfLeveledUpEvent(val newLevel: Int, val hpGained: Int, val skillIncrease: String? = null, val abilityBoosts: List<String> = emptyList()) : CharacterEvent {
     override val summary: String
         get() {

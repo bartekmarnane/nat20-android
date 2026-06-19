@@ -85,6 +85,8 @@ data class PathfinderPayload(
     val focusPoints: Int = 0,
     val maxFocusPoints: Int = 0,
     val focusSpells: List<String> = emptyList(),
+    /** Feats taken, by catalogue id ([PfFeats]) — ancestry / class / skill / general. */
+    val feats: List<String> = emptyList(),
 ) : CharacterPayload {
 
     val isDying: Boolean get() = dying in 1 until DYING_MAX

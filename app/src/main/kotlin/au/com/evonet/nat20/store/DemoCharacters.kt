@@ -79,6 +79,7 @@ object DemoCharacters {
             spellProficiency = au.com.evonet.nat20.pf2e.core.Proficiency.TRAINED,
             cantrips = listOf("electric-arc", "daze", "shield", "light", "prestidigitation"),
             knownSpells = mapOf(1 to listOf("magic-missile", "fear", "grease"), 2 to listOf("mirror-image", "invisibility")),
+            feats = listOf("natural-ambition", "dangerous-sorcery", "intimidating-glare"),
         ).withFullSpellSlots(),
         timestamp = seededAt,
     )

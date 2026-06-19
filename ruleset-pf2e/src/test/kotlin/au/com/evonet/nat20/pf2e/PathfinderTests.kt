@@ -299,3 +299,47 @@ class PathfinderLevelUpTests {
         assertEquals(evt, ruleset.decodeEvent(ruleset.encodeEvent(evt), typeId))
     }
 }
+
+class PathfinderFeatTests {
+    @org.junit.jupiter.api.Test
+    fun `feat slots follow the cadence per type and class`() {
+        // Fighter (martial): class feats at 1 then every even level.
+        assertEquals(1, FeatSlots.classFeat(1, "fighter"))
+        assertEquals(2, FeatSlots.classFeat(2, "fighter"))
+        // Caster: class feats at even levels only.
+        assertEquals(0, FeatSlots.classFeat(1, "wizard"))
+        assertEquals(1, FeatSlots.classFeat(2, "wizard"))
+        // Ancestry feats at 1/5/9/13/17; general at 3/7/11/15/19.
+        assertEquals(2, FeatSlots.ancestry(5))
+        assertEquals(1, FeatSlots.general(3))
+        // Rogue gains a skill feat every level; others on even levels.
+        assertEquals(5, FeatSlots.skill(5, rogue = true))
+        assertEquals(2, FeatSlots.skill(5, rogue = false))
+    }
+
+    @org.junit.jupiter.api.Test
+    fun `the picker only offers legal feats by type, ancestry, class, and level`() {
+        val elfAncestry = PfFeats.available(PfFeatType.ANCESTRY, "elf", "wizard", 1)
+        assertTrue(elfAncestry.all { it.ancestry == "elf" && it.level <= 1 })
+        assertTrue(elfAncestry.any { it.id == "elven-lore" })
+        // A higher-level elf feat isn't offered at level 1.
+        assertTrue(PfFeats.available(PfFeatType.ANCESTRY, "elf", "wizard", 1).none { it.id == "ageless-patience" })
+        assertTrue(PfFeats.available(PfFeatType.ANCESTRY, "elf", "wizard", 5).any { it.id == "ageless-patience" })
+        // Class feats are gated to the class.
+        assertTrue(PfFeats.available(PfFeatType.CLASS, "elf", "wizard", 1).all { it.className == "wizard" })
+    }
+
+    @org.junit.jupiter.api.Test
+    fun `taking and removing a feat journals and the event round-trips`() {
+        val c = character(PathfinderPayload(ancestry = "human", className = "sorcerer", level = 3))
+        val took = PfTakeFeat("dangerous-sorcery").applyTo(c, ruleset)
+        assertTrue("dangerous-sorcery" in took.character.p().feats)
+        assertTrue(took.event.summary.contains("Dangerous Sorcery"))
+        // De-dupe: taking it again is a no-op on the list.
+        assertEquals(1, PfTakeFeat("dangerous-sorcery").applyTo(took.character, ruleset).character.p().feats.size)
+        val removed = PfRemoveFeat("dangerous-sorcery").applyTo(took.character, ruleset)
+        assertTrue(removed.character.p().feats.isEmpty())
+        val typeId = ruleset.eventTypeId(took.event)
+        assertEquals(took.event, ruleset.decodeEvent(ruleset.encodeEvent(took.event), typeId))
+    }
+}

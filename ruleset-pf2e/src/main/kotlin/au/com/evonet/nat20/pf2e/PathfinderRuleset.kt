@@ -43,6 +43,7 @@ class PathfinderRuleset : Ruleset {
         is PfSpellCastEvent -> "pf2e.castSpell"
         is PfDailyPrepEvent -> "pf2e.dailyPrep"
         is PfLeveledUpEvent -> "pf2e.level"
+        is PfFeatChangedEvent -> "pf2e.feat"
         else -> "pf2e.unknown"
     }
 
@@ -59,6 +60,7 @@ class PathfinderRuleset : Ruleset {
         is PfSpellCastEvent -> json.encodeToString(PfSpellCastEvent.serializer(), event)
         is PfDailyPrepEvent -> json.encodeToString(PfDailyPrepEvent.serializer(), event)
         is PfLeveledUpEvent -> json.encodeToString(PfLeveledUpEvent.serializer(), event)
+        is PfFeatChangedEvent -> json.encodeToString(PfFeatChangedEvent.serializer(), event)
         else -> throw CharacterCodecError.UnknownEventType(event::class.simpleName ?: "unknown")
     }
 
@@ -75,6 +77,7 @@ class PathfinderRuleset : Ruleset {
         "pf2e.castSpell" -> this.json.decodeFromString(PfSpellCastEvent.serializer(), json)
         "pf2e.dailyPrep" -> this.json.decodeFromString(PfDailyPrepEvent.serializer(), json)
         "pf2e.level" -> this.json.decodeFromString(PfLeveledUpEvent.serializer(), json)
+        "pf2e.feat" -> this.json.decodeFromString(PfFeatChangedEvent.serializer(), json)
         else -> throw CharacterCodecError.UnknownEventType(typeId)
     }
 
