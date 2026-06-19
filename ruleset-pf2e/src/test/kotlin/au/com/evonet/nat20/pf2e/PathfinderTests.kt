@@ -343,3 +343,16 @@ class PathfinderFeatTests {
         assertEquals(took.event, ruleset.decodeEvent(ruleset.encodeEvent(took.event), typeId))
     }
 }
+
+class PFMonsterCatalogTests {
+    @org.junit.jupiter.api.Test
+    fun `the ORC Monster Core bestiary loads, sorted by level then name`() {
+        val all = PFMonsterCatalog.all
+        assertEquals(445, all.size)
+        assertTrue(all.zipWithNext().all { (a, b) -> a.level <= b.level })
+        val broom = PFMonsterCatalog.monster("animated-broom")!!
+        assertEquals(-1, broom.level)
+        assertTrue(broom.subtitle.contains("Construct"))
+        assertTrue(broom.statblock.isNotEmpty())
+    }
+}

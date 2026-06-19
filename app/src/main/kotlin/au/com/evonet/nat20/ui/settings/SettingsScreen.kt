@@ -35,6 +35,8 @@ fun SettingsScreen(
     onOpenSpellLibrary: () -> Unit,
     onOpenMonsterCodex: () -> Unit,
     onOpenItemCatalog: () -> Unit,
+    onOpenPfMonsterCodex: () -> Unit,
+    onOpenPfItemCatalog: () -> Unit,
     onOpenCredits: () -> Unit,
     onBack: () -> Unit,
 ) {
@@ -74,6 +76,12 @@ fun SettingsScreen(
                 }
                 Row(Modifier.fillMaxWidth().clickable(onClick = onOpenItemCatalog).padding(vertical = 8.dp)) {
                     Text("Item Catalog (2024)", style = MaterialTheme.typography.bodyLarge)
+                }
+                Row(Modifier.fillMaxWidth().clickable(onClick = onOpenPfMonsterCodex).padding(vertical = 8.dp)) {
+                    Text("Monster Core (PF2e)", style = MaterialTheme.typography.bodyLarge)
+                }
+                Row(Modifier.fillMaxWidth().clickable(onClick = onOpenPfItemCatalog).padding(vertical = 8.dp)) {
+                    Text("Item Catalog (PF2e)", style = MaterialTheme.typography.bodyLarge)
                 }
             }
 
