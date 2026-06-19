@@ -80,6 +80,12 @@ object DemoCharacters {
             cantrips = listOf("electric-arc", "daze", "shield", "light", "prestidigitation"),
             knownSpells = mapOf(1 to listOf("magic-missile", "fear", "grease"), 2 to listOf("mirror-image", "invisibility")),
             feats = listOf("natural-ambition", "dangerous-sorcery", "intimidating-glare"),
+            coins = mapOf(au.com.evonet.nat20.pf2e.PFCoin.GP to 18, au.com.evonet.nat20.pf2e.PFCoin.SP to 5),
+            inventory = listOf(
+                au.com.evonet.nat20.pf2e.PFInventoryItem("Spellbook", bulk = 1.0),
+                au.com.evonet.nat20.pf2e.PFInventoryItem("Healing Potion (Minor)", quantity = 2, bulk = au.com.evonet.nat20.pf2e.Bulk.LIGHT),
+            ),
+            weaponRunes = mapOf("dagger" to au.com.evonet.nat20.pf2e.WeaponRunes(potency = 1)),
         ).withFullSpellSlots(),
         timestamp = seededAt,
     )

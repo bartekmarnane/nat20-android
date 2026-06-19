@@ -25,9 +25,9 @@ val PathfinderPayload.frightenedPenalty: Int
 val PathfinderPayload.perceptionBonus: Int
     get() = modifier(PfAbility.WISDOM) + perception.bonus(level) - frightenedPenalty
 
-/** A saving throw bonus = governing-ability modifier + that save's proficiency(level) − Frightened. */
+/** A saving throw bonus = ability modifier + proficiency(level) + resilient-rune item bonus − Frightened. */
 fun PathfinderPayload.saveBonus(save: Save): Int =
-    modifier(save.ability) + (saves[save] ?: Proficiency.UNTRAINED).bonus(level) - frightenedPenalty
+    modifier(save.ability) + (saves[save] ?: Proficiency.UNTRAINED).bonus(level) + armorRunes.resilient - frightenedPenalty
 
 /** A skill bonus = governing-ability modifier + that skill's proficiency(level) − Frightened. */
 fun PathfinderPayload.skillBonus(skill: PfSkill): Int =
@@ -52,7 +52,7 @@ val PathfinderPayload.armorClass: Int
         val worn = armor?.let { PfArmors.by(it) }
         val base = if (worn != null) {
             val prof = armorProficiencies[worn.category] ?: Proficiency.UNTRAINED
-            10 + minOf(dexMod, worn.dexCap) + prof.bonus(level) + worn.acBonus
+            10 + minOf(dexMod, worn.dexCap) + prof.bonus(level) + worn.acBonus + armorRunes.potency
         } else {
             10 + dexMod + unarmoredProficiency.bonus(level)
         }
@@ -80,12 +80,15 @@ fun PathfinderPayload.strike(weapon: PfWeapon): Strike {
         else -> str
     }
     val prof = (weaponProficiencies[weapon.category] ?: Proficiency.UNTRAINED).bonus(level)
-    val first = attackAbility + prof - frightenedPenalty
+    val runes = weaponRunes[weapon.id] ?: WeaponRunes()
+    val first = attackAbility + prof + runes.potency - frightenedPenalty // potency rune = item bonus to attack
     val map = if (weapon.agile) 4 else 5
     val attackMods = listOf(first, first - map, first - map * 2)
     // Damage adds STR for melee strikes (including finesse); ranged adds nothing (no propulsive/thrown modelled yet).
     val dmgBonus = if (weapon.ranged) 0 else str
-    val damage = weapon.damageDie + if (dmgBonus != 0) (if (dmgBonus > 0) "+$dmgBonus" else "$dmgBonus") else ""
+    // Striking rune multiplies the weapon's damage dice (total dice = 1 + striking).
+    val dice = heightenDamageDice(weapon.damageDie, 1 + runes.striking)
+    val damage = dice + if (dmgBonus != 0) (if (dmgBonus > 0) "+$dmgBonus" else "$dmgBonus") else ""
     return Strike(weapon, attackMods, damage, weapon.damageType)
 }
 
@@ -104,3 +107,25 @@ val PathfinderPayload.spellAttack: Int
 
 /** Spell DC = 10 + the spell attack modifier (the Frightened penalty already folded in). */
 val PathfinderPayload.spellDc: Int get() = 10 + spellAttack
+
+// ── Runes + Bulk (A22 slice 9) ──────────────────────────────────────────────────
+
+/** Multiply a "NdX" damage string's die count (a striking rune of tier T → 1+T dice). */
+internal fun heightenDamageDice(damageDie: String, totalDice: Int): String {
+    val parts = damageDie.lowercase().split("d")
+    val count = parts.getOrNull(0)?.toIntOrNull() ?: return damageDie
+    val face = parts.getOrNull(1)?.toIntOrNull() ?: return damageDie
+    return "${count * totalDice}d$face"
+}
+
+/** Total Bulk carried: inventory items + coins (1,000 coins = 1 Bulk). Worn armor counts as 1 less than carried (not modelled here). */
+val PathfinderPayload.totalBulk: Double
+    get() = inventory.sumOf { it.bulk * it.quantity } + coins.values.sum() * Bulk.PER_COIN
+
+/** Carrying-capacity threshold at which the character becomes encumbered: 5 + STR modifier. */
+val PathfinderPayload.encumberedThreshold: Int
+    get() = 5 + modifier(PfAbility.STRENGTH)
+
+/** True once the effective (floored) Bulk exceeds the encumbered threshold. */
+val PathfinderPayload.isEncumbered: Boolean
+    get() = Bulk.effective(totalBulk) > encumberedThreshold

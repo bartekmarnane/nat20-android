@@ -46,8 +46,21 @@ import au.com.evonet.nat20.pf2e.PfApplyCondition
 import au.com.evonet.nat20.pf2e.PfArmors
 import au.com.evonet.nat20.pf2e.PfCastFocusSpell
 import au.com.evonet.nat20.pf2e.PfCastSpell
+import au.com.evonet.nat20.pf2e.Bulk
 import au.com.evonet.nat20.pf2e.ClassProgression
 import au.com.evonet.nat20.pf2e.FeatSlots
+import au.com.evonet.nat20.pf2e.PFCoin
+import au.com.evonet.nat20.pf2e.PFInventoryItem
+import au.com.evonet.nat20.pf2e.PfAddInventoryItem
+import au.com.evonet.nat20.pf2e.PfAdjustCoin
+import au.com.evonet.nat20.pf2e.PfRemoveInventoryItem
+import au.com.evonet.nat20.pf2e.PfSetArmorRunes
+import au.com.evonet.nat20.pf2e.PfSetWeaponRunes
+import au.com.evonet.nat20.pf2e.Runes
+import au.com.evonet.nat20.pf2e.Wealth
+import au.com.evonet.nat20.pf2e.encumberedThreshold
+import au.com.evonet.nat20.pf2e.isEncumbered
+import au.com.evonet.nat20.pf2e.totalBulk
 import au.com.evonet.nat20.pf2e.PfClearCondition
 import au.com.evonet.nat20.pf2e.PfDailyPreparations
 import au.com.evonet.nat20.pf2e.PfFeatType
@@ -245,6 +258,10 @@ private fun PfCombat(payload: PathfinderPayload, onApplyIntent: (CharacterIntent
     var pickArmor by remember { mutableStateOf(false) }
     var pickShield by remember { mutableStateOf(false) }
     var addWeapon by remember { mutableStateOf(false) }
+    var armorRunes by remember { mutableStateOf(false) }
+    var weaponRunesFor by remember { mutableStateOf<String?>(null) }
+    var addItem by remember { mutableStateOf(false) }
+    var adjustCoin by remember { mutableStateOf<PFCoin?>(null) }
     PfPage {
         PfCard("Hit Points") {
             PfStatRow("Current / Max", "${payload.currentHp} / ${payload.maxHp}" + if (payload.temporaryHp > 0) " (+${payload.temporaryHp})" else "")
@@ -285,6 +302,10 @@ private fun PfCombat(payload: PathfinderPayload, onApplyIntent: (CharacterIntent
                 if (shield != null) OutlinedButton(onClick = { onApplyIntent(PfRaiseShield(!payload.shieldRaised)) }) { Text(if (payload.shieldRaised) "Lower" else "Raise") }
                 OutlinedButton(onClick = { pickShield = true }) { Text(if (shield == null) "Hold" else "Stow") }
             }
+            if (worn != null) Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(if (payload.armorRunes.isEmpty) "No runes" else "Runes: +${payload.armorRunes.potency}" + if (payload.armorRunes.resilient > 0) " · resilient ${payload.armorRunes.resilient}" else "", Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                OutlinedButton(onClick = { armorRunes = true }) { Text("Etch") }
+            }
         }
         PfCard("Strikes") {
             if (payload.strikes.isEmpty()) Text("No weapons.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -292,13 +313,30 @@ private fun PfCombat(payload: PathfinderPayload, onApplyIntent: (CharacterIntent
                 if (i > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
-                        Text(s.weapon.name, fontWeight = FontWeight.Medium)
+                        val r = payload.weaponRunes[s.weapon.id]
+                        Text(s.weapon.name + (r?.takeIf { !it.isEmpty }?.let { " (+${it.potency}${if (it.striking > 0) " striking" else ""})" } ?: ""), fontWeight = FontWeight.Medium)
                         Text("Atk " + s.attackMods.joinToString(" / ") { it.signedPf() } + "  ·  ${s.damage} ${s.damageType}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
+                    TextButton(onClick = { weaponRunesFor = s.weapon.id }) { Text("Etch") }
                     TextButton(onClick = { onApplyIntent(PfRemoveWeapon(s.weapon.id)) }) { Text("✕") }
                 }
             }
             OutlinedButton(onClick = { addWeapon = true }) { Text("Add weapon") }
+        }
+        PfCard("Inventory & Coins") {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text("Purse: ${Wealth.purseLabel(payload.coins)}", Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                PFCoin.entries.reversed().forEach { c -> TextButton(onClick = { adjustCoin = c }) { Text(c.abbreviation) } }
+            }
+            Text("Bulk ${Bulk.effective(payload.totalBulk)} / ${payload.encumberedThreshold}" + if (payload.isEncumbered) " · Encumbered" else "", style = MaterialTheme.typography.labelSmall, color = if (payload.isEncumbered) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
+            if (payload.inventory.isEmpty()) Text("Pack is empty.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            else payload.inventory.forEach { item ->
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text((if (item.quantity > 1) "${item.name} ×${item.quantity}" else item.name) + " · Bulk ${Bulk.label(item.bulk)}", Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                    TextButton(onClick = { onApplyIntent(PfRemoveInventoryItem(item.name)) }) { Text("✕") }
+                }
+            }
+            OutlinedButton(onClick = { addItem = true }) { Text("Add item") }
         }
         PfCard("Conditions") {
             if (payload.conditions.isEmpty()) Text("No conditions.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -313,6 +351,13 @@ private fun PfCombat(payload: PathfinderPayload, onApplyIntent: (CharacterIntent
     if (pickArmor) PfChoiceDialog("Choose armor", listOf(null to "Unarmored") + PfArmors.all.map { it.id to "${it.name} · ${it.category.displayName} +${it.acBonus}" }, onPick = { onApplyIntent(PfEquipArmor(it)); pickArmor = false }, onDismiss = { pickArmor = false })
     if (pickShield) PfChoiceDialog("Choose shield", listOf(null to "None") + PfShields.all.map { it.id to "${it.name} (+${it.raisedAcBonus})" }, onPick = { onApplyIntent(PfEquipShield(it)); pickShield = false }, onDismiss = { pickShield = false })
     if (addWeapon) PfChoiceDialog("Add weapon", PfWeapons.all.map { it.id as String? to "${it.name} · ${it.category.displayName} ${it.damageDie}${it.damageType}" }, onPick = { it?.let { id -> onApplyIntent(PfAddWeapon(id)) }; addWeapon = false }, onDismiss = { addWeapon = false })
+    if (armorRunes) PfRuneDialog("Armor runes", payload.armorRunes.potency, payload.armorRunes.resilient, "Resilient", onApply = { pot, sec -> onApplyIntent(PfSetArmorRunes(pot, sec)); armorRunes = false }, onDismiss = { armorRunes = false })
+    weaponRunesFor?.let { wid ->
+        val r = payload.weaponRunes[wid]
+        PfRuneDialog("Weapon runes", r?.potency ?: 0, r?.striking ?: 0, "Striking", onApply = { pot, sec -> onApplyIntent(PfSetWeaponRunes(wid, pot, sec)); weaponRunesFor = null }, onDismiss = { weaponRunesFor = null })
+    }
+    if (addItem) PfItemDialog(onAdd = { onApplyIntent(PfAddInventoryItem(it)); addItem = false }, onDismiss = { addItem = false })
+    adjustCoin?.let { coin -> PfCoinDialog(coin, payload.coins[coin] ?: 0, onConfirm = { d -> if (d != 0) onApplyIntent(PfAdjustCoin(coin, d)); adjustCoin = null }, onDismiss = { adjustCoin = null }) }
     amount?.let { kind ->
         PfAmountDialog(kind.label, onConfirm = { n ->
             onApplyIntent(when (kind) { PfAmount.DAMAGE -> PfTakeDamage(n); PfAmount.HEAL -> PfHeal(n); PfAmount.TEMP -> PfGainTempHp(n) })
@@ -551,6 +596,77 @@ private fun PfNoteDialog(onConfirm: (String) -> Unit, onDismiss: () -> Unit) {
         title = { Text("Add a note") },
         text = { OutlinedTextField(text, { text = it }, label = { Text("Note") }, modifier = Modifier.fillMaxWidth()) },
         confirmButton = { TextButton(enabled = text.isNotBlank(), onClick = { onConfirm(text.trim()) }) { Text("Add") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+    )
+}
+
+@Composable
+private fun PfRuneDialog(title: String, potency: Int, secondary: Int, secondaryLabel: String, onApply: (Int, Int) -> Unit, onDismiss: () -> Unit) {
+    var pot by remember { mutableIntStateOf(potency) }
+    var sec by remember { mutableIntStateOf(secondary) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                PfStepperRow("Potency", pot, 0..Runes.MAX_TIER) { pot = it }
+                PfStepperRow(secondaryLabel, sec, 0..Runes.MAX_TIER) { sec = it }
+            }
+        },
+        confirmButton = { TextButton(onClick = { onApply(pot, sec) }) { Text("Apply") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+    )
+}
+
+@Composable
+private fun PfStepperRow(label: String, value: Int, range: IntRange, onChange: (Int) -> Unit) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+        TextButton(enabled = value > range.first, onClick = { onChange(value - 1) }) { Text("−", style = MaterialTheme.typography.titleMedium) }
+        Text("+$value", fontWeight = FontWeight.Bold)
+        TextButton(enabled = value < range.last, onClick = { onChange(value + 1) }) { Text("+", style = MaterialTheme.typography.titleMedium) }
+    }
+}
+
+@Composable
+private fun PfCoinDialog(coin: PFCoin, current: Int, onConfirm: (Int) -> Unit, onDismiss: () -> Unit) {
+    var delta by remember { mutableIntStateOf(0) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Adjust ${coin.abbreviation}") },
+        text = {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Have $current ${coin.abbreviation}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    TextButton(enabled = current + delta > 0, onClick = { delta-- }) { Text("−", style = MaterialTheme.typography.headlineSmall) }
+                    Text(if (delta >= 0) "+$delta" else "$delta", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                    TextButton(onClick = { delta++ }) { Text("+", style = MaterialTheme.typography.headlineSmall) }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = { onConfirm(delta) }) { Text("Apply") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+    )
+}
+
+@Composable
+private fun PfItemDialog(onAdd: (PFInventoryItem) -> Unit, onDismiss: () -> Unit) {
+    var name by remember { mutableStateOf("") }
+    var light by remember { mutableStateOf(false) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Add item") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(name, { name = it }, label = { Text("Item name") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Bulk", Modifier.weight(1f))
+                    FilterChip(!light, { light = false }, label = { Text("—") })
+                    FilterChip(light, { light = true }, label = { Text("L") })
+                }
+            }
+        },
+        confirmButton = { TextButton(enabled = name.isNotBlank(), onClick = { onAdd(PFInventoryItem(name.trim(), 1, if (light) Bulk.LIGHT else 0.0)) }) { Text("Add") } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
     )
 }

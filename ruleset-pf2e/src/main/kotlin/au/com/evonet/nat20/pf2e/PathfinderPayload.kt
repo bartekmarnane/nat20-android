@@ -87,6 +87,13 @@ data class PathfinderPayload(
     val focusSpells: List<String> = emptyList(),
     /** Feats taken, by catalogue id ([PfFeats]) — ancestry / class / skill / general. */
     val feats: List<String> = emptyList(),
+    // ── Runes, coins, inventory (A22 slice 9) ──
+    /** Runes etched per weapon (keyed by weapon id). */
+    val weaponRunes: Map<String, WeaponRunes> = emptyMap(),
+    /** Runes on the worn armor. */
+    val armorRunes: ArmorRunes = ArmorRunes(),
+    val coins: Map<PFCoin, Int> = emptyMap(),
+    val inventory: List<PFInventoryItem> = emptyList(),
 ) : CharacterPayload {
 
     val isDying: Boolean get() = dying in 1 until DYING_MAX

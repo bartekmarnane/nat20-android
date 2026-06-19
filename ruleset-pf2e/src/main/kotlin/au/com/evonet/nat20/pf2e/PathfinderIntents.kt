@@ -253,6 +253,65 @@ private fun Map<Int, Int>.withSlot(rank: Int, remaining: Int): Map<Int, Int> =
 /** A copy with all spell slots reset to full — used at creation + on Daily Preparations. */
 fun PathfinderPayload.withFullSpellSlots(): PathfinderPayload = copy(currentSpellSlots = maxSpellSlots)
 
+// ── Runes, coins, inventory (A22 slice 9) ───────────────────────────────────────
+
+/** Etches (replaces) the fundamental runes on a weapon, clamped to 0–[Runes.MAX_TIER]. */
+data class PfSetWeaponRunes(val weaponId: String, val potency: Int, val striking: Int) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        val weapon = PfWeapons.by(weaponId) ?: throw CharacterIntentError.Invalid("Unknown weapon $weaponId")
+        val p = character.pf()
+        val pot = potency.coerceIn(0, Runes.MAX_TIER)
+        val str = striking.coerceIn(0, Runes.MAX_TIER)
+        val existing = p.weaponRunes[weaponId] ?: WeaponRunes()
+        val runes = existing.copy(potency = pot, striking = str, properties = existing.properties.take(pot))
+        val map = if (runes.isEmpty) p.weaponRunes - weaponId else p.weaponRunes + (weaponId to runes)
+        return IntentResult(character.copy(payload = p.copy(weaponRunes = map)), PfNoteEvent("Etched runes on ${weapon.name} (+$pot, striking $str)"))
+    }
+}
+
+/** Etches (replaces) the fundamental runes on the worn armor. */
+data class PfSetArmorRunes(val potency: Int, val resilient: Int) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        val p = character.pf()
+        val pot = potency.coerceIn(0, Runes.MAX_TIER)
+        val res = resilient.coerceIn(0, Runes.MAX_TIER)
+        val runes = p.armorRunes.copy(potency = pot, resilient = res, properties = p.armorRunes.properties.take(pot))
+        return IntentResult(character.copy(payload = p.copy(armorRunes = runes)), PfNoteEvent("Etched armor runes (+$pot, resilient $res)"))
+    }
+}
+
+/** Adjusts a coin pouch by [delta] (positive = gain, negative = spend); never goes negative. */
+data class PfAdjustCoin(val coin: PFCoin, val delta: Int) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        if (delta == 0) throw CharacterIntentError.Invalid("Coin adjustment must be non-zero")
+        val p = character.pf()
+        val current = p.coins[coin] ?: 0
+        val next = current + delta
+        if (next < 0) throw CharacterIntentError.Invalid("Not enough ${coin.abbreviation}: have $current, spending ${-delta}")
+        val coins = if (next == 0) p.coins - coin else p.coins + (coin to next)
+        return IntentResult(character.copy(payload = p.copy(coins = coins)), PfNoteEvent("${if (delta >= 0) "Gained" else "Spent"} ${kotlin.math.abs(delta)} ${coin.abbreviation}"))
+    }
+}
+
+/** Adds an item to the pack (merging by name). */
+data class PfAddInventoryItem(val item: PFInventoryItem) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        if (item.name.isBlank()) throw CharacterIntentError.Invalid("Item needs a name")
+        val p = character.pf()
+        val index = p.inventory.indexOfFirst { it.name.equals(item.name, ignoreCase = true) }
+        val updated = p.inventory.toMutableList()
+        if (index >= 0) updated[index] = updated[index].copy(quantity = updated[index].quantity + item.quantity) else updated.add(item)
+        return IntentResult(character.copy(payload = p.copy(inventory = updated)), PfNoteEvent("Acquired ${item.name}"))
+    }
+}
+
+data class PfRemoveInventoryItem(val name: String) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        val p = character.pf()
+        return IntentResult(character.copy(payload = p.copy(inventory = p.inventory.filterNot { it.name.equals(name, ignoreCase = true) })), PfNoteEvent("Dropped $name"))
+    }
+}
+
 // ── Feats (A22 slice 6) ─────────────────────────────────────────────────────────
 
 /** Takes a feat (de-duped). The picker filters by type/level/ancestry/class so the choice is legal. */

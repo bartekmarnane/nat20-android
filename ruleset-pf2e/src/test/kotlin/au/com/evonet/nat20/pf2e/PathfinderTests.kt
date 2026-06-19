@@ -393,3 +393,52 @@ class PathfinderClassProgressionTests {
         }
     }
 }
+
+class PathfinderRunesWealthTests {
+    private fun fighter() = PathfinderPayload(
+        className = "fighter", level = 1, abilityScores = PfAbilityScores(strength = 18, dexterity = 14, constitution = 10),
+        armor = "breastplate", armorProficiencies = mapOf(ArmorCategory.MEDIUM to Proficiency.TRAINED),
+        saves = mapOf(Save.FORTITUDE to Proficiency.EXPERT),
+        weapons = listOf("longsword"), weaponProficiencies = mapOf(WeaponCategory.MARTIAL to Proficiency.EXPERT),
+    )
+
+    @org.junit.jupiter.api.Test
+    fun `runes fold into AC, saves, attack, and damage dice`() {
+        val base = fighter()
+        val runed = base.copy(armorRunes = au.com.evonet.nat20.pf2e.ArmorRunes(potency = 2, resilient = 1))
+        assertEquals(base.armorClass + 2, runed.armorClass)             // armor potency +2 AC
+        assertEquals(base.saveBonus(Save.FORTITUDE) + 1, runed.saveBonus(Save.FORTITUDE)) // resilient +1 saves
+        // Weapon potency +1 attack, striking 1 → 2 damage dice.
+        val withWeaponRunes = base.copy(weaponRunes = mapOf("longsword" to au.com.evonet.nat20.pf2e.WeaponRunes(potency = 1, striking = 1)))
+        val s = withWeaponRunes.strike(PfWeapons.by("longsword")!!)
+        assertEquals(base.strike(PfWeapons.by("longsword")!!).attackMods.first() + 1, s.attackMods.first())
+        assertEquals("2d8+4", s.damage)
+    }
+
+    @org.junit.jupiter.api.Test
+    fun `bulk sums items and coins, encumbrance keys off Strength`() {
+        val p = fighter().copy(
+            inventory = listOf(PFInventoryItem("Plate", bulk = 4.0), PFInventoryItem("Torch", quantity = 3, bulk = Bulk.LIGHT)),
+            coins = mapOf(PFCoin.GP to 1000),
+        )
+        // 4 + 3×0.1 + 1000×0.001 = 5.3 → floored 5.
+        assertEquals(5, Bulk.effective(p.totalBulk))
+        assertEquals(5 + 4, p.encumberedThreshold) // 5 + STR mod (+4)
+        assertFalse(p.isEncumbered)
+        assertTrue(p.copy(inventory = p.inventory + PFInventoryItem("Anvil", bulk = 6.0)).isEncumbered)
+    }
+
+    @org.junit.jupiter.api.Test
+    fun `rune, coin, and inventory intents apply and clamp`() {
+        var c = character(fighter())
+        c = PfSetWeaponRunes("longsword", potency = 5, striking = 2).applyTo(c, ruleset).character // clamps to 3
+        assertEquals(3, c.p().weaponRunes["longsword"]!!.potency)
+        c = PfAdjustCoin(PFCoin.GP, 10).applyTo(c, ruleset).character
+        assertEquals(10, c.p().coins[PFCoin.GP])
+        assertThrows(CharacterIntentError.Invalid::class.java) { PfAdjustCoin(PFCoin.GP, -20).applyTo(c, ruleset) }
+        c = PfAddInventoryItem(PFInventoryItem("Rope", bulk = Bulk.LIGHT)).applyTo(c, ruleset).character
+        c = PfAddInventoryItem(PFInventoryItem("Rope")).applyTo(c, ruleset).character // merges by name
+        assertEquals(2, c.p().inventory.first { it.name == "Rope" }.quantity)
+        assertTrue(PfRemoveInventoryItem("Rope").applyTo(c, ruleset).character.p().inventory.none { it.name == "Rope" })
+    }
+}
