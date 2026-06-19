@@ -29,6 +29,7 @@ import au.com.evonet.nat20.domain.CharacterIntent
 import au.com.evonet.nat20.domain.CharacterPhase
 import au.com.evonet.nat20.dnd5e.DnD5eRuleset
 import au.com.evonet.nat20.dnd5e2024.DnD5e2024Ruleset
+import au.com.evonet.nat20.pf2e.PathfinderRuleset
 import au.com.evonet.nat20.ui.actions.DnD5eActionsSheet
 import au.com.evonet.nat20.ui.codex.CodexShellView
 
@@ -87,6 +88,7 @@ fun CharacterSheetScreen(
             when (character.rulesetId) {
                 DnD5eRuleset.RULESET_ID -> CodexShellView(character, onBrowseSpells, onApplyIntent, onSave, Modifier.fillMaxSize())
                 DnD5e2024Ruleset.RULESET_ID -> Codex2024ShellView(character, onApplyIntent, onSave, Modifier.fillMaxSize())
+                PathfinderRuleset.RULESET_ID -> PathfinderSheetView(character, onApplyIntent, Modifier.fillMaxSize())
                 else -> UnsupportedRuleset(character.rulesetId)
             }
         }

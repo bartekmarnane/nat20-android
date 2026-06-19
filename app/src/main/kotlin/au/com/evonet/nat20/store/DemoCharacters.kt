@@ -33,9 +33,47 @@ import java.time.Instant
 object DemoCharacters {
     private val ruleset = DnD5eRuleset()
     private val ruleset2024 = DnD5e2024Ruleset()
+    private val rulesetPf2e = au.com.evonet.nat20.pf2e.PathfinderRuleset()
     private val seededAt: Instant = Instant.parse("2026-06-18T00:00:00Z")
 
-    fun seed(): List<Character> = listOf(thorgar(), lyra(), kael(), nyx(), wisp())
+    fun seed(): List<Character> = listOf(thorgar(), lyra(), kael(), nyx(), wisp(), seoni())
+
+    /** A Pathfinder 2e (Remaster) character — proves the first non-D&D ruleset renders (A22). */
+    private fun seoni(): Character = Character.new(
+        name = "Seoni",
+        ruleset = rulesetPf2e,
+        payload = au.com.evonet.nat20.pf2e.PathfinderPayload(
+            ancestry = "human",
+            heritage = "skilled-heritage",
+            background = "noble",
+            className = "sorcerer",
+            level = 3,
+            abilityScores = au.com.evonet.nat20.pf2e.core.PfAbilityScores(
+                strength = 10, dexterity = 14, constitution = 12,
+                intelligence = 12, wisdom = 11, charisma = 18,
+            ),
+            keyAbility = au.com.evonet.nat20.pf2e.core.PfAbility.CHARISMA,
+            maxHp = 30, currentHp = 30,
+            heroPoints = 1,
+            perception = au.com.evonet.nat20.pf2e.core.Proficiency.TRAINED,
+            unarmoredProficiency = au.com.evonet.nat20.pf2e.core.Proficiency.TRAINED,
+            classDC = au.com.evonet.nat20.pf2e.core.Proficiency.TRAINED,
+            saves = mapOf(
+                au.com.evonet.nat20.pf2e.core.Save.FORTITUDE to au.com.evonet.nat20.pf2e.core.Proficiency.TRAINED,
+                au.com.evonet.nat20.pf2e.core.Save.REFLEX to au.com.evonet.nat20.pf2e.core.Proficiency.TRAINED,
+                au.com.evonet.nat20.pf2e.core.Save.WILL to au.com.evonet.nat20.pf2e.core.Proficiency.EXPERT,
+            ),
+            skills = mapOf(
+                au.com.evonet.nat20.pf2e.core.PfSkill.ARCANA to au.com.evonet.nat20.pf2e.core.Proficiency.TRAINED,
+                au.com.evonet.nat20.pf2e.core.PfSkill.DECEPTION to au.com.evonet.nat20.pf2e.core.Proficiency.TRAINED,
+                au.com.evonet.nat20.pf2e.core.PfSkill.DIPLOMACY to au.com.evonet.nat20.pf2e.core.Proficiency.EXPERT,
+                au.com.evonet.nat20.pf2e.core.PfSkill.INTIMIDATION to au.com.evonet.nat20.pf2e.core.Proficiency.TRAINED,
+                au.com.evonet.nat20.pf2e.core.PfSkill.SOCIETY to au.com.evonet.nat20.pf2e.core.Proficiency.TRAINED,
+            ),
+            loreSkills = mapOf("Genealogy Lore" to au.com.evonet.nat20.pf2e.core.Proficiency.TRAINED),
+        ),
+        timestamp = seededAt,
+    )
 
     private fun character(name: String, payload: DnD5ePayload): Character =
         Character.new(name = name, ruleset = ruleset, payload = payload, timestamp = seededAt)

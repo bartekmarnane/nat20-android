@@ -1,0 +1,73 @@
+package au.com.evonet.nat20.pf2e
+
+import au.com.evonet.nat20.domain.CharacterEvent
+import au.com.evonet.nat20.domain.NoteKind
+import kotlinx.serialization.Serializable
+
+/** Journal events for the Pathfinder 2e foundation slice (A22). */
+
+@Serializable
+data class PfNoteEvent(val text: String, val kind: NoteKind? = null) : CharacterEvent {
+    override val summary: String get() = text
+}
+
+@Serializable
+data class PfDamageTakenEvent(
+    val amount: Int,
+    val previousHp: Int,
+    val newHp: Int,
+    val tempAbsorbed: Int = 0,
+    val nowDying: Int? = null,
+) : CharacterEvent {
+    override val summary: String
+        get() {
+            val temp = if (tempAbsorbed > 0) " ($tempAbsorbed absorbed by temp)" else ""
+            val dying = nowDying?.takeIf { it > 0 }?.let { " · Dying $it" } ?: ""
+            return "Took $amount damage (HP $previousHp → $newHp)$temp$dying"
+        }
+}
+
+@Serializable
+data class PfHealedEvent(val amount: Int, val previousHp: Int, val newHp: Int, val recoveredFromDying: Boolean = false) : CharacterEvent {
+    override val summary: String
+        get() = "Healed $amount (HP $previousHp → $newHp)" + if (recoveredFromDying) " · no longer dying" else ""
+}
+
+@Serializable
+data class PfTempHpGainedEvent(val amount: Int, val newValue: Int) : CharacterEvent {
+    override val summary: String get() = "Gained $amount temporary HP (now $newValue)"
+}
+
+@Serializable
+data class PfDyingChangedEvent(val previous: Int, val newValue: Int) : CharacterEvent {
+    override val summary: String
+        get() = when {
+            newValue >= PathfinderPayload.DYING_MAX -> "Dying reached ${PathfinderPayload.DYING_MAX} — death"
+            newValue == 0 -> "Stabilized — no longer dying"
+            else -> "Dying ${if (newValue > previous) "rose" else "eased"} to $newValue"
+        }
+}
+
+@Serializable
+data class PfWoundedChangedEvent(val previous: Int, val newValue: Int) : CharacterEvent {
+    override val summary: String get() = if (newValue == 0) "Cleared the Wounded condition" else "Wounded $newValue"
+}
+
+@Serializable
+data class PfHeroPointsChangedEvent(val previous: Int, val newValue: Int) : CharacterEvent {
+    override val summary: String
+        get() = when {
+            newValue > previous -> "Gained a Hero Point (now $newValue)"
+            newValue == 0 -> "Spent the last Hero Point"
+            else -> "Spent a Hero Point (now $newValue)"
+        }
+}
+
+@Serializable
+data class PfConditionChangedEvent(val name: String, val value: Int? = null, val applied: Boolean) : CharacterEvent {
+    override val summary: String
+        get() {
+            val label = name + (value?.let { " $it" } ?: "")
+            return if (applied) "Gained $label" else "Cleared $name"
+        }
+}

@@ -49,6 +49,8 @@ dependencies {
     // editions (2024, PF2e) get added here as their modules land.
     implementation(project(":ruleset-dnd5e-2014"))
     implementation(project(":ruleset-dnd5e-2024"))
+    // Pathfinder 2e (Remaster) — the first non-D&D ruleset (A22); pulls in :ruleset-pf2e-core.
+    implementation(project(":ruleset-pf2e"))
     implementation(project(":data"))
 
     implementation(libs.androidx.core.ktx)
