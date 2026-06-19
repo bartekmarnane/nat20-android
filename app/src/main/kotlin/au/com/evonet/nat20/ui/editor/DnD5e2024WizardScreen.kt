@@ -51,6 +51,8 @@ import au.com.evonet.nat20.dnd5e2024.ClassEntry2024
 import au.com.evonet.nat20.dnd5e2024.DnD5e2024Catalog
 import au.com.evonet.nat20.dnd5e2024.DnD5e2024Payload
 import au.com.evonet.nat20.dnd5e2024.DnD5e2024Ruleset
+import au.com.evonet.nat20.dnd5e2024.FeatCategory2024
+import au.com.evonet.nat20.dnd5e2024.Feats2024
 import au.com.evonet.nat20.dnd5e2024.effectiveMaxHp
 import au.com.evonet.nat20.dnd5e2024.withFullSpellSlots
 import au.com.evonet.nat20.domain.Character
@@ -65,15 +67,43 @@ import java.time.Instant
  */
 private enum class Wiz2024(val title: String) {
     NAME("Name"), SPECIES("Species"), CLASS("Class"), BACKGROUND("Background"),
-    ABILITIES("Abilities"), SKILLS("Skills"), REVIEW("Review"),
+    ABILITIES("Abilities"), SKILLS("Skills"), ADVANCEMENTS("Advancements"), REVIEW("Review"),
 }
 
 private enum class AsiMode2024 { TWO_ONE, ONE_EACH }
 
+/** A single advancement-level choice in the above-level-1 creation step. */
+private enum class AdvKind2024 { ASI_ONE, ASI_TWO, FEAT }
+
+private data class AdvState2024(
+    val kind: AdvKind2024 = AdvKind2024.ASI_ONE,
+    val abilities: List<Ability> = emptyList(),
+    val featId: String? = null,
+    val half: Ability? = null,
+) {
+    /** The ability bumps this choice contributes (+2/one, +1/two, or a half-feat's +1). */
+    fun bumps(): Map<Ability, Int> = when (kind) {
+        AdvKind2024.ASI_ONE -> abilities.take(1).associateWith { 2 }
+        AdvKind2024.ASI_TWO -> abilities.take(2).associateWith { 1 }
+        AdvKind2024.FEAT -> half?.let { mapOf(it to 1) }.orEmpty()
+    }
+
+    val chosenFeat: String? get() = featId.takeIf { kind == AdvKind2024.FEAT }
+
+    fun isComplete(): Boolean = when (kind) {
+        AdvKind2024.ASI_ONE -> abilities.size == 1
+        AdvKind2024.ASI_TWO -> abilities.size == 2
+        AdvKind2024.FEAT -> featId != null && (Feats2024.feat(featId)?.grantsAbilityIncrease != true || half != null)
+    }
+}
+
+/** Levels at or below [level] where [classId] grants an Ability Score Improvement (the advancement levels). */
+private fun asiLevels2024(classId: String?, level: Int): List<Int> =
+    if (classId == null) emptyList() else (1..level).filter { LevelUpMath.grantsAbilityScoreImprovement(classId, it) }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DnD5e2024WizardScreen(onSave: (Character) -> Unit, onCancel: () -> Unit) {
-    val steps = Wiz2024.entries
     var stepIndex by rememberSaveable { mutableIntStateOf(0) }
     var name by rememberSaveable { mutableStateOf("") }
     var speciesId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -85,13 +115,21 @@ fun DnD5e2024WizardScreen(onSave: (Character) -> Unit, onCancel: () -> Unit) {
     var plus2 by remember { mutableStateOf<Ability?>(null) }
     var plus1 by remember { mutableStateOf<Ability?>(null) }
     var chosenSkills by remember { mutableStateOf(emptySet<String>()) }
+    var subclass by remember { mutableStateOf<String?>(null) }
+    var advs by remember { mutableStateOf<Map<Int, AdvState2024>>(emptyMap()) }
 
     val klass = classId?.let(DnD5e2024Catalog::characterClass)
     val background = backgroundId?.let(DnD5e2024Catalog::background)
     val backgroundSkills = background?.skills.orEmpty()
     val asi = backgroundAsi(asiMode, background, plus2, plus1)
     val finalScores = base.applying(asi)
-    val step = steps[stepIndex]
+
+    // Above level 1, an Advancements step captures the subclass + each ASI-level choice.
+    val asiLevels = asiLevels2024(classId, level)
+    val needsSubclass = klass != null && level >= klass.subclassLevel
+    val needsAdvancements = klass != null && (needsSubclass || asiLevels.isNotEmpty())
+    val steps = Wiz2024.entries.filter { it != Wiz2024.ADVANCEMENTS || needsAdvancements }
+    val step = steps[stepIndex.coerceIn(0, steps.lastIndex)]
 
     fun canAdvance(): Boolean = when (step) {
         Wiz2024.NAME -> name.isNotBlank()
@@ -100,23 +138,33 @@ fun DnD5e2024WizardScreen(onSave: (Character) -> Unit, onCancel: () -> Unit) {
         Wiz2024.BACKGROUND -> background != null
         Wiz2024.ABILITIES -> asi.values.sum() == 3 // a complete +2/+1 or +1/+1/+1 allocation
         Wiz2024.SKILLS -> klass != null && chosenSkills.size == klass.skillChoiceCount
+        Wiz2024.ADVANCEMENTS -> (!needsSubclass || subclass != null) && asiLevels.all { (advs[it] ?: AdvState2024()).isComplete() }
         Wiz2024.REVIEW -> true
     }
 
     fun build(): Character {
         val k = klass!!
-        val conMod = AbilityScores.modifier(finalScores.constitution)
+        // Fold the advancement ASIs/half-feats into the scores (capped at 20) + collect chosen feats.
+        var scores = finalScores
+        val feats = mutableListOf<String>()
+        for (lvl in asiLevels) {
+            val choice = advs[lvl] ?: AdvState2024()
+            for ((ability, inc) in choice.bumps()) scores = scores.with(ability, minOf(20, scores.score(ability) + inc))
+            choice.chosenFeat?.let { feats += it }
+        }
+        val conMod = AbilityScores.modifier(scores.constitution)
         val maxHp = LevelUpMath.firstLevelHp(k.hitDie, conMod) + LevelUpMath.averageGain(k.hitDie) * (level - 1)
         val payload = DnD5e2024Payload(
             species = speciesId.orEmpty(),
-            classes = listOf(ClassEntry2024(k.id, level)),
+            classes = listOf(ClassEntry2024(k.id, level, subclass = subclass.takeIf { needsSubclass })),
             background = backgroundId.orEmpty(),
-            abilityScores = finalScores,
+            abilityScores = scores,
             baseAbilityScores = base,
             backgroundASI = asi,
             maxHp = maxHp,
             skillProficiencies = (backgroundSkills + chosenSkills).distinct(),
             originFeat = background?.originFeat,
+            chosenFeats = feats.distinct(),
         ).withFullSpellSlots().let { it.copy(currentHp = it.effectiveMaxHp) } // start at full incl. Tough / Dwarven Toughness
         return Character.new(name.trim(), DnD5e2024Ruleset(), payload, Instant.now())
     }
@@ -144,6 +192,7 @@ fun DnD5e2024WizardScreen(onSave: (Character) -> Unit, onCancel: () -> Unit) {
                     Wiz2024.BACKGROUND -> Pick2024(DnD5e2024Catalog.backgrounds, backgroundId, { it.id }, { it.name }, { "${it.description} · ${it.abilityOptions.joinToString(", ") { a -> a.abbreviation }}" }) { backgroundId = it; plus2 = null; plus1 = null }
                     Wiz2024.ABILITIES -> Abilities2024(base, background, asiMode, plus2, plus1, finalScores, onBase = { base = it }, onMode = { asiMode = it; plus2 = null; plus1 = null }, onPlus2 = { plus2 = it; if (plus1 == it) plus1 = null }, onPlus1 = { plus1 = it })
                     Wiz2024.SKILLS -> Skills2024(klass, backgroundSkills, chosenSkills) { chosenSkills = it }
+                    Wiz2024.ADVANCEMENTS -> Advancements2024(klass, level, needsSubclass, asiLevels, finalScores, subclass, advs, onSubclass = { subclass = it }, onAdv = { lvl, s -> advs = advs + (lvl to s) })
                     Wiz2024.REVIEW -> Review2024(name, speciesId, klass, level, background, finalScores, backgroundSkills + chosenSkills)
                 }
             }
@@ -252,6 +301,77 @@ private fun Skills2024(klass: CharacterClass2024Ui?, backgroundSkills: List<Stri
         }
     }
 }
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun Advancements2024(
+    klass: CharacterClass2024Ui?,
+    level: Int,
+    needsSubclass: Boolean,
+    asiLevels: List<Int>,
+    scores: AbilityScores,
+    subclass: String?,
+    advs: Map<Int, AdvState2024>,
+    onSubclass: (String) -> Unit,
+    onAdv: (Int, AdvState2024) -> Unit,
+) {
+    klass ?: return
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Text("Your ${klass.name} is level $level — make the choices earned along the way.", style = MaterialTheme.typography.bodyLarge)
+
+        if (needsSubclass && klass.subclasses.isNotEmpty()) {
+            StepLabel2024("Subclass (level ${klass.subclassLevel})")
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                klass.subclasses.forEach { s -> FilterChip(subclass == s.id, { onSubclass(s.id) }, label = { Text(s.name) }) }
+            }
+        }
+
+        asiLevels.forEach { lvl ->
+            val state = advs[lvl] ?: AdvState2024()
+            StepLabel2024("Level $lvl — Ability Score Improvement or Feat")
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(state.kind == AdvKind2024.ASI_ONE, { onAdv(lvl, AdvState2024(AdvKind2024.ASI_ONE)) }, label = { Text("+2 one") })
+                FilterChip(state.kind == AdvKind2024.ASI_TWO, { onAdv(lvl, AdvState2024(AdvKind2024.ASI_TWO)) }, label = { Text("+1 two") })
+                FilterChip(state.kind == AdvKind2024.FEAT, { onAdv(lvl, AdvState2024(AdvKind2024.FEAT)) }, label = { Text("Feat") })
+            }
+            when (state.kind) {
+                AdvKind2024.ASI_ONE, AdvKind2024.ASI_TWO -> {
+                    val limit = if (state.kind == AdvKind2024.ASI_ONE) 1 else 2
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Ability.entries.forEach { a ->
+                            val picked = a in state.abilities
+                            FilterChip(
+                                picked,
+                                enabled = scores.score(a) < 20 && (picked || state.abilities.size < limit),
+                                onClick = { onAdv(lvl, state.copy(abilities = if (picked) state.abilities - a else state.abilities + a)) },
+                                label = { Text("${a.abbreviation} ${scores.score(a)}") },
+                            )
+                        }
+                    }
+                }
+                AdvKind2024.FEAT -> {
+                    val available = Feats2024.inCategory(FeatCategory2024.GENERAL).filter { it.id != "ability-score-improvement" && it.isAvailable(lvl, scores, klass.isCaster) }
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        available.forEach { f -> FilterChip(state.featId == f.id, { onAdv(lvl, state.copy(featId = f.id, half = null)) }, label = { Text(f.name) }) }
+                    }
+                    state.featId?.let { Feats2024.feat(it) }?.let { f ->
+                        Text(f.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        if (f.grantsAbilityIncrease) {
+                            Text("+1 ability score:", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Ability.entries.forEach { a -> FilterChip(state.half == a, enabled = scores.score(a) < 20, onClick = { onAdv(lvl, state.copy(half = a)) }, label = { Text("${a.abbreviation} ${scores.score(a)}") }) }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun StepLabel2024(text: String) =
+    Text(text.uppercase(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
 
 @Composable
 private fun Review2024(name: String, speciesId: String?, klass: CharacterClass2024Ui?, level: Int, background: au.com.evonet.nat20.dnd5e2024.Background2024?, scores: AbilityScores, skills: List<String>) {
