@@ -33,4 +33,11 @@ internal object Migrations {
             db.execSQL("ALTER TABLE `campaigns` ADD COLUMN `chronicleJson` TEXT NOT NULL DEFAULT '[]'")
         }
     }
+
+    /** v3 → v4 (A18): additive — summoned-creature column on characters. */
+    val MIGRATION_3_4 = object : Migration(3, 4) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE `characters` ADD COLUMN `summonsJson` TEXT NOT NULL DEFAULT '[]'")
+        }
+    }
 }

@@ -1,5 +1,6 @@
 package au.com.evonet.nat20.store
 
+import au.com.evonet.nat20.dnd5e.CreatureCatalog
 import au.com.evonet.nat20.dnd5e.DnD5eCatalog
 import au.com.evonet.nat20.dnd5e.DnD5ePayload
 import au.com.evonet.nat20.dnd5e.DnD5eRuleset
@@ -17,6 +18,8 @@ import au.com.evonet.nat20.dnd5e2024.ItemKind2024
 import au.com.evonet.nat20.dnd5e2024.Weapons2024
 import au.com.evonet.nat20.dnd5e2024.withFullSpellSlots
 import au.com.evonet.nat20.domain.Character
+import au.com.evonet.nat20.domain.SummonLifecycle
+import au.com.evonet.nat20.domain.SummonOrigin
 import java.time.Instant
 
 /**
@@ -156,6 +159,17 @@ object DemoCharacters {
             cantripsKnown = listOf("fire-bolt", "mage-hand", "prestidigitation"),
             spellsKnown = mapOf("wizard" to listOf("magic-missile", "shield", "detect-magic", "sleep")),
         ).withFullSpellSlots(),
+    ).copy(
+        // An owl familiar (Find Familiar) — exercises the A18 companions section + statblock card.
+        summons = listOf(
+            CreatureCatalog.buildSummon(
+                CreatureCatalog.template("owl")!!,
+                SummonOrigin.Spell("Find Familiar", 1),
+                SummonLifecycle.Persistent,
+                seededAt,
+                customName = "Archimedes",
+            ),
+        ),
     )
 
     /** Level-1 human cleric at full health. */

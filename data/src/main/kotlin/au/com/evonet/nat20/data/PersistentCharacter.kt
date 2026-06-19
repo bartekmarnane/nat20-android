@@ -28,4 +28,6 @@ data class PersistentCharacter(
     /** ISO-8601 instants (see domain `InstantSerializer`). */
     val createdAt: String,
     val updatedAt: String,
+    /** Cross-ruleset summoned creatures (familiars, companions, summons), JSON-encoded. A18; defaults `[]`. */
+    val summonsJson: String = "[]",
 )

@@ -58,6 +58,9 @@ class DnD5eRuleset : Ruleset {
         is ConditionAppliedEvent -> "dnd5e.conditionApplied"
         is ConditionClearedEvent -> "dnd5e.conditionCleared"
         is ExhaustionChangedEvent -> "dnd5e.exhaustion"
+        is CreatureSummonedEvent -> "dnd5e.summon"
+        is SummonDismissedEvent -> "dnd5e.dismiss"
+        is CreatureHpEvent -> "dnd5e.creatureHp"
         else -> "dnd5e.unknown"
     }
 
@@ -91,6 +94,9 @@ class DnD5eRuleset : Ruleset {
         is ConditionAppliedEvent -> json.encodeToString(ConditionAppliedEvent.serializer(), event)
         is ConditionClearedEvent -> json.encodeToString(ConditionClearedEvent.serializer(), event)
         is ExhaustionChangedEvent -> json.encodeToString(ExhaustionChangedEvent.serializer(), event)
+        is CreatureSummonedEvent -> json.encodeToString(CreatureSummonedEvent.serializer(), event)
+        is SummonDismissedEvent -> json.encodeToString(SummonDismissedEvent.serializer(), event)
+        is CreatureHpEvent -> json.encodeToString(CreatureHpEvent.serializer(), event)
         else -> throw CharacterCodecError.UnknownEventType(event::class.simpleName ?: "unknown")
     }
 
@@ -124,6 +130,9 @@ class DnD5eRuleset : Ruleset {
         "dnd5e.conditionApplied" -> this.json.decodeFromString(ConditionAppliedEvent.serializer(), json)
         "dnd5e.conditionCleared" -> this.json.decodeFromString(ConditionClearedEvent.serializer(), json)
         "dnd5e.exhaustion" -> this.json.decodeFromString(ExhaustionChangedEvent.serializer(), json)
+        "dnd5e.summon" -> this.json.decodeFromString(CreatureSummonedEvent.serializer(), json)
+        "dnd5e.dismiss" -> this.json.decodeFromString(SummonDismissedEvent.serializer(), json)
+        "dnd5e.creatureHp" -> this.json.decodeFromString(CreatureHpEvent.serializer(), json)
         else -> throw CharacterCodecError.UnknownEventType(typeId)
     }
 

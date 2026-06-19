@@ -452,3 +452,25 @@ data class NoteEvent(
 ) : CharacterEvent {
     override val summary: String get() = text
 }
+
+// ── Familiars + summoned creatures (A18) ────────────────────────────────────────
+
+@Serializable
+data class CreatureSummonedEvent(val label: String, val count: Int) : CharacterEvent {
+    override val summary: String get() = "Summoned $label" + if (count > 1) " ($count creatures)" else ""
+}
+
+@Serializable
+data class SummonDismissedEvent(val label: String) : CharacterEvent {
+    override val summary: String get() = "Dismissed $label"
+}
+
+@Serializable
+data class CreatureHpEvent(val name: String, val previousHp: Int, val newHp: Int, val maxHp: Int) : CharacterEvent {
+    override val summary: String
+        get() = when {
+            newHp == 0 -> "$name dropped to 0 HP"
+            newHp > previousHp -> "$name healed to $newHp/$maxHp HP"
+            else -> "$name took damage — $newHp/$maxHp HP"
+        }
+}

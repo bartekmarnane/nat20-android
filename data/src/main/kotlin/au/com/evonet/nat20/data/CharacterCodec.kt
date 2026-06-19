@@ -4,6 +4,8 @@ import au.com.evonet.nat20.domain.Character
 import au.com.evonet.nat20.domain.CharacterCodecError
 import au.com.evonet.nat20.domain.CharacterPhase
 import au.com.evonet.nat20.domain.RulesetRegistry
+import au.com.evonet.nat20.domain.Summon
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.time.Instant
@@ -17,6 +19,11 @@ import java.util.UUID
  */
 class CharacterCodec(private val registry: RulesetRegistry) {
     private val json = Json { ignoreUnknownKeys = true }
+    private val summonsSerializer = ListSerializer(Summon.serializer())
+
+    private fun encodeSummons(summons: List<Summon>): String = json.encodeToString(summonsSerializer, summons)
+    private fun decodeSummons(text: String): List<Summon> =
+        if (text.isBlank()) emptyList() else json.decodeFromString(summonsSerializer, text)
 
     /** Domain → row. The ruleset must be registered (it owns the encoder). */
     fun toEntity(character: Character): PersistentCharacter {
@@ -30,6 +37,7 @@ class CharacterCodec(private val registry: RulesetRegistry) {
             inCampaignId = character.phase.inCampaignId(),
             createdAt = character.createdAt.toString(),
             updatedAt = character.updatedAt.toString(),
+            summonsJson = encodeSummons(character.summons),
         )
     }
 
@@ -45,6 +53,7 @@ class CharacterCodec(private val registry: RulesetRegistry) {
             phase = phaseFrom(row.inCampaignId),
             createdAt = Instant.parse(row.createdAt),
             updatedAt = Instant.parse(row.updatedAt),
+            summons = decodeSummons(row.summonsJson),
         )
     }
 
@@ -64,6 +73,7 @@ class CharacterCodec(private val registry: RulesetRegistry) {
             inCampaignId = character.phase.inCampaignId(),
             createdAt = character.createdAt.toString(),
             updatedAt = character.updatedAt.toString(),
+            summonsJson = encodeSummons(character.summons),
         )
         return json.encodeToString(CharacterEnvelope.serializer(), envelope)
     }
@@ -81,6 +91,7 @@ class CharacterCodec(private val registry: RulesetRegistry) {
             phase = phaseFrom(envelope.inCampaignId),
             createdAt = Instant.parse(envelope.createdAt),
             updatedAt = Instant.parse(envelope.updatedAt),
+            summons = decodeSummons(envelope.summonsJson),
         )
     }
 
@@ -104,4 +115,5 @@ internal data class CharacterEnvelope(
     val inCampaignId: String?,
     val createdAt: String,
     val updatedAt: String,
+    val summonsJson: String = "[]",
 )

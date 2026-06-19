@@ -247,6 +247,7 @@ internal fun CombatPage(character: Character, payload: DnD5ePayload, onApplyInte
         EffectsSection(payload, onApplyIntent)
         ConditionsSection(payload, onApplyIntent)
         ClassResourcesSection(payload, onApplyIntent)
+        CompanionsSection(character, onApplyIntent)
         RestSection(onApplyIntent)
     }
     if (spendHitDie) {

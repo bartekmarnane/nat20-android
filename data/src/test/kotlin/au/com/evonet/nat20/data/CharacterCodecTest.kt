@@ -77,6 +77,25 @@ class CharacterCodecTest {
     }
 
     @Test
+    fun `summons round-trip through the row codec`() {
+        val creature = au.com.evonet.nat20.domain.Creature(
+            id = UUID.randomUUID(), name = "Owl", currentHp = 1, maxHp = 1, rulesetPayload = "{\"armorClass\":11}",
+        )
+        val summon = au.com.evonet.nat20.domain.Summon(
+            label = "Find Familiar — Owl",
+            origin = au.com.evonet.nat20.domain.SummonOrigin.Spell("Find Familiar", 1),
+            lifecycle = au.com.evonet.nat20.domain.SummonLifecycle.Persistent,
+            creatures = listOf(creature),
+            spawnedAt = Instant.parse("2026-06-18T12:00:00Z"),
+        )
+        val original = character(CharacterPhase.Building).copy(summons = listOf(summon))
+        val entity = codec.toEntity(original)
+        assertEquals(original, codec.toDomain(entity))
+        // And through the embedded JSON envelope (campaign snapshots).
+        assertEquals(original, codec.decodeFromJson(codec.encodeToJson(original)))
+    }
+
+    @Test
     fun `an unregistered ruleset is rejected`() {
         val emptyRegistry = object : RulesetRegistry {
             override fun ruleset(id: RulesetId): Ruleset? = null

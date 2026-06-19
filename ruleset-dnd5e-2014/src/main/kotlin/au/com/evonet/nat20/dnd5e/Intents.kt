@@ -22,6 +22,8 @@ import au.com.evonet.nat20.domain.CharacterIntentError
 import au.com.evonet.nat20.domain.IntentResult
 import au.com.evonet.nat20.domain.NoteKind
 import au.com.evonet.nat20.domain.Ruleset
+import au.com.evonet.nat20.domain.Summon
+import java.util.UUID
 
 /**
  * The first handful of 5e intents (A3 slice): the HP/vitals trio plus
@@ -939,5 +941,46 @@ data class LevelUp(
             abilityIncreases = abilityIncreases,
         )
         return IntentResult(character.copy(payload = updated), event)
+    }
+}
+
+// ── Familiars + summoned creatures (A18) ────────────────────────────────────────
+
+/**
+ * Spawns a [Summon] (familiar, mount, companion, or summon group). The summon is
+ * built in the UI from [CreatureCatalog] (fresh ids + spawn timestamp keep the
+ * intent pure); this just attaches it to the cross-ruleset `Character.summons`.
+ */
+data class SummonCreature(val summon: Summon) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        if (summon.creatures.isEmpty()) throw CharacterIntentError.Invalid("A summon needs at least one creature")
+        val updated = character.copy(summons = character.summons + summon)
+        return IntentResult(updated, CreatureSummonedEvent(summon.label, summon.creatures.size))
+    }
+}
+
+/** Dismisses a summon group, detaching its creatures. */
+data class DismissSummon(val summonId: UUID) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        val summon = character.summons.firstOrNull { it.id == summonId }
+            ?: throw CharacterIntentError.Invalid("No summon with id $summonId")
+        val updated = character.copy(summons = character.summons.filterNot { it.id == summonId })
+        return IntentResult(updated, SummonDismissedEvent(summon.label))
+    }
+}
+
+/** Sets a single creature's current HP (statblock-card damage/heal), clamped to 0..maxHp. */
+data class SetCreatureHp(val summonId: UUID, val creatureId: UUID, val newHp: Int) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        val summon = character.summons.firstOrNull { it.id == summonId }
+            ?: throw CharacterIntentError.Invalid("No summon with id $summonId")
+        val creature = summon.creatures.firstOrNull { it.id == creatureId }
+            ?: throw CharacterIntentError.Invalid("No creature with id $creatureId")
+        val clamped = newHp.coerceIn(0, creature.maxHp)
+        val updatedSummons = character.summons.map { s ->
+            if (s.id != summonId) s
+            else s.copy(creatures = s.creatures.map { c -> if (c.id == creatureId) c.copy(currentHp = clamped) else c })
+        }
+        return IntentResult(character.copy(summons = updatedSummons), CreatureHpEvent(creature.name, creature.currentHp, clamped, creature.maxHp))
     }
 }
