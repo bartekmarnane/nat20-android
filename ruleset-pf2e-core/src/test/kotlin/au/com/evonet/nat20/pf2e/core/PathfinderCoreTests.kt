@@ -1,6 +1,7 @@
 package au.com.evonet.nat20.pf2e.core
 
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -68,6 +69,19 @@ class AbilityAndSkillTests {
         assertEquals(PfAbility.CONSTITUTION, Save.FORTITUDE.ability)
         assertEquals(16, PfSkill.entries.size)
         assertEquals(4, SpellTradition.entries.size)
+    }
+
+    @Test
+    fun `advancement schedule gates boosts, skill increases, and skill rank ceilings`() {
+        assertTrue(AdvancementSchedule.grantsAbilityBoosts(5))
+        assertFalse(AdvancementSchedule.grantsAbilityBoosts(4))
+        assertTrue(AdvancementSchedule.grantsSkillIncrease(3))
+        assertFalse(AdvancementSchedule.grantsSkillIncrease(2))
+        assertEquals(Proficiency.EXPERT, AdvancementSchedule.maxSkillRank(3))
+        assertEquals(Proficiency.MASTER, AdvancementSchedule.maxSkillRank(7))
+        assertEquals(Proficiency.LEGENDARY, AdvancementSchedule.maxSkillRank(15))
+        assertEquals(20, AdvancementSchedule.skillFeatLevels(rogue = true).size)
+        assertEquals(10, AdvancementSchedule.skillFeatLevels(rogue = false).size)
     }
 
     @Test

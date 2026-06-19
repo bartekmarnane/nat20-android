@@ -16,6 +16,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -54,6 +55,7 @@ import au.com.evonet.nat20.pf2e.PfEquipArmor
 import au.com.evonet.nat20.pf2e.PfEquipShield
 import au.com.evonet.nat20.pf2e.PfGainTempHp
 import au.com.evonet.nat20.pf2e.PfHeal
+import au.com.evonet.nat20.pf2e.PfLevelUp
 import au.com.evonet.nat20.pf2e.PfRaiseShield
 import au.com.evonet.nat20.pf2e.PfRemoveWeapon
 import au.com.evonet.nat20.pf2e.PfSetDying
@@ -68,6 +70,7 @@ import au.com.evonet.nat20.pf2e.maxSpellSlots
 import au.com.evonet.nat20.pf2e.spellAttack
 import au.com.evonet.nat20.pf2e.spellDc
 import au.com.evonet.nat20.pf2e.strikes
+import au.com.evonet.nat20.pf2e.core.AdvancementSchedule
 import au.com.evonet.nat20.pf2e.core.PfAbility
 import au.com.evonet.nat20.pf2e.core.PfAbilityScores
 import au.com.evonet.nat20.pf2e.core.PfSkill
@@ -105,7 +108,7 @@ fun PathfinderSheetView(character: Character, onApplyIntent: (CharacterIntent) -
         HorizontalDivider(color = MaterialTheme.colorScheme.outline)
         HorizontalPager(state = pager, modifier = Modifier.weight(1f).fillMaxWidth()) { page ->
             when (tabs[page]) {
-                PfTab.STATS -> PfStats(payload)
+                PfTab.STATS -> PfStats(payload, onApplyIntent)
                 PfTab.SKILLS -> PfSkills(payload)
                 PfTab.COMBAT -> PfCombat(payload, onApplyIntent)
                 PfTab.SPELLS -> PfSpellsTab(payload, onApplyIntent)
@@ -130,7 +133,8 @@ fun PathfinderSheetView(character: Character, onApplyIntent: (CharacterIntent) -
 }
 
 @Composable
-private fun PfStats(payload: PathfinderPayload) {
+private fun PfStats(payload: PathfinderPayload, onApplyIntent: (CharacterIntent) -> Unit) {
+    var levelingUp by remember { mutableStateOf(false) }
     PfPage {
         PfCard("Abilities") {
             PfAbility.entries.chunked(3).forEach { row ->
@@ -147,7 +151,54 @@ private fun PfStats(payload: PathfinderPayload) {
             Save.entries.forEach { s -> PfProfRow(s.displayName, payload.saveBonus(s), payload.saves[s] ?: Proficiency.UNTRAINED) }
             PfStatRow("Class DC", payload.classDcValue.toString())
         }
+        if (payload.level < PathfinderPayload.MAX_LEVEL) {
+            androidx.compose.material3.Button(onClick = { levelingUp = true }, modifier = Modifier.fillMaxWidth()) { Text("Level Up") }
+        }
     }
+    if (levelingUp) PfLevelUpDialog(payload, onApply = { onApplyIntent(it); levelingUp = false }, onDismiss = { levelingUp = false })
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun PfLevelUpDialog(payload: PathfinderPayload, onApply: (PfLevelUp) -> Unit, onDismiss: () -> Unit) {
+    val newLevel = payload.level + 1
+    val grantsSkill = AdvancementSchedule.grantsSkillIncrease(newLevel)
+    val grantsBoosts = AdvancementSchedule.grantsAbilityBoosts(newLevel)
+    val maxRank = AdvancementSchedule.maxSkillRank(newLevel)
+    var skill by remember { mutableStateOf<PfSkill?>(null) }
+    var boosts by remember { mutableStateOf<List<PfAbility>>(emptyList()) }
+    val ready = (!grantsBoosts || boosts.size == 4)
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Level Up → $newLevel") },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("HP and every proficiency-scaled statistic improve automatically.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (grantsSkill) {
+                    PfSectionLabel("Skill increase (to ≤ ${maxRank.displayName})")
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        PfSkill.entries.forEach { s ->
+                            val cur = payload.skills[s] ?: Proficiency.UNTRAINED
+                            val canRaise = (cur.next?.rank ?: 99) <= maxRank.rank
+                            FilterChip(skill == s, enabled = canRaise, onClick = { skill = if (skill == s) null else s }, label = { Text("${s.displayName} ${cur.letter}→${cur.next?.letter ?: "—"}") })
+                        }
+                    }
+                }
+                if (grantsBoosts) {
+                    PfSectionLabel("Ability boosts (${boosts.size}/4)")
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        PfAbility.entries.forEach { a ->
+                            val on = a in boosts
+                            FilterChip(on, enabled = on || boosts.size < 4, onClick = { boosts = if (on) boosts - a else boosts + a }, label = { Text("${a.abbreviation} ${payload.abilityScores.score(a)}") })
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(enabled = ready, onClick = { onApply(PfLevelUp(skill, boosts)) }) { Text("Level Up") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+    )
 }
 
 @Composable
@@ -358,6 +409,9 @@ private fun PfCard(title: String, content: @Composable () -> Unit) {
         }
     }
 }
+
+@Composable
+private fun PfSectionLabel(text: String) = Text(text.uppercase(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
 
 @Composable
 private fun PfStatRow(label: String, value: String) {

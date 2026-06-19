@@ -78,6 +78,19 @@ data class PfSpellCastEvent(val spellName: String, val slotRank: Int, val height
 }
 
 @Serializable
+data class PfLeveledUpEvent(val newLevel: Int, val hpGained: Int, val skillIncrease: String? = null, val abilityBoosts: List<String> = emptyList()) : CharacterEvent {
+    override val summary: String
+        get() {
+            val extras = buildList {
+                skillIncrease?.let { add("$it ↑") }
+                if (abilityBoosts.isNotEmpty()) add(abilityBoosts.joinToString(", ") { "+$it" })
+            }
+            val extra = if (extras.isEmpty()) "" else " · ${extras.joinToString(" · ")}"
+            return "Reached level $newLevel — +$hpGained HP$extra"
+        }
+}
+
+@Serializable
 data class PfDailyPrepEvent(val slotsRestored: Int) : CharacterEvent {
     override val summary: String get() = "Daily preparations — ${if (slotsRestored > 0) "$slotsRestored spell slot${if (slotsRestored == 1) "" else "s"} + focus restored" else "rested and refocused"}"
 }

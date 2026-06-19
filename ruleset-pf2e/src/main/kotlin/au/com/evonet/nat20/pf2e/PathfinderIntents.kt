@@ -6,6 +6,11 @@ import au.com.evonet.nat20.domain.CharacterIntentError
 import au.com.evonet.nat20.domain.IntentResult
 import au.com.evonet.nat20.domain.NoteKind
 import au.com.evonet.nat20.domain.Ruleset
+import au.com.evonet.nat20.pf2e.core.AdvancementSchedule
+import au.com.evonet.nat20.pf2e.core.PfAbility
+import au.com.evonet.nat20.pf2e.core.PfAbilityScores
+import au.com.evonet.nat20.pf2e.core.PfSkill
+import au.com.evonet.nat20.pf2e.core.Proficiency
 import au.com.evonet.nat20.pf2e.core.ValuedCondition
 
 /** The Pathfinder 2e foundation-slice intents (A22) — vitals + the dying track + Hero Points + conditions. */
@@ -246,3 +251,70 @@ private fun Map<Int, Int>.withSlot(rank: Int, remaining: Int): Map<Int, Int> =
 
 /** A copy with all spell slots reset to full — used at creation + on Daily Preparations. */
 fun PathfinderPayload.withFullSpellSlots(): PathfinderPayload = copy(currentSpellSlots = maxSpellSlots)
+
+// ── Level-up / advancement (A22 slice 5) ────────────────────────────────────────
+
+/**
+ * Advances the character one level. PF2e HP is fixed (no roll): `class HP/level +
+ * CON modifier`. Bumping the level alone improves every proficiency-scaled stat
+ * (bonus = level + rank). At skill-increase levels the player may raise one
+ * skill one rank (capped by [AdvancementSchedule.maxSkillRank]); at 5/10/15/20
+ * they allocate four ability boosts (+2 / +1-at-18). The class-specific
+ * proficiency-rank jumps (weapon mastery, save expertise) are a later slice.
+ */
+data class PfLevelUp(
+    val skillIncrease: PfSkill? = null,
+    val abilityBoosts: List<PfAbility> = emptyList(),
+) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        val p = character.pf()
+        if (p.level >= PathfinderPayload.MAX_LEVEL) throw CharacterIntentError.Invalid("Already at maximum level")
+        val newLevel = p.level + 1
+
+        // Skill increase, gated to a legal level + the rank ceiling for that level.
+        var skills = p.skills
+        if (skillIncrease != null) {
+            if (!AdvancementSchedule.grantsSkillIncrease(newLevel)) throw CharacterIntentError.Invalid("Level $newLevel doesn't grant a skill increase")
+            val current = p.skills[skillIncrease] ?: Proficiency.UNTRAINED
+            val raised = current.next ?: throw CharacterIntentError.Invalid("${skillIncrease.displayName} is already Legendary")
+            if (raised.rank > AdvancementSchedule.maxSkillRank(newLevel).rank) throw CharacterIntentError.Invalid("Can't raise above ${AdvancementSchedule.maxSkillRank(newLevel).displayName} at level $newLevel")
+            skills = p.skills + (skillIncrease to raised)
+        }
+
+        // Ability boosts at 5/10/15/20.
+        var scores = p.abilityScores
+        if (abilityBoosts.isNotEmpty()) {
+            if (!AdvancementSchedule.grantsAbilityBoosts(newLevel)) throw CharacterIntentError.Invalid("Level $newLevel doesn't grant ability boosts")
+            if (abilityBoosts.size != abilityBoosts.toSet().size) throw CharacterIntentError.Invalid("Can't boost the same ability twice")
+            for (a in abilityBoosts) {
+                val cur = scores.score(a)
+                scores = scores.with(a, cur + if (cur >= 18) 1 else 2)
+            }
+        }
+
+        val conMod = PfAbilityScores.modifier(scores.constitution)
+        val hpGained = (PathfinderCatalog.pfClass(p.className)?.hpPerLevel ?: 8) + conMod
+
+        val leveled = p.copy(
+            level = newLevel,
+            abilityScores = scores,
+            skills = skills,
+            maxHp = p.maxHp + maxOf(1, hpGained),
+            currentHp = p.currentHp + maxOf(1, hpGained),
+        )
+        // Newly-unlocked spell slots top up (caster ranks scale with level), preserving spent ones.
+        val updated = if (leveled.isCaster) {
+            val oldMax = p.maxSpellSlots
+            val newSlots = leveled.maxSpellSlots.mapValues { (rank, max) ->
+                (p.currentSpellSlots[rank] ?: 0) + maxOf(0, max - (oldMax[rank] ?: 0))
+            }
+            leveled.copy(currentSpellSlots = newSlots)
+        } else {
+            leveled
+        }
+        return IntentResult(
+            character.copy(payload = updated),
+            PfLeveledUpEvent(newLevel, maxOf(1, hpGained), skillIncrease?.displayName, abilityBoosts.map { it.abbreviation }),
+        )
+    }
+}

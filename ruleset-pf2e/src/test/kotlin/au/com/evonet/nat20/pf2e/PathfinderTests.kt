@@ -247,3 +247,55 @@ class PathfinderSpellTests {
         assertEquals(p.maxSpellSlots, p.currentSpellSlots) // seeded full
     }
 }
+
+class PathfinderLevelUpTests {
+    private fun fighter(level: Int = 2, con: Int = 14) = character(PathfinderPayload(
+        className = "fighter", level = level, abilityScores = PfAbilityScores(strength = 18, constitution = con, charisma = 10),
+        maxHp = 30, currentHp = 30, skills = mapOf(PfSkill.ATHLETICS to Proficiency.TRAINED),
+    ))
+
+    @org.junit.jupiter.api.Test
+    fun `leveling adds fixed HP and bumps the level`() {
+        // Fighter 2 -> 3: +10 (class) + 2 (CON) = 12 HP.
+        val up = PfLevelUp().applyTo(fighter(), ruleset)
+        assertEquals(3, up.character.p().level)
+        assertEquals(42, up.character.p().maxHp)
+        assertTrue(up.event.summary.contains("+12 HP"))
+    }
+
+    @org.junit.jupiter.api.Test
+    fun `a skill increase raises one rank and is gated by the level cap`() {
+        // Level 3 grants a skill increase, capped at expert.
+        val up = PfLevelUp(skillIncrease = PfSkill.ATHLETICS).applyTo(fighter(level = 2), ruleset)
+        assertEquals(Proficiency.EXPERT, up.character.p().skills[PfSkill.ATHLETICS])
+        // Trying to take a master jump at level 3 (only expert allowed) is rejected.
+        val expertAlready = fighter(level = 2).copy(payload = fighter(level = 2).p().copy(skills = mapOf(PfSkill.ATHLETICS to Proficiency.EXPERT)))
+        assertThrows(CharacterIntentError.Invalid::class.java) { PfLevelUp(skillIncrease = PfSkill.ATHLETICS).applyTo(expertAlready, ruleset) }
+    }
+
+    @org.junit.jupiter.api.Test
+    fun `ability boosts apply only at boost levels and reject duplicates`() {
+        val atFour = fighter(level = 4) // -> 5, a boost level
+        val up = PfLevelUp(abilityBoosts = listOf(PfAbility.STRENGTH, PfAbility.DEXTERITY, PfAbility.CONSTITUTION, PfAbility.WISDOM)).applyTo(atFour, ruleset)
+        assertEquals(19, up.character.p().abilityScores.strength) // 18 -> +1 (already 18+)
+        assertEquals(16, up.character.p().abilityScores.constitution) // 14 -> +2
+        // Boosts at a non-boost level are rejected.
+        assertThrows(CharacterIntentError.Invalid::class.java) { PfLevelUp(abilityBoosts = listOf(PfAbility.STRENGTH)).applyTo(fighter(level = 2), ruleset) }
+        // Duplicate boost rejected.
+        assertThrows(CharacterIntentError.Invalid::class.java) { PfLevelUp(abilityBoosts = listOf(PfAbility.STRENGTH, PfAbility.STRENGTH, PfAbility.DEXTERITY, PfAbility.WISDOM)).applyTo(atFour, ruleset) }
+    }
+
+    @org.junit.jupiter.api.Test
+    fun `leveling a caster grants newly-unlocked spell slots and the event round-trips`() {
+        val wiz = character(PathfinderPayload(className = "wizard", level = 2, abilityScores = PfAbilityScores(intelligence = 18),
+            spellTradition = au.com.evonet.nat20.pf2e.core.SpellTradition.ARCANE, castingAbility = PfAbility.INTELLIGENCE,
+            spellProficiency = Proficiency.TRAINED, currentSpellSlots = mapOf(1 to 1)))
+        val up = PfLevelUp().applyTo(wiz, ruleset).character.p()
+        assertEquals(mapOf(1 to 3, 2 to 2), up.maxSpellSlots) // level 3
+        assertEquals(1, up.currentSpellSlots[1]) // rank 1 was already maxed at level 2 → the remaining 1 is preserved
+        assertEquals(2, up.currentSpellSlots[2]) // newly unlocked → full
+        val evt = PfLevelUp().applyTo(wiz, ruleset).event
+        val typeId = ruleset.eventTypeId(evt)
+        assertEquals(evt, ruleset.decodeEvent(ruleset.encodeEvent(evt), typeId))
+    }
+}
