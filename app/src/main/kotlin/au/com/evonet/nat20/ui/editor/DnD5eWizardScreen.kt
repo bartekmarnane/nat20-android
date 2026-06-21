@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -24,7 +23,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -39,7 +37,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import au.com.evonet.nat20.dnd5e.Background
@@ -144,7 +141,7 @@ fun DnD5eWizardScreen(existing: Character?, onSave: (Character) -> Unit, onCance
         Column(Modifier.padding(inner).fillMaxSize()) {
             Column(Modifier.weight(1f).fillMaxWidth()) {
                 when (step) {
-                    WizStep.NAME -> NameStep(name) { name = it }
+                    WizStep.NAME -> IdentityStep(name, { name = it }, Modifier.fillMaxSize().padding(16.dp))
                     WizStep.RACE -> PickStep(DnD5eCatalog.races, raceId, { it.id }, { it.name }, { it.description }) { raceId = it }
                     WizStep.CLASS -> ClassStep(classId, level, onPick = { classId = it; chosenSkills = emptySet() }, onLevel = { level = it })
                     WizStep.BACKGROUND -> PickStep(DnD5eCatalog.backgrounds, backgroundId, { it.id }, { it.name }, { it.description }) { backgroundId = it }
@@ -166,20 +163,7 @@ fun DnD5eWizardScreen(existing: Character?, onSave: (Character) -> Unit, onCance
 }
 
 // ── Steps ────────────────────────────────────────────────────────────────────
-
-@Composable
-private fun NameStep(name: String, onChange: (String) -> Unit) {
-    Column(Modifier.fillMaxSize().padding(16.dp)) {
-        OutlinedTextField(
-            value = name,
-            onValueChange = onChange,
-            label = { Text("Character name") },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
-            modifier = Modifier.fillMaxWidth(),
-        )
-    }
-}
+// The NAME step uses the shared `IdentityStep` (see IdentityStep.kt).
 
 @Composable
 private fun <T> PickStep(

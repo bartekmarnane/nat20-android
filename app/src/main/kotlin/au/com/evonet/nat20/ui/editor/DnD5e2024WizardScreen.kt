@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -24,7 +23,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -39,7 +37,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -186,7 +183,7 @@ fun DnD5e2024WizardScreen(onSave: (Character) -> Unit, onCancel: () -> Unit) {
         Column(Modifier.padding(inner).fillMaxSize()) {
             Column(Modifier.weight(1f).fillMaxWidth()) {
                 when (step) {
-                    Wiz2024.NAME -> Name2024(name) { name = it }
+                    Wiz2024.NAME -> IdentityStep(name, { name = it }, Modifier.fillMaxSize().padding(16.dp))
                     Wiz2024.SPECIES -> Pick2024(DnD5e2024Catalog.species, speciesId, { it.id }, { it.name }, { it.description }) { speciesId = it }
                     Wiz2024.CLASS -> Class2024(classId, level, onPick = { classId = it; chosenSkills = emptySet() }, onLevel = { level = it })
                     Wiz2024.BACKGROUND -> Pick2024(DnD5e2024Catalog.backgrounds, backgroundId, { it.id }, { it.name }, { "${it.description} · ${it.abilityOptions.joinToString(", ") { a -> a.abbreviation }}" }) { backgroundId = it; plus2 = null; plus1 = null }
@@ -202,13 +199,7 @@ fun DnD5e2024WizardScreen(onSave: (Character) -> Unit, onCancel: () -> Unit) {
 }
 
 // ── Steps ──────────────────────────────────────────────────────────────────────
-
-@Composable
-private fun Name2024(name: String, onChange: (String) -> Unit) {
-    Column(Modifier.fillMaxSize().padding(16.dp)) {
-        OutlinedTextField(name, onChange, label = { Text("Character name") }, singleLine = true, keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words), modifier = Modifier.fillMaxWidth())
-    }
-}
+// The NAME step uses the shared `IdentityStep` (see IdentityStep.kt).
 
 @Composable
 private fun <T> Pick2024(items: List<T>, selectedId: String?, id: (T) -> String, title: (T) -> String, subtitle: (T) -> String, onPick: (String) -> Unit) {
