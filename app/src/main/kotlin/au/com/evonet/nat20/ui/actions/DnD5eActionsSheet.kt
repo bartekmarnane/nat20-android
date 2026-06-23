@@ -34,15 +34,19 @@ import androidx.compose.ui.unit.dp
 import au.com.evonet.nat20.dnd5e.AddNote
 import au.com.evonet.nat20.dnd5e.GainTempHp
 import au.com.evonet.nat20.dnd5e.Heal
+import au.com.evonet.nat20.dnd5e.LongRest
+import au.com.evonet.nat20.dnd5e.ShortRest
 import au.com.evonet.nat20.dnd5e.TakeDamage
 import au.com.evonet.nat20.domain.CharacterIntent
 import au.com.evonet.nat20.domain.NoteKind
 
-/** The actions available in the A7b slice; the full catalogue grows at A7e/A7f. */
+/** The quick in-campaign actions; the detailed pickers live on the codex tabs. */
 private enum class Act(val label: String) {
     DAMAGE("Damage"),
     HEAL("Heal"),
     TEMP_HP("Temp HP"),
+    SHORT_REST("Short Rest"),
+    LONG_REST("Long Rest"),
     NOTE("Note"),
 }
 
@@ -72,7 +76,14 @@ fun DnD5eActionsSheet(onDismiss: () -> Unit, onAct: (CharacterIntent) -> Unit) {
                 null -> {
                     Text("Actions", style = MaterialTheme.typography.titleLarge)
                     Act.entries.forEach { entry ->
-                        ActionTile(entry.label) { selected = entry }
+                        // Rests are immediate (no picker); everything else opens a sub-picker.
+                        ActionTile(entry.label) {
+                            when (entry) {
+                                Act.SHORT_REST -> emit(ShortRest())
+                                Act.LONG_REST -> emit(LongRest())
+                                else -> selected = entry
+                            }
+                        }
                     }
                 }
 
@@ -82,6 +93,8 @@ fun DnD5eActionsSheet(onDismiss: () -> Unit, onAct: (CharacterIntent) -> Unit) {
                         onBack = { selected = null },
                         onConfirm = { amount -> emit(amountIntent(act, amount)) },
                     )
+
+                Act.SHORT_REST, Act.LONG_REST -> Unit // handled immediately from the tile tap
 
                 Act.NOTE ->
                     NotePicker(
@@ -97,7 +110,7 @@ private fun amountIntent(act: Act, amount: Int): CharacterIntent = when (act) {
     Act.DAMAGE -> TakeDamage(amount)
     Act.HEAL -> Heal(amount)
     Act.TEMP_HP -> GainTempHp(amount)
-    Act.NOTE -> error("note has its own picker")
+    Act.NOTE, Act.SHORT_REST, Act.LONG_REST -> error("$act has no amount picker")
 }
 
 @Composable
