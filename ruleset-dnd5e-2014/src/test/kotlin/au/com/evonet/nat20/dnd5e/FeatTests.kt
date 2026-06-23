@@ -112,6 +112,27 @@ class FeatLevelUpTests {
     }
 }
 
+class LevelUpSpellPickTests {
+    @Test
+    fun `a known caster's level-up adds cantrips and spells to the known list`() {
+        val bard = Character.new("Lyra", ruleset, DnD5ePayload(classes = listOf(ClassEntry("bard", 2)), abilityScores = AbilityScores(charisma = 16)), NOW)
+        val result = LevelUp("bard", newCantrips = listOf("vicious-mockery"), newSpells = listOf("healing-word"), className = "Bard").applyTo(bard, ruleset)
+        val p = result.character.payload()
+        assertTrue("vicious-mockery" in p.cantripsKnown)
+        assertTrue("healing-word" in p.spellsKnown["bard"].orEmpty())
+        assertTrue(p.preparedSpells.isEmpty()) // bards are known casters, not prepared
+    }
+
+    @Test
+    fun `a prepared caster's level-up adds spells to the prepared list`() {
+        val cleric = Character.new("Pike", ruleset, DnD5ePayload(classes = listOf(ClassEntry("cleric", 2)), abilityScores = AbilityScores(wisdom = 16)), NOW)
+        val result = LevelUp("cleric", newSpells = listOf("bless"), className = "Cleric").applyTo(cleric, ruleset)
+        val p = result.character.payload()
+        assertTrue("bless" in p.preparedSpells["cleric"].orEmpty())
+        assertTrue(p.spellsKnown.isEmpty())
+    }
+}
+
 class FeatCodecTests {
     @Test
     fun `chosenFeats round-trip through the payload codec`() {

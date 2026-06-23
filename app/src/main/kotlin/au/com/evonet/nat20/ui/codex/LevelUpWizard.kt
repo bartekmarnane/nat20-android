@@ -26,8 +26,11 @@ import au.com.evonet.nat20.dnd5e.DnD5ePayload
 import au.com.evonet.nat20.dnd5e.Feats
 import au.com.evonet.nat20.dnd5e.FightingStyles
 import au.com.evonet.nat20.dnd5e.LevelUp
+import au.com.evonet.nat20.dnd5e.castableSpellIDs
 import au.com.evonet.nat20.dnd5e.isSpellcaster
+import au.com.evonet.nat20.dnd5e.maxSpellSlots
 import au.com.evonet.nat20.dnd5e.core.Ability
+import au.com.evonet.nat20.dnd5e.core.CastingProgression
 import au.com.evonet.nat20.dnd5e.core.AbilityScores
 import au.com.evonet.nat20.dnd5e.core.DnD5eClasses
 import au.com.evonet.nat20.dnd5e.core.HpChoice
@@ -69,6 +72,10 @@ internal fun LevelUpWizard(payload: DnD5ePayload, onApplyIntent: (CharacterInten
 
     val needsStyle = FightingStyles.grantLevel(classId) == newClassLevel && payload.fightingStyles.isEmpty()
     var style by remember(classId) { mutableStateOf<String?>(null) }
+
+    val classCasts = CastingProgression.forClass(classId) != CastingProgression.NONE
+    var newCantrips by remember(classId) { mutableStateOf<Set<String>>(emptySet()) }
+    var newSpells by remember(classId) { mutableStateOf<Set<String>>(emptySet()) }
 
     val needsAsi = LevelUpMath.grantsAbilityScoreImprovement(classId, newClassLevel)
     var advMode by remember { mutableStateOf(AdvMode.ASI) }
@@ -158,6 +165,35 @@ internal fun LevelUpWizard(payload: DnD5ePayload, onApplyIntent: (CharacterInten
                     style?.let { id -> FightingStyles.style(id)?.let { Text(it.description, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) } }
                 }
 
+                // New spells (optional) for caster classes.
+                if (classCasts && klass != null) {
+                    val className = klass.name
+                    val maxLvl = payload.maxSpellSlots.keys.maxOrNull() ?: 1
+                    val cantripPool = DnD5eCatalog.spellLibrary.filter { it.level == 0 && it.classNames.any { c -> c.equals(className, true) } && it.index !in payload.cantripsKnown }
+                    val spellPool = DnD5eCatalog.spellLibrary.filter { it.level in 1..maxLvl && it.classNames.any { c -> c.equals(className, true) } && it.index !in payload.castableSpellIDs }
+                    if (cantripPool.isNotEmpty() || spellPool.isNotEmpty()) {
+                        StepLabel("New spells (optional)")
+                        if (cantripPool.isNotEmpty()) {
+                            Text("Cantrips", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                cantripPool.sortedBy { it.name }.forEach { s ->
+                                    val on = s.index in newCantrips
+                                    FilterChip(selected = on, onClick = { newCantrips = if (on) newCantrips - s.index else newCantrips + s.index }, label = { Text(s.name) })
+                                }
+                            }
+                        }
+                        if (spellPool.isNotEmpty()) {
+                            Text("Spells", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                spellPool.sortedWith(compareBy({ it.level }, { it.name })).forEach { s ->
+                                    val on = s.index in newSpells
+                                    FilterChip(selected = on, onClick = { newSpells = if (on) newSpells - s.index else newSpells + s.index }, label = { Text("${s.name} (${s.level})") })
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // ASI or Feat.
                 if (needsAsi) {
                     StepLabel("Ability Score Improvement or Feat")
@@ -223,6 +259,8 @@ internal fun LevelUpWizard(payload: DnD5ePayload, onApplyIntent: (CharacterInten
                             abilityIncreases = asi,
                             feat = if (needsAsi && advMode == AdvMode.FEAT) featId else null,
                             fightingStyle = if (needsStyle) style else null,
+                            newCantrips = newCantrips.toList(),
+                            newSpells = newSpells.toList(),
                             className = klass?.name ?: classId.slugToTitle(),
                         ),
                     )

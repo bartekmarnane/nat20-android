@@ -907,6 +907,10 @@ data class LevelUp(
     val feat: String? = null,
     /** A Fighting Style chosen this level-up (Fighter L1, Paladin/Ranger L2); recorded on [DnD5ePayload.fightingStyles]. */
     val fightingStyle: String? = null,
+    /** Cantrip ids learned this level-up (added to [DnD5ePayload.cantripsKnown]). */
+    val newCantrips: List<String> = emptyList(),
+    /** Spell ids learned this level-up (added to the prepared or known list of [classId]). */
+    val newSpells: List<String> = emptyList(),
     /** Display name for the journal (catalogue-resolved by the caller). */
     val className: String = "",
 ) : CharacterIntent {
@@ -983,6 +987,15 @@ data class LevelUp(
         // level boosts only the max (through effectiveMaxHp), not the rolled current — RAW.
         val newFeats = if (feat != null && feat !in payload.chosenFeats) payload.chosenFeats + feat else payload.chosenFeats
         val newStyles = if (fightingStyle != null && fightingStyle !in payload.fightingStyles) payload.fightingStyles + fightingStyle else payload.fightingStyles
+        // Spell picks: cantrips join the flat list; spells go to the prepared or known list of this class.
+        val updatedCantrips = (payload.cantripsKnown + newCantrips).distinct()
+        val prepares = au.com.evonet.nat20.dnd5e.core.CastingProgression.usesPreparation(classId)
+        val updatedSpellsKnown = if (newSpells.isNotEmpty() && !prepares) {
+            payload.spellsKnown + (classId to (payload.spellsKnown[classId].orEmpty() + newSpells).distinct())
+        } else payload.spellsKnown
+        val updatedPrepared = if (newSpells.isNotEmpty() && prepares) {
+            payload.preparedSpells + (classId to (payload.preparedSpells[classId].orEmpty() + newSpells).distinct())
+        } else payload.preparedSpells
         val updated = leveled.copy(
             maxHp = payload.maxHp + hpGained,
             currentHp = payload.currentHp + hpGained + payload.bonusMaxHpPerLevel,
@@ -990,6 +1003,9 @@ data class LevelUp(
             currentPactSlots = newPactSlots,
             chosenFeats = newFeats,
             fightingStyles = newStyles,
+            cantripsKnown = updatedCantrips,
+            spellsKnown = updatedSpellsKnown,
+            preparedSpells = updatedPrepared,
         )
         val event = LeveledUpEvent(
             classId = classId,

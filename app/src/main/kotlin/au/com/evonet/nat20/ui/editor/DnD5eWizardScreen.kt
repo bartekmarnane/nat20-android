@@ -50,6 +50,7 @@ import au.com.evonet.nat20.dnd5e.Race
 import au.com.evonet.nat20.dnd5e.withFullSpellSlots
 import au.com.evonet.nat20.dnd5e.core.Ability
 import au.com.evonet.nat20.dnd5e.core.AbilityScores
+import au.com.evonet.nat20.dnd5e.core.CastingProgression
 import au.com.evonet.nat20.dnd5e.core.LevelUpMath
 import au.com.evonet.nat20.domain.Character
 import java.time.Instant
@@ -64,7 +65,8 @@ import kotlin.math.max
  */
 private enum class WizStep(val title: String) {
     NAME("Name"), RACE("Race"), CLASS("Class"), BACKGROUND("Background"),
-    ABILITIES("Abilities"), SKILLS("Skills"), FIGHTING_STYLE("Fighting Style"), REVIEW("Review"),
+    ABILITIES("Abilities"), SKILLS("Skills"), FIGHTING_STYLE("Fighting Style"),
+    SPELLS("Spells"), REVIEW("Review"),
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -81,6 +83,8 @@ fun DnD5eWizardScreen(existing: Character?, onSave: (Character) -> Unit, onCance
     var base by remember { mutableStateOf(initialBaseScores(source)) }
     var chosenSkills by remember { mutableStateOf(classChosenSkills(source)) }
     var fightingStyle by rememberSaveable { mutableStateOf(source?.fightingStyles?.firstOrNull()) }
+    var chosenCantrips by remember { mutableStateOf(source?.cantripsKnown?.toSet().orEmpty()) }
+    var chosenSpells by remember { mutableStateOf((source?.spellsKnown.orEmpty().values.flatten() + source?.preparedSpells.orEmpty().values.flatten()).toSet()) }
 
     val race = raceId?.let(DnD5eCatalog::race)
     val klass = classId?.let(DnD5eCatalog::characterClass)
@@ -91,7 +95,11 @@ fun DnD5eWizardScreen(existing: Character?, onSave: (Character) -> Unit, onCance
 
     // The Fighting Style step appears only when the chosen class grants one by the chosen level.
     val grantsStyle = klass != null && FightingStyles.grantsBy(klass.id, level)
-    val steps = WizStep.entries.filter { it != WizStep.FIGHTING_STYLE || grantsStyle }
+    // The Spells step appears only for classes that cast at level 1 (full casters + Warlock).
+    val castsAtCreation = klass != null && CastingProgression.forClass(klass.id) in setOf(CastingProgression.FULL, CastingProgression.WARLOCK)
+    val steps = WizStep.entries.filter {
+        (it != WizStep.FIGHTING_STYLE || grantsStyle) && (it != WizStep.SPELLS || castsAtCreation)
+    }
     val step = steps[stepIndex.coerceIn(0, steps.lastIndex)]
 
     fun canAdvance(): Boolean = when (step) {
@@ -102,6 +110,7 @@ fun DnD5eWizardScreen(existing: Character?, onSave: (Character) -> Unit, onCance
         WizStep.ABILITIES -> true
         WizStep.SKILLS -> klass != null && chosenSkills.size == klass.skillChoiceCount
         WizStep.FIGHTING_STYLE -> fightingStyle != null
+        WizStep.SPELLS -> true
         WizStep.REVIEW -> true
     }
 
@@ -110,6 +119,10 @@ fun DnD5eWizardScreen(existing: Character?, onSave: (Character) -> Unit, onCance
         val conMod = AbilityScores.modifier(finalScores.constitution)
         val maxHp = LevelUpMath.firstLevelHp(k.hitDie, conMod) +
             LevelUpMath.averageGain(k.hitDie) * (level - 1)
+        // Spell picks (A11): cantrips to cantripsKnown; 1st-level spells to the prepared or known list per class.
+        val cantrips = if (castsAtCreation) chosenCantrips.toList() else emptyList()
+        val spellList = if (castsAtCreation) chosenSpells.toList() else emptyList()
+        val prepares = CastingProgression.usesPreparation(k.id)
         val payload = DnD5ePayload(
             race = raceId.orEmpty(),
             classes = listOf(ClassEntry(k.id, level)),
@@ -119,7 +132,10 @@ fun DnD5eWizardScreen(existing: Character?, onSave: (Character) -> Unit, onCance
             background = backgroundId.orEmpty(),
             selectedSkills = (backgroundSkills + chosenSkills).distinct(),
             fightingStyles = listOfNotNull(fightingStyle.takeIf { grantsStyle }),
-        ).withFullSpellSlots() // casters start the day with all slots (spell picks land with A11)
+            cantripsKnown = cantrips,
+            spellsKnown = if (spellList.isNotEmpty() && !prepares) mapOf(k.id to spellList) else emptyMap(),
+            preparedSpells = if (spellList.isNotEmpty() && prepares) mapOf(k.id to spellList) else emptyMap(),
+        ).withFullSpellSlots() // casters start the day with all slots
         return if (existing == null) {
             Character.new(name.trim(), DnD5eRuleset(), payload, Instant.now())
         } else {
@@ -155,6 +171,7 @@ fun DnD5eWizardScreen(existing: Character?, onSave: (Character) -> Unit, onCance
                     WizStep.ABILITIES -> AbilitiesStep(base, raceBonus, finalScores) { base = it }
                     WizStep.SKILLS -> SkillsStep(klass, backgroundSkills, chosenSkills) { chosenSkills = it }
                     WizStep.FIGHTING_STYLE -> FightingStyleStep(fightingStyle) { fightingStyle = it }
+                    WizStep.SPELLS -> SpellsStep(klass, chosenCantrips, chosenSpells, { chosenCantrips = it }, { chosenSpells = it })
                     WizStep.REVIEW -> ReviewStep(name, race, klass, level, background, finalScores, backgroundSkills + chosenSkills)
                 }
             }
@@ -272,6 +289,39 @@ private fun SkillsStep(klass: CharacterClass?, backgroundSkills: List<String>, c
                 )
             }
         }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun SpellsStep(
+    klass: CharacterClass?,
+    cantrips: Set<String>,
+    spells: Set<String>,
+    onCantrips: (Set<String>) -> Unit,
+    onSpells: (Set<String>) -> Unit,
+) {
+    val className = klass?.name ?: return
+    // Filter the SRD library to this class's cantrips and 1st-level spells.
+    val cantripPool = remember(className) { DnD5eCatalog.spellLibrary.filter { it.level == 0 && it.classNames.any { c -> c.equals(className, ignoreCase = true) } }.sortedBy { it.name } }
+    val spellPool = remember(className) { DnD5eCatalog.spellLibrary.filter { it.level == 1 && it.classNames.any { c -> c.equals(className, ignoreCase = true) } }.sortedBy { it.name } }
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text("Choose your starting spells.", style = MaterialTheme.typography.bodyLarge)
+        Text("Cantrips (${cantrips.size})", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            cantripPool.forEach { s ->
+                val on = s.index in cantrips
+                FilterChip(selected = on, onClick = { onCantrips(if (on) cantrips - s.index else cantrips + s.index) }, label = { Text(s.name) })
+            }
+        }
+        Text("1st-level spells (${spells.size})", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            spellPool.forEach { s ->
+                val on = s.index in spells
+                FilterChip(selected = on, onClick = { onSpells(if (on) spells - s.index else spells + s.index) }, label = { Text(s.name) })
+            }
+        }
+        Text("You can add or change spells anytime on the Spells tab.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
