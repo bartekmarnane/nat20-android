@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.time.Instant
 
@@ -27,6 +28,72 @@ private fun fighter(str: Int = 16, dex: Int = 12, level: Int = 5, inventory: Lis
     )
 
 private fun Character.payload() = payload as DnD5ePayload
+
+class DamageRiderTests {
+    @Test
+    fun `sneak attack scales one d6 per two rogue levels rounded up`() {
+        assertEquals(1, DamageRiders.sneakAttackDice(1))
+        assertEquals(1, DamageRiders.sneakAttackDice(2))
+        assertEquals(2, DamageRiders.sneakAttackDice(3))
+        assertEquals(3, DamageRiders.sneakAttackDice(5))
+        assertEquals(10, DamageRiders.sneakAttackDice(20))
+        assertEquals(0, DamageRiders.sneakAttackDice(0))
+    }
+
+    @Test
+    fun `sneak attack needs a finesse or ranged weapon`() {
+        val dagger = WeaponProperties(WeaponProperties.Kind.MELEE, "1d4", "piercing", listOf("Finesse", "Light"))
+        val club = WeaponProperties(WeaponProperties.Kind.MELEE, "1d4", "bludgeoning", emptyList())
+        val bow = WeaponProperties(WeaponProperties.Kind.RANGED, "1d8", "piercing", listOf("Ammunition"))
+        assertEquals(true, DamageRiders.sneakAttackEligible(dagger))
+        assertEquals(false, DamageRiders.sneakAttackEligible(club))
+        assertEquals(true, DamageRiders.sneakAttackEligible(bow))
+    }
+
+    @Test
+    fun `divine smite is two d8 plus one per slot level above first, capped at five, plus one vs fiend or undead`() {
+        assertEquals(2, DamageRiders.divineSmiteDice(1))
+        assertEquals(3, DamageRiders.divineSmiteDice(2))
+        assertEquals(5, DamageRiders.divineSmiteDice(4))
+        assertEquals(5, DamageRiders.divineSmiteDice(5)) // capped
+        assertEquals(6, DamageRiders.divineSmiteDice(4, vsUndeadOrFiend = true)) // exceeds the cap, RAW
+    }
+
+    private fun paladin(slots: Map<Int, Int>) = Character.new(
+        "Dame", ruleset,
+        DnD5ePayload(
+            classes = listOf(ClassEntry("paladin", 5)),
+            abilityScores = AbilityScores(strength = 16),
+            currentSpellSlots = slots,
+        ),
+        NOW,
+    )
+
+    @Test
+    fun `a smite attack expends the slot and journals the rider`() {
+        val result = MakeAttack(
+            weaponName = "Longsword", attackTotal = 18, outcome = AttackOutcome.HIT,
+            damage = 20, damageType = "slashing",
+            riders = listOf("Divine Smite (2nd)"), expendSlotLevel = 2,
+        ).applyTo(paladin(mapOf(1 to 4, 2 to 3)), ruleset)
+        assertEquals(2, result.character.payload().currentSpellSlots[2]) // 3 → 2
+        assertTrue(result.event.summary.contains("Divine Smite (2nd)"))
+    }
+
+    @Test
+    fun `a smite with no slot of that level is rejected`() {
+        assertThrows(CharacterIntentError.Invalid::class.java) {
+            MakeAttack("Longsword", 18, AttackOutcome.HIT, damage = 20, expendSlotLevel = 3)
+                .applyTo(paladin(mapOf(1 to 2)), ruleset)
+        }
+    }
+
+    @Test
+    fun `a plain attack leaves slots untouched`() {
+        val result = MakeAttack("Club", 12, AttackOutcome.HIT, damage = 5).applyTo(paladin(mapOf(1 to 2)), ruleset)
+        assertEquals(2, result.character.payload().currentSpellSlots[1])
+    }
+}
 
 class DiceParseTests {
     @Test

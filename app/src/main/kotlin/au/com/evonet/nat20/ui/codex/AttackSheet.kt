@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import au.com.evonet.nat20.dnd5e.AttackMath
+import au.com.evonet.nat20.dnd5e.DamageRiders
 import au.com.evonet.nat20.dnd5e.DnD5ePayload
 import au.com.evonet.nat20.dnd5e.MakeAttack
 import au.com.evonet.nat20.dnd5e.equippedWeapons
@@ -46,8 +47,22 @@ internal fun AttackSheet(payload: DnD5ePayload, onApplyIntent: (CharacterIntent)
 
     var attackTotal by remember(weaponName) { mutableStateOf<Int?>(null) }
     var outcome by remember(weaponName) { mutableStateOf<AttackOutcome?>(null) }
-    var damage by remember(weaponName) { mutableStateOf<Int?>(null) }
+    var weaponDamage by remember(weaponName) { mutableStateOf<Int?>(null) }
     var target by remember { mutableStateOf("") }
+
+    // Class damage riders (A15/A17): Sneak Attack (Rogue) and Divine Smite (Paladin).
+    val rogueLevel = DamageRiders.classLevel(payload, "rogue")
+    val paladinLevel = DamageRiders.classLevel(payload, "paladin")
+    val weapon = weapons.firstOrNull { it.name == weaponName }?.weapon
+    val sneakSpec = remember(weaponName) {
+        if (weapon != null && DamageRiders.sneakAttackEligible(weapon)) DamageRiders.sneakAttackSpec(rogueLevel) else null
+    }
+    val availableSlots = (1..9).filter { (payload.currentSpellSlots[it] ?: 0) > 0 }
+    var sneakOn by remember(weaponName, outcome) { mutableStateOf(false) }
+    var sneakDamage by remember(weaponName, outcome) { mutableStateOf<Int?>(null) }
+    var smiteSlot by remember(weaponName, outcome) { mutableStateOf<Int?>(null) }
+    var smiteVsUndead by remember(weaponName, outcome) { mutableStateOf(false) }
+    var smiteDamage by remember(weaponName, outcome) { mutableStateOf<Int?>(null) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -81,7 +96,7 @@ internal fun AttackSheet(payload: DnD5ePayload, onApplyIntent: (CharacterIntent)
                                 result.isNatural1 -> AttackOutcome.MISS
                                 else -> null // player confirms hit/miss against the AC
                             }
-                            damage = null
+                            weaponDamage = null
                         },
                     )
 
@@ -89,22 +104,63 @@ internal fun AttackSheet(payload: DnD5ePayload, onApplyIntent: (CharacterIntent)
                     if (attackTotal != null) {
                         SectionLabel("Outcome")
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            OutcomeChip("Hit", outcome == AttackOutcome.HIT) { outcome = AttackOutcome.HIT; damage = null }
-                            OutcomeChip("Miss", outcome == AttackOutcome.MISS) { outcome = AttackOutcome.MISS; damage = null }
-                            OutcomeChip("Crit", outcome == AttackOutcome.CRITICAL) { outcome = AttackOutcome.CRITICAL; damage = null }
+                            OutcomeChip("Hit", outcome == AttackOutcome.HIT) { outcome = AttackOutcome.HIT; weaponDamage = null }
+                            OutcomeChip("Miss", outcome == AttackOutcome.MISS) { outcome = AttackOutcome.MISS; weaponDamage = null }
+                            OutcomeChip("Crit", outcome == AttackOutcome.CRITICAL) { outcome = AttackOutcome.CRITICAL; weaponDamage = null }
                         }
                     }
 
-                    // Step 3 — damage (hit/crit only).
+                    // Step 3 — damage (hit/crit only): weapon dice + any class riders, each doubled on a crit.
                     if (outcome == AttackOutcome.HIT || outcome == AttackOutcome.CRITICAL) {
-                        SectionLabel("Damage")
-                        val spec = if (outcome == AttackOutcome.CRITICAL) attack.damageSpec.critDoubled() else attack.damageSpec
+                        val crit = outcome == AttackOutcome.CRITICAL
+                        SectionLabel("Weapon damage")
                         RollResultView(
-                            baseSpec = spec,
+                            baseSpec = if (crit) attack.damageSpec.critDoubled() else attack.damageSpec,
                             bonuses = attack.damageBonuses,
                             allowAdvantageToggle = false,
-                            onSettled = { result: RollResult -> damage = maxOf(0, result.total) },
+                            onSettled = { result: RollResult -> weaponDamage = maxOf(0, result.total) },
                         )
+
+                        if (sneakSpec != null) {
+                            FilterChip(
+                                selected = sneakOn,
+                                onClick = { sneakOn = !sneakOn; sneakDamage = null },
+                                label = { Text("Sneak Attack ${sneakSpec.count}d6") },
+                            )
+                            if (sneakOn) {
+                                RollResultView(
+                                    baseSpec = if (crit) sneakSpec.critDoubled() else sneakSpec,
+                                    allowAdvantageToggle = false,
+                                    onSettled = { result: RollResult -> sneakDamage = maxOf(0, result.total) },
+                                )
+                            }
+                        }
+
+                        if (paladinLevel > 0 && availableSlots.isNotEmpty()) {
+                            SectionLabel("Divine Smite")
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                availableSlots.forEach { lvl ->
+                                    FilterChip(
+                                        selected = smiteSlot == lvl,
+                                        onClick = { smiteSlot = if (smiteSlot == lvl) null else lvl; smiteDamage = null },
+                                        label = { Text("L$lvl slot") },
+                                    )
+                                }
+                            }
+                            smiteSlot?.let { lvl ->
+                                FilterChip(
+                                    selected = smiteVsUndead,
+                                    onClick = { smiteVsUndead = !smiteVsUndead; smiteDamage = null },
+                                    label = { Text("vs Undead / Fiend") },
+                                )
+                                val smiteSpec = DamageRiders.divineSmiteSpec(lvl, smiteVsUndead)!!
+                                RollResultView(
+                                    baseSpec = if (crit) smiteSpec.critDoubled() else smiteSpec,
+                                    allowAdvantageToggle = false,
+                                    onSettled = { result: RollResult -> smiteDamage = maxOf(0, result.total) },
+                                )
+                            }
+                        }
                     }
 
                     OutlinedTextField(
@@ -118,8 +174,18 @@ internal fun AttackSheet(payload: DnD5ePayload, onApplyIntent: (CharacterIntent)
             }
         },
         confirmButton = {
+            val ridersReady = (!sneakOn || sneakDamage != null) && (smiteSlot == null || smiteDamage != null)
             val ready = attack != null && attackTotal != null && outcome != null &&
-                (outcome == AttackOutcome.MISS || damage != null)
+                (outcome == AttackOutcome.MISS || (weaponDamage != null && ridersReady))
+            val totalDamage = if (outcome == AttackOutcome.MISS) null else listOfNotNull(
+                weaponDamage,
+                sneakDamage.takeIf { sneakOn },
+                smiteDamage.takeIf { smiteSlot != null },
+            ).sum()
+            val riders = buildList {
+                if (sneakOn && sneakSpec != null) add("Sneak Attack ${sneakSpec.count}d6")
+                smiteSlot?.let { add("Divine Smite (${it.ordinalSlot()})") }
+            }
             TextButton(
                 enabled = ready,
                 onClick = {
@@ -128,9 +194,11 @@ internal fun AttackSheet(payload: DnD5ePayload, onApplyIntent: (CharacterIntent)
                             weaponName = attack!!.name,
                             attackTotal = attackTotal!!,
                             outcome = outcome!!,
-                            damage = damage,
+                            damage = totalDamage,
                             damageType = attack.damageType,
                             target = target.ifBlank { null },
+                            riders = if (outcome == AttackOutcome.MISS) emptyList() else riders,
+                            expendSlotLevel = smiteSlot.takeIf { outcome != AttackOutcome.MISS },
                         ),
                     )
                     onDismiss()
@@ -144,6 +212,11 @@ internal fun AttackSheet(payload: DnD5ePayload, onApplyIntent: (CharacterIntent)
 @Composable
 private fun SectionLabel(text: String) {
     Text(text.uppercase(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+}
+
+/** "1st" / "2nd" / "3rd" / "Nth" for a spell-slot level. */
+private fun Int.ordinalSlot(): String = when (this) {
+    1 -> "1st"; 2 -> "2nd"; 3 -> "3rd"; else -> "${this}th"
 }
 
 @Composable

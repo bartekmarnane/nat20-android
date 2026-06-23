@@ -197,9 +197,25 @@ data class MakeAttack(
     val damage: Int? = null,
     val damageType: String? = null,
     val target: String? = null,
+    /** Class damage riders folded into [damage] this hit, e.g. "Sneak Attack 2d6", "Divine Smite (2nd)". */
+    val riders: List<String> = emptyList(),
+    /** A spell slot level to expend for Divine Smite, drained atomically with the log; null = no smite. */
+    val expendSlotLevel: Int? = null,
 ) : CharacterIntent {
     override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
         if (weaponName.isBlank()) throw CharacterIntentError.Invalid("Attack needs a weapon")
+        val payload = character.dnd5ePayload()
+
+        // Divine Smite expends a regular spell slot of the chosen level (atomic with the attack log).
+        val updatedPayload = if (expendSlotLevel != null) {
+            if (expendSlotLevel !in 1..9) throw CharacterIntentError.Invalid("Spell slot level must be 1–9")
+            val available = payload.currentSpellSlots[expendSlotLevel] ?: 0
+            if (available <= 0) throw CharacterIntentError.Invalid("No level $expendSlotLevel spell slots remaining")
+            payload.copy(currentSpellSlots = payload.currentSpellSlots.withSlot(expendSlotLevel, available - 1))
+        } else {
+            payload
+        }
+
         val event = AttackEvent(
             weaponName = weaponName,
             attackTotal = attackTotal,
@@ -207,8 +223,9 @@ data class MakeAttack(
             damage = damage?.takeIf { outcome != AttackOutcome.MISS },
             damageType = damageType,
             target = target?.trim()?.takeIf { it.isNotEmpty() },
+            riders = if (outcome == AttackOutcome.MISS) emptyList() else riders,
         )
-        return IntentResult(character, event)
+        return IntentResult(character.copy(payload = updatedPayload), event)
     }
 }
 

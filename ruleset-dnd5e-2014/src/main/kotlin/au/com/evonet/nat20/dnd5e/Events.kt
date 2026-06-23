@@ -373,6 +373,8 @@ data class AttackEvent(
     val damage: Int? = null,
     val damageType: String? = null,
     val target: String? = null,
+    /** Class damage riders applied this hit (Sneak Attack, Divine Smite), for the journal. */
+    val riders: List<String> = emptyList(),
 ) : CharacterEvent {
     override val summary: String
         get() {
@@ -383,10 +385,11 @@ data class AttackEvent(
             } else {
                 ""
             }
+            val rider = riders.takeIf { it.isNotEmpty() }?.let { " (${it.joinToString(" + ")})" } ?: ""
             return when (outcome) {
                 au.com.evonet.nat20.dnd5e.core.AttackOutcome.MISS -> "Attacked$tgt with $weaponName — missed (rolled $attackTotal)"
-                au.com.evonet.nat20.dnd5e.core.AttackOutcome.HIT -> "Hit$tgt with $weaponName$dmg (rolled $attackTotal)"
-                au.com.evonet.nat20.dnd5e.core.AttackOutcome.CRITICAL -> "Critical hit$tgt with $weaponName$dmg!"
+                au.com.evonet.nat20.dnd5e.core.AttackOutcome.HIT -> "Hit$tgt with $weaponName$dmg$rider (rolled $attackTotal)"
+                au.com.evonet.nat20.dnd5e.core.AttackOutcome.CRITICAL -> "Critical hit$tgt with $weaponName$dmg$rider!"
             }
         }
 }
