@@ -15,9 +15,25 @@ import au.com.evonet.nat20.dnd5e.core.EffectSource
  * `DnD5ePayload` effect accessors + `PassiveClassEffectCatalog`.
  */
 
-/** Every effect that contributes to derived stats: the live ones plus passive class + race effects. */
+/** Every effect that contributes to derived stats: the live ones plus passive class + race + fighting-style effects. */
 val DnD5ePayload.allEffects: List<ActiveEffect>
-    get() = activeEffects + passiveClassEffects() + RaceTraits.passiveEffects(race)
+    get() = activeEffects + passiveClassEffects() + RaceTraits.passiveEffects(race) + passiveStyleEffects()
+
+/** The Defense fighting style's always-on +1 AC while wearing armor (folds through the AC calculator). */
+fun DnD5ePayload.passiveStyleEffects(): List<ActiveEffect> = buildList {
+    val armored = inventory.any { it.equipped && it.kind == ItemKind.ARMOR }
+    if ("defense" in fightingStyles && armored) {
+        add(
+            ActiveEffect(
+                id = "passive:style:defense",
+                name = "Defense",
+                source = EffectSource.Feature("fighting-style:defense"),
+                modifiers = listOf(EffectModifier.AcBonus(1)),
+                duration = au.com.evonet.nat20.dnd5e.core.EffectDuration.UntilCancelled,
+            ),
+        )
+    }
+}
 
 /** Skill proficiencies the character has, including those auto-granted by a race trait (Elf Keen Senses). */
 val DnD5ePayload.effectiveSkillProficiencies: List<String>

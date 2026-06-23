@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import au.com.evonet.nat20.dnd5e.DnD5eCatalog
 import au.com.evonet.nat20.dnd5e.DnD5ePayload
 import au.com.evonet.nat20.dnd5e.Feats
+import au.com.evonet.nat20.dnd5e.FightingStyles
 import au.com.evonet.nat20.dnd5e.LevelUp
 import au.com.evonet.nat20.dnd5e.isSpellcaster
 import au.com.evonet.nat20.dnd5e.core.Ability
@@ -66,6 +67,9 @@ internal fun LevelUpWizard(payload: DnD5ePayload, onApplyIntent: (CharacterInten
         payload.classes.firstOrNull { it.classId == classId }?.subclass == null && klass.subclasses.isNotEmpty()
     var subclass by remember(classId) { mutableStateOf<String?>(null) }
 
+    val needsStyle = FightingStyles.grantLevel(classId) == newClassLevel && payload.fightingStyles.isEmpty()
+    var style by remember(classId) { mutableStateOf<String?>(null) }
+
     val needsAsi = LevelUpMath.grantsAbilityScoreImprovement(classId, newClassLevel)
     var advMode by remember { mutableStateOf(AdvMode.ASI) }
     var asiMode by remember { mutableStateOf(AsiMode.ONE) }
@@ -92,8 +96,9 @@ internal fun LevelUpWizard(payload: DnD5ePayload, onApplyIntent: (CharacterInten
     }
     val asiReady = !needsAsi || advReady
     val subclassReady = !needsSubclass || subclass != null
+    val styleReady = !needsStyle || style != null
     val hpReady = hpMode == HpMode.AVERAGE || rolledDie != null
-    val ready = klass != null && payload.level < DnD5ePayload.MAX_LEVEL && asiReady && subclassReady && hpReady
+    val ready = klass != null && payload.level < DnD5ePayload.MAX_LEVEL && asiReady && subclassReady && styleReady && hpReady
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -140,6 +145,17 @@ internal fun LevelUpWizard(payload: DnD5ePayload, onApplyIntent: (CharacterInten
                             FilterChip(selected = subclass == sub.id, onClick = { subclass = sub.id }, label = { Text(sub.name) })
                         }
                     }
+                }
+
+                // Fighting Style (Fighter L1, Paladin/Ranger L2).
+                if (needsStyle) {
+                    StepLabel("Fighting Style")
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        FightingStyles.all.forEach { fs ->
+                            FilterChip(selected = style == fs.id, onClick = { style = fs.id }, label = { Text(fs.name) })
+                        }
+                    }
+                    style?.let { id -> FightingStyles.style(id)?.let { Text(it.description, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) } }
                 }
 
                 // ASI or Feat.
@@ -206,6 +222,7 @@ internal fun LevelUpWizard(payload: DnD5ePayload, onApplyIntent: (CharacterInten
                             subclass = subclass,
                             abilityIncreases = asi,
                             feat = if (needsAsi && advMode == AdvMode.FEAT) featId else null,
+                            fightingStyle = if (needsStyle) style else null,
                             className = klass?.name ?: classId.slugToTitle(),
                         ),
                     )

@@ -38,14 +38,20 @@ object AttackMath {
         // Active-effect riders (Bless +2 attack, Rage/Hex/Hunter's Mark +N damage) fold in as chips.
         val effectAttack = payload.effectAttackBonus
         val effectDamage = payload.effectDamageBonus
+        // Fighting-style riders: Archery (+2 ranged attack), Dueling (+2 damage with a single one-handed melee weapon).
+        val twoHanded = weapon.properties.any { it.contains("two-handed", ignoreCase = true) }
+        val archery = ranged && "archery" in payload.fightingStyles
+        val dueling = !ranged && !twoHanded && "dueling" in payload.fightingStyles
         val attackBonuses = buildList {
             add(RollBonus(label, mod))
             add(RollBonus("Proficiency", prof))
             if (effectAttack != 0) add(RollBonus("Effects", effectAttack))
+            if (archery) add(RollBonus("Archery", 2))
         }
         val damageBonuses = buildList {
             if (mod != 0) add(RollBonus(label, mod))
             if (effectDamage != 0) add(RollBonus("Effects", effectDamage))
+            if (dueling) add(RollBonus("Dueling", 2))
         }
         return WeaponAttack(
             name = item.name,

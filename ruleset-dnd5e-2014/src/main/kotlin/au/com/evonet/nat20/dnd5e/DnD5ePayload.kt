@@ -90,6 +90,8 @@ data class DnD5ePayload(
     val enabledSources: List<String> = emptyList(),
     /** Feat ids taken in place of an Ability Score Improvement (A11). Resolved through [Feats]. */
     val chosenFeats: List<String> = emptyList(),
+    /** Fighting Style ids chosen (Fighter L1, Paladin/Ranger L2). Resolved through [FightingStyles]. */
+    val fightingStyles: List<String> = emptyList(),
 ) : CharacterPayload {
 
     /** Total character level = sum of all class entry levels, floored at 1. */

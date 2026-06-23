@@ -905,6 +905,8 @@ data class LevelUp(
     val abilityIncreases: Map<Ability, Int> = emptyMap(),
     /** A feat taken in place of the ASI (A11); recorded on [DnD5ePayload.chosenFeats]. */
     val feat: String? = null,
+    /** A Fighting Style chosen this level-up (Fighter L1, Paladin/Ranger L2); recorded on [DnD5ePayload.fightingStyles]. */
+    val fightingStyle: String? = null,
     /** Display name for the journal (catalogue-resolved by the caller). */
     val className: String = "",
 ) : CharacterIntent {
@@ -940,6 +942,9 @@ data class LevelUp(
         }
         if (feat != null && Feats.feat(feat) == null) {
             throw CharacterIntentError.Invalid("Unknown feat $feat")
+        }
+        if (fightingStyle != null && FightingStyles.style(fightingStyle) == null) {
+            throw CharacterIntentError.Invalid("Unknown fighting style $fightingStyle")
         }
 
         val previousLevel = payload.level
@@ -977,12 +982,14 @@ data class LevelUp(
         // Tough) tops a full character up via [bonusMaxHpPerLevel]. A feat taken *this*
         // level boosts only the max (through effectiveMaxHp), not the rolled current — RAW.
         val newFeats = if (feat != null && feat !in payload.chosenFeats) payload.chosenFeats + feat else payload.chosenFeats
+        val newStyles = if (fightingStyle != null && fightingStyle !in payload.fightingStyles) payload.fightingStyles + fightingStyle else payload.fightingStyles
         val updated = leveled.copy(
             maxHp = payload.maxHp + hpGained,
             currentHp = payload.currentHp + hpGained + payload.bonusMaxHpPerLevel,
             currentSpellSlots = newCurrentSlots,
             currentPactSlots = newPactSlots,
             chosenFeats = newFeats,
+            fightingStyles = newStyles,
         )
         val event = LeveledUpEvent(
             classId = classId,
@@ -996,6 +1003,7 @@ data class LevelUp(
             subclass = subclass,
             abilityIncreases = abilityIncreases,
             feat = feat,
+            fightingStyle = fightingStyle,
         )
         return IntentResult(character.copy(payload = updated), event)
     }

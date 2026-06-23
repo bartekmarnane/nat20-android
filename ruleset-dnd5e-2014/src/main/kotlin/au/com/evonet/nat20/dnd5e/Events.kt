@@ -92,6 +92,8 @@ data class LeveledUpEvent(
     val abilityIncreases: Map<au.com.evonet.nat20.dnd5e.core.Ability, Int> = emptyMap(),
     /** Feat taken in place of the ASI this level-up, if any (A11). */
     val feat: String? = null,
+    /** Fighting Style chosen this level-up, if any (A11). */
+    val fightingStyle: String? = null,
 ) : CharacterEvent {
     override val summary: String
         get() {
@@ -102,6 +104,7 @@ data class LeveledUpEvent(
             val extras = buildList {
                 subclass?.takeIf { it.isNotBlank() }?.let { add(it) }
                 feat?.let { id -> add(Feats.feat(id)?.name ?: id) }
+                fightingStyle?.let { id -> add(FightingStyles.style(id)?.name ?: id) }
                 if (abilityIncreases.isNotEmpty()) {
                     add(abilityIncreases.entries.joinToString(", ") { "+${it.value} ${it.key.abbreviation}" })
                 }

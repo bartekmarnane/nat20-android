@@ -45,6 +45,7 @@ import au.com.evonet.nat20.dnd5e.ClassEntry
 import au.com.evonet.nat20.dnd5e.DnD5eCatalog
 import au.com.evonet.nat20.dnd5e.DnD5ePayload
 import au.com.evonet.nat20.dnd5e.DnD5eRuleset
+import au.com.evonet.nat20.dnd5e.FightingStyles
 import au.com.evonet.nat20.dnd5e.Race
 import au.com.evonet.nat20.dnd5e.withFullSpellSlots
 import au.com.evonet.nat20.dnd5e.core.Ability
@@ -63,14 +64,13 @@ import kotlin.math.max
  */
 private enum class WizStep(val title: String) {
     NAME("Name"), RACE("Race"), CLASS("Class"), BACKGROUND("Background"),
-    ABILITIES("Abilities"), SKILLS("Skills"), REVIEW("Review"),
+    ABILITIES("Abilities"), SKILLS("Skills"), FIGHTING_STYLE("Fighting Style"), REVIEW("Review"),
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DnD5eWizardScreen(existing: Character?, onSave: (Character) -> Unit, onCancel: () -> Unit) {
     val source = existing?.payload as? DnD5ePayload
-    val steps = WizStep.entries
 
     var stepIndex by rememberSaveable { mutableIntStateOf(0) }
     var name by rememberSaveable { mutableStateOf(existing?.name.orEmpty()) }
@@ -80,6 +80,7 @@ fun DnD5eWizardScreen(existing: Character?, onSave: (Character) -> Unit, onCance
     var backgroundId by rememberSaveable { mutableStateOf(source?.background?.ifEmpty { null }) }
     var base by remember { mutableStateOf(initialBaseScores(source)) }
     var chosenSkills by remember { mutableStateOf(classChosenSkills(source)) }
+    var fightingStyle by rememberSaveable { mutableStateOf(source?.fightingStyles?.firstOrNull()) }
 
     val race = raceId?.let(DnD5eCatalog::race)
     val klass = classId?.let(DnD5eCatalog::characterClass)
@@ -87,7 +88,11 @@ fun DnD5eWizardScreen(existing: Character?, onSave: (Character) -> Unit, onCance
     val raceBonus = race?.abilityBonuses().orEmpty()
     val finalScores = base.applying(raceBonus)
     val backgroundSkills = background?.grantedSkills.orEmpty()
-    val step = steps[stepIndex]
+
+    // The Fighting Style step appears only when the chosen class grants one by the chosen level.
+    val grantsStyle = klass != null && FightingStyles.grantsBy(klass.id, level)
+    val steps = WizStep.entries.filter { it != WizStep.FIGHTING_STYLE || grantsStyle }
+    val step = steps[stepIndex.coerceIn(0, steps.lastIndex)]
 
     fun canAdvance(): Boolean = when (step) {
         WizStep.NAME -> name.isNotBlank()
@@ -96,6 +101,7 @@ fun DnD5eWizardScreen(existing: Character?, onSave: (Character) -> Unit, onCance
         WizStep.BACKGROUND -> background != null
         WizStep.ABILITIES -> true
         WizStep.SKILLS -> klass != null && chosenSkills.size == klass.skillChoiceCount
+        WizStep.FIGHTING_STYLE -> fightingStyle != null
         WizStep.REVIEW -> true
     }
 
@@ -112,6 +118,7 @@ fun DnD5eWizardScreen(existing: Character?, onSave: (Character) -> Unit, onCance
             currentHp = maxHp,
             background = backgroundId.orEmpty(),
             selectedSkills = (backgroundSkills + chosenSkills).distinct(),
+            fightingStyles = listOfNotNull(fightingStyle.takeIf { grantsStyle }),
         ).withFullSpellSlots() // casters start the day with all slots (spell picks land with A11)
         return if (existing == null) {
             Character.new(name.trim(), DnD5eRuleset(), payload, Instant.now())
@@ -147,6 +154,7 @@ fun DnD5eWizardScreen(existing: Character?, onSave: (Character) -> Unit, onCance
                     WizStep.BACKGROUND -> PickStep(DnD5eCatalog.backgrounds, backgroundId, { it.id }, { it.name }, { it.description }) { backgroundId = it }
                     WizStep.ABILITIES -> AbilitiesStep(base, raceBonus, finalScores) { base = it }
                     WizStep.SKILLS -> SkillsStep(klass, backgroundSkills, chosenSkills) { chosenSkills = it }
+                    WizStep.FIGHTING_STYLE -> FightingStyleStep(fightingStyle) { fightingStyle = it }
                     WizStep.REVIEW -> ReviewStep(name, race, klass, level, background, finalScores, backgroundSkills + chosenSkills)
                 }
             }
@@ -263,6 +271,17 @@ private fun SkillsStep(klass: CharacterClass?, backgroundSkills: List<String>, c
                     label = { Text(skillName(skillId)) },
                 )
             }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun FightingStyleStep(selected: String?, onPick: (String) -> Unit) {
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text("Choose your Fighting Style.", style = MaterialTheme.typography.bodyLarge)
+        FightingStyles.all.forEach { fs ->
+            PickCard(title = fs.name, subtitle = fs.description, selected = selected == fs.id) { onPick(fs.id) }
         }
     }
 }

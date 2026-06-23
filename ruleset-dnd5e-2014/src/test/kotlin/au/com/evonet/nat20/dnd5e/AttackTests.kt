@@ -95,6 +95,71 @@ class DamageRiderTests {
     }
 }
 
+class FightingStyleTests {
+    @Test
+    fun `grant levels match the base classes`() {
+        assertEquals(1, FightingStyles.grantLevel("fighter"))
+        assertEquals(2, FightingStyles.grantLevel("paladin"))
+        assertEquals(2, FightingStyles.grantLevel("ranger"))
+        assertNull(FightingStyles.grantLevel("wizard"))
+        assertTrue(FightingStyles.grantsBy("fighter", 1))
+        assertFalse(FightingStyles.grantsBy("paladin", 1))
+        assertTrue(FightingStyles.grantsBy("paladin", 2))
+    }
+
+    private fun styledFighter(styles: List<String>, inventory: List<InventoryItem> = emptyList()) = Character.new(
+        "Bron", ruleset,
+        DnD5ePayload(
+            classes = listOf(ClassEntry("fighter", 3)),
+            abilityScores = AbilityScores(strength = 16, dexterity = 16),
+            fightingStyles = styles,
+            inventory = inventory,
+        ),
+        NOW,
+    ).payload()
+
+    @Test
+    fun `defense adds plus one AC only while armored`() {
+        val leather = DnD5eCatalog.armorPiece("leather")!!.makeItem(equipped = true)
+        val unarmored = styledFighter(listOf("defense"))
+        val armored = styledFighter(listOf("defense"), inventory = listOf(leather))
+        // Unarmored: no Defense bonus (RAW gate). Armored: leather 11 + DEX 3 + Defense 1 = 15.
+        assertEquals(13, unarmored.armorClass) // 10 + DEX 3, no Defense
+        assertEquals(15, armored.armorClass)
+    }
+
+    @Test
+    fun `archery adds plus two to ranged attacks and dueling adds plus two melee damage`() {
+        val bow = InventoryItem("b", "Shortbow", ItemKind.WEAPON, equipped = true, weapon = WeaponProperties(WeaponProperties.Kind.RANGED, "1d6", "piercing", listOf("Ammunition")))
+        val sword = InventoryItem("s", "Longsword", ItemKind.WEAPON, equipped = true, weapon = WeaponProperties(WeaponProperties.Kind.MELEE, "1d8", "slashing", emptyList()))
+
+        val archer = AttackMath.forWeapon(bow, styledFighter(listOf("archery"), inventory = listOf(bow)))!!
+        assertTrue(archer.attackBonuses.any { it.label == "Archery" && it.value == 2 })
+
+        val duelist = AttackMath.forWeapon(sword, styledFighter(listOf("dueling"), inventory = listOf(sword)))!!
+        assertTrue(duelist.damageBonuses.any { it.label == "Dueling" && it.value == 2 })
+        // Dueling doesn't apply to a ranged weapon.
+        val duelistBow = AttackMath.forWeapon(bow, styledFighter(listOf("dueling"), inventory = listOf(bow)))!!
+        assertFalse(duelistBow.damageBonuses.any { it.label == "Dueling" })
+    }
+
+    @Test
+    fun `a level-up records the fighting style and rejects an unknown one`() {
+        val paladin = Character.new("Dame", ruleset, DnD5ePayload(classes = listOf(ClassEntry("paladin", 1)), abilityScores = AbilityScores(strength = 16)), NOW)
+        val result = LevelUp("paladin", fightingStyle = "dueling", className = "Paladin").applyTo(paladin, ruleset)
+        assertTrue("dueling" in result.character.payload().fightingStyles)
+        assertThrows(CharacterIntentError.Invalid::class.java) {
+            LevelUp("paladin", fightingStyle = "nope").applyTo(paladin, ruleset)
+        }
+    }
+
+    @Test
+    fun `fightingStyles round-trip through the payload codec`() {
+        val payload = DnD5ePayload(classes = listOf(ClassEntry("fighter", 1)), fightingStyles = listOf("defense"))
+        assertEquals(payload, ruleset.decodePayload(ruleset.encodePayload(payload)))
+    }
+}
+
 class DiceParseTests {
     @Test
     fun `parses standard weapon notation`() {
