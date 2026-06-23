@@ -429,6 +429,27 @@ data class EffectAppliedEvent(
     override val summary: String get() = "Gained the $name effect"
 }
 
+/**
+ * A concentration check rolled in response to damage (A17): a CON saving throw
+ * against [dc] (= max of 10 and half the damage taken). A failed total auto-ends
+ * concentration on [focus].
+ */
+@Serializable
+data class ConcentrationSaveRolledEvent(
+    val d20: Int,
+    val bonus: Int,
+    val dc: Int,
+    val focus: String,
+    val maintained: Boolean,
+) : CharacterEvent {
+    override val summary: String
+        get() {
+            val total = d20 + bonus
+            val verb = if (maintained) "Held" else "Lost"
+            return "$verb concentration on $focus — CON save $total vs DC $dc"
+        }
+}
+
 @Serializable
 data class EffectCancelledEvent(
     val name: String,

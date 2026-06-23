@@ -667,6 +667,35 @@ class EndConcentration : CharacterIntent {
     override fun hashCode(): Int = javaClass.hashCode()
 }
 
+/**
+ * Resolves a concentration check from a rolled [d20] against [dc] (the damage
+ * that triggered it sets DC = max(10, damage / 2)). Total = d20 + the CON
+ * saving-throw bonus, computed here so the math stays in the pure domain. A
+ * failed total **auto-ends concentration** (drops every concentration-owning
+ * effect — the A17 "auto-break on damage"). Rejected if not concentrating.
+ */
+data class RollConcentrationSave(
+    val d20: Int,
+    val dc: Int,
+) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        if (d20 !in 1..20) throw CharacterIntentError.Invalid("A d20 roll is 1–20")
+        val payload = character.dnd5ePayload()
+        val focus = payload.concentratingOn
+            ?: throw CharacterIntentError.Invalid("Not concentrating on anything")
+        val bonus = payload.savingThrowBonus(Ability.CONSTITUTION)
+        val maintained = (d20 + bonus) >= dc
+        val updated = if (maintained) payload else payload.copy(
+            concentratingOn = null,
+            activeEffects = payload.activeEffects.filterNot { it.concentrationOwner },
+        )
+        return IntentResult(
+            character.copy(payload = updated),
+            ConcentrationSaveRolledEvent(d20 = d20, bonus = bonus, dc = dc, focus = focus, maintained = maintained),
+        )
+    }
+}
+
 /** Cancels a single active effect by id; also drops concentration if no owner effects remain. */
 data class CancelEffect(
     val effectId: String,

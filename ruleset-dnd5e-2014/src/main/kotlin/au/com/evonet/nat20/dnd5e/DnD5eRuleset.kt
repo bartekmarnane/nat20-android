@@ -49,6 +49,7 @@ class DnD5eRuleset : Ruleset {
         is ClassFeatureUsedEvent -> "dnd5e.feature"
         is InspirationChangedEvent -> "dnd5e.inspiration"
         is ConcentrationEndedEvent -> "dnd5e.concentrationEnded"
+        is ConcentrationSaveRolledEvent -> "dnd5e.concentrationSave"
         is EffectAppliedEvent -> "dnd5e.effectApplied"
         is EffectCancelledEvent -> "dnd5e.effectCancelled"
         is DeathSaveMarkedEvent -> "dnd5e.deathSave"
@@ -85,6 +86,7 @@ class DnD5eRuleset : Ruleset {
         is ClassFeatureUsedEvent -> json.encodeToString(ClassFeatureUsedEvent.serializer(), event)
         is InspirationChangedEvent -> json.encodeToString(InspirationChangedEvent.serializer(), event)
         is ConcentrationEndedEvent -> json.encodeToString(ConcentrationEndedEvent.serializer(), event)
+        is ConcentrationSaveRolledEvent -> json.encodeToString(ConcentrationSaveRolledEvent.serializer(), event)
         is EffectAppliedEvent -> json.encodeToString(EffectAppliedEvent.serializer(), event)
         is EffectCancelledEvent -> json.encodeToString(EffectCancelledEvent.serializer(), event)
         is DeathSaveMarkedEvent -> json.encodeToString(DeathSaveMarkedEvent.serializer(), event)
@@ -121,6 +123,7 @@ class DnD5eRuleset : Ruleset {
         "dnd5e.feature" -> this.json.decodeFromString(ClassFeatureUsedEvent.serializer(), json)
         "dnd5e.inspiration" -> this.json.decodeFromString(InspirationChangedEvent.serializer(), json)
         "dnd5e.concentrationEnded" -> this.json.decodeFromString(ConcentrationEndedEvent.serializer(), json)
+        "dnd5e.concentrationSave" -> this.json.decodeFromString(ConcentrationSaveRolledEvent.serializer(), json)
         "dnd5e.effectApplied" -> this.json.decodeFromString(EffectAppliedEvent.serializer(), json)
         "dnd5e.effectCancelled" -> this.json.decodeFromString(EffectCancelledEvent.serializer(), json)
         "dnd5e.deathSave" -> this.json.decodeFromString(DeathSaveMarkedEvent.serializer(), json)

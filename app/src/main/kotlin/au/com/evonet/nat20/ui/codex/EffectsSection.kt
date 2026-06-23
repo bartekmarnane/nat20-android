@@ -12,10 +12,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -28,13 +30,19 @@ import androidx.compose.ui.unit.dp
 import au.com.evonet.nat20.dnd5e.DnD5ePayload
 import au.com.evonet.nat20.dnd5e.EndConcentration
 import au.com.evonet.nat20.dnd5e.CancelEffect
+import au.com.evonet.nat20.dnd5e.RollConcentrationSave
+import au.com.evonet.nat20.dnd5e.savingThrowBonus
 import au.com.evonet.nat20.dnd5e.core.ACOverrideFormula
+import au.com.evonet.nat20.dnd5e.core.Ability
 import au.com.evonet.nat20.dnd5e.core.ActiveEffect
 import au.com.evonet.nat20.dnd5e.core.EffectDuration
 import au.com.evonet.nat20.dnd5e.core.EffectModifier
 import au.com.evonet.nat20.dnd5e.core.EffectSource
 import au.com.evonet.nat20.dnd5e.core.RestKind
+import au.com.evonet.nat20.dnd5e.core.RollBonus
+import au.com.evonet.nat20.dnd5e.core.RollSpec
 import au.com.evonet.nat20.domain.CharacterIntent
+import au.com.evonet.nat20.ui.roll.RollResultView
 
 private val BuffGreen = Color(0xFF246B29)
 private val DebuffRed = Color(0xFF8C1A1A)
@@ -50,11 +58,13 @@ private val DebuffRed = Color(0xFF8C1A1A)
 internal fun EffectsSection(payload: DnD5ePayload, onApplyIntent: (CharacterIntent) -> Unit) {
     if (payload.concentratingOn == null && payload.activeEffects.isEmpty()) return
     var detail by remember { mutableStateOf<ActiveEffect?>(null) }
+    var savingFocus by remember { mutableStateOf<String?>(null) }
 
     SectionCard("Active Effects") {
         payload.concentratingOn?.let { focus ->
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text("Concentrating on $focus", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary, modifier = Modifier.weight(1f))
+                TextButton(onClick = { savingFocus = focus }) { Text("Save") }
                 TextButton(onClick = { onApplyIntent(EndConcentration()) }) { Text("End") }
             }
         }
@@ -74,6 +84,72 @@ internal fun EffectsSection(payload: DnD5ePayload, onApplyIntent: (CharacterInte
             onDismiss = { detail = null },
         )
     }
+
+    savingFocus?.let { focus ->
+        ConcentrationSaveDialog(
+            payload = payload,
+            focus = focus,
+            onApplyIntent = onApplyIntent,
+            onDismiss = { savingFocus = null },
+        )
+    }
+}
+
+/**
+ * Rolls a concentration check (CON save) against a DC the player sets from the
+ * triggering damage (the damage event surfaces it: max of 10 and half the
+ * damage). A failed roll auto-ends concentration via [RollConcentrationSave];
+ * the result resolves once so a re-roll can't double-break it.
+ */
+@Composable
+private fun ConcentrationSaveDialog(
+    payload: DnD5ePayload,
+    focus: String,
+    onApplyIntent: (CharacterIntent) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var dc by remember { mutableIntStateOf(10) }
+    var maintained by remember { mutableStateOf<Boolean?>(null) }
+    val conBonus = payload.savingThrowBonus(Ability.CONSTITUTION)
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Concentration — $focus") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text("Save DC", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                    OutlinedButton(onClick = { if (dc > 10) dc-- }, enabled = dc > 10 && maintained == null) { Text("−") }
+                    Text("$dc", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 12.dp))
+                    OutlinedButton(onClick = { dc++ }, enabled = maintained == null) { Text("+") }
+                }
+                Text(
+                    "DC is the higher of 10 and half the damage taken.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                RollResultView(
+                    baseSpec = RollSpec.d(1, 20),
+                    bonuses = listOf(RollBonus("CON", conBonus)),
+                    onSettled = { result ->
+                        if (maintained == null) {
+                            val d20 = result.naturalD20 ?: return@RollResultView
+                            maintained = (d20 + conBonus) >= dc
+                            onApplyIntent(RollConcentrationSave(d20, dc))
+                        }
+                    },
+                )
+                maintained?.let { ok ->
+                    Text(
+                        if (ok) "Concentration holds." else "Concentration broken.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (ok) BuffGreen else DebuffRed,
+                    )
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Done") } },
+    )
 }
 
 @Composable

@@ -9,9 +9,11 @@ import au.com.evonet.nat20.dnd5e.core.EffectModifier
 import au.com.evonet.nat20.dnd5e.core.EffectSource
 import au.com.evonet.nat20.dnd5e.core.RestKind
 import au.com.evonet.nat20.domain.Character
+import au.com.evonet.nat20.domain.CharacterIntentError
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.time.Instant
@@ -158,6 +160,38 @@ class ConcentrationTests {
         assertNull(result.character.payload().concentratingOn)
         assertEquals("Lost the Bless effect", result.event.summary)
     }
+
+    // Fighter L1 is proficient in CON saves → +2 prof; CON 14 → +2 mod; total +4.
+    private fun concentrating() = character(
+        classId = "fighter", level = 1, scores = AbilityScores(constitution = 14),
+        effects = listOf(effect("Bless", EffectModifier.AttackBonus(2), concentration = true)),
+        concentratingOn = "Bless",
+    )
+
+    @Test
+    fun `a passed concentration save keeps the focus`() {
+        val result = RollConcentrationSave(d20 = 10, dc = 12).applyTo(concentrating(), ruleset) // 10 + 4 = 14 ≥ 12
+        val p = result.character.payload()
+        assertEquals("Bless", p.concentratingOn)
+        assertTrue(p.activeEffects.any { it.name == "Bless" })
+        assertTrue((result.event as ConcentrationSaveRolledEvent).maintained)
+    }
+
+    @Test
+    fun `a failed concentration save auto-breaks concentration and drops its effects`() {
+        val result = RollConcentrationSave(d20 = 5, dc = 15).applyTo(concentrating(), ruleset) // 5 + 4 = 9 < 15
+        val p = result.character.payload()
+        assertNull(p.concentratingOn)
+        assertTrue(p.activeEffects.isEmpty())
+        assertFalse((result.event as ConcentrationSaveRolledEvent).maintained)
+    }
+
+    @Test
+    fun `a concentration save is rejected when not concentrating`() {
+        assertThrows(CharacterIntentError.Invalid::class.java) {
+            RollConcentrationSave(d20 = 10, dc = 10).applyTo(character(), ruleset)
+        }
+    }
 }
 
 // ── Producers + rest cleanup ──────────────────────────────────────────────────
@@ -225,6 +259,7 @@ class EffectCatalogueCodecTests {
     fun `effect events round-trip with their type ids`() {
         val events = listOf(
             ConcentrationEndedEvent("Bless"),
+            ConcentrationSaveRolledEvent(d20 = 7, bonus = 3, dc = 12, focus = "Bless", maintained = false),
             EffectAppliedEvent("Rage"),
             EffectCancelledEvent("Hex"),
         )

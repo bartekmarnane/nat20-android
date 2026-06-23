@@ -72,6 +72,19 @@ fun DnD5ePayload.effectiveScore(ability: Ability): Int {
 val DnD5ePayload.effectiveAbilityScores: AbilityScores
     get() = Ability.entries.fold(abilityScores) { scores, ability -> scores.with(ability, effectiveScore(ability)) }
 
+/**
+ * A complete saving-throw modifier for [ability]: effective ability mod +
+ * proficiency (only the primary/first class grants save proficiencies in 5e) +
+ * any effect bonuses. Used by the Stats tab and the concentration check.
+ */
+fun DnD5ePayload.savingThrowBonus(ability: Ability): Int {
+    val proficient = ability in (
+        DnD5eCatalog.characterClass(classes.firstOrNull()?.classId ?: "")?.savingThrowAbilities().orEmpty()
+        )
+    val prof = if (proficient) au.com.evonet.nat20.dnd5e.core.Proficiency.bonus(level) else 0
+    return effectiveAbilityScores.modifier(ability) + prof + temporarySaveBonus(ability)
+}
+
 /** Net save bonus from effects for [ability] — both ability-scoped and all-saves (null) modifiers contribute. */
 fun DnD5ePayload.temporarySaveBonus(ability: Ability): Int =
     activeEffects.sumOf { effect ->
