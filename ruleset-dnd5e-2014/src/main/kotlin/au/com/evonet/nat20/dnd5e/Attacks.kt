@@ -62,6 +62,6 @@ object AttackMath {
 val DnD5ePayload.equippedWeapons: List<InventoryItem>
     get() = inventory.filter { it.equipped && it.kind == ItemKind.WEAPON }
 
-/** Initiative bonus = DEX modifier (base rules). */
+/** Initiative bonus = DEX modifier, plus the Alert feat's flat +5 (A11). */
 val DnD5ePayload.initiativeBonus: Int
-    get() = abilityScores.modifier(Ability.DEXTERITY)
+    get() = abilityScores.modifier(Ability.DEXTERITY) + (if ("alert" in chosenFeats) 5 else 0)

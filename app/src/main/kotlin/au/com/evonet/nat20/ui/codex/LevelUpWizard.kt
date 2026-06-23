@@ -23,7 +23,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import au.com.evonet.nat20.dnd5e.DnD5eCatalog
 import au.com.evonet.nat20.dnd5e.DnD5ePayload
+import au.com.evonet.nat20.dnd5e.Feats
 import au.com.evonet.nat20.dnd5e.LevelUp
+import au.com.evonet.nat20.dnd5e.isSpellcaster
 import au.com.evonet.nat20.dnd5e.core.Ability
 import au.com.evonet.nat20.dnd5e.core.AbilityScores
 import au.com.evonet.nat20.dnd5e.core.DnD5eClasses
@@ -36,6 +38,7 @@ import au.com.evonet.nat20.ui.slugToTitle
 
 private enum class HpMode { AVERAGE, ROLL }
 private enum class AsiMode { ONE, TWO }
+private enum class AdvMode { ASI, FEAT }
 
 /**
  * The level-up wizard (A11): advance a class (or multiclass), choose HP
@@ -64,14 +67,30 @@ internal fun LevelUpWizard(payload: DnD5ePayload, onApplyIntent: (CharacterInten
     var subclass by remember(classId) { mutableStateOf<String?>(null) }
 
     val needsAsi = LevelUpMath.grantsAbilityScoreImprovement(classId, newClassLevel)
+    var advMode by remember { mutableStateOf(AdvMode.ASI) }
     var asiMode by remember { mutableStateOf(AsiMode.ONE) }
     var asiPicks by remember(classId) { mutableStateOf<List<Ability>>(emptyList()) }
-    val asi: Map<Ability, Int> = when (asiMode) {
-        AsiMode.ONE -> asiPicks.take(1).associateWith { 2 }
-        AsiMode.TWO -> asiPicks.take(2).associateWith { 1 }
+    var featId by remember(classId, advMode) { mutableStateOf<String?>(null) }
+    var halfFeatPick by remember(featId) { mutableStateOf<Ability?>(null) }
+
+    val availableFeats = remember(payload.abilityScores, payload.isSpellcaster) {
+        Feats.available(payload.abilityScores, payload.isSpellcaster)
+    }
+    val pickedFeat = featId?.let { Feats.feat(it) }
+    val asi: Map<Ability, Int> = when (advMode) {
+        AdvMode.ASI -> when (asiMode) {
+            AsiMode.ONE -> asiPicks.take(1).associateWith { 2 }
+            AsiMode.TWO -> asiPicks.take(2).associateWith { 1 }
+        }
+        // A half-feat's +1 rides through abilityIncreases, exactly like an ASI.
+        AdvMode.FEAT -> if (pickedFeat?.grantsAbilityIncrease == true) halfFeatPick?.let { mapOf(it to 1) }.orEmpty() else emptyMap()
     }
 
-    val asiReady = !needsAsi || asi.values.sum() == 2
+    val advReady = when (advMode) {
+        AdvMode.ASI -> asi.values.sum() == 2
+        AdvMode.FEAT -> pickedFeat != null && (!pickedFeat.grantsAbilityIncrease || halfFeatPick != null)
+    }
+    val asiReady = !needsAsi || advReady
     val subclassReady = !needsSubclass || subclass != null
     val hpReady = hpMode == HpMode.AVERAGE || rolledDie != null
     val ready = klass != null && payload.level < DnD5ePayload.MAX_LEVEL && asiReady && subclassReady && hpReady
@@ -123,27 +142,55 @@ internal fun LevelUpWizard(payload: DnD5ePayload, onApplyIntent: (CharacterInten
                     }
                 }
 
-                // ASI.
+                // ASI or Feat.
                 if (needsAsi) {
-                    StepLabel("Ability Score Improvement")
+                    StepLabel("Ability Score Improvement or Feat")
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        FilterChip(selected = asiMode == AsiMode.ONE, onClick = { asiMode = AsiMode.ONE; asiPicks = emptyList() }, label = { Text("+2 to one") })
-                        FilterChip(selected = asiMode == AsiMode.TWO, onClick = { asiMode = AsiMode.TWO; asiPicks = emptyList() }, label = { Text("+1 to two") })
+                        FilterChip(selected = advMode == AdvMode.ASI, onClick = { advMode = AdvMode.ASI }, label = { Text("Ability Scores") })
+                        FilterChip(selected = advMode == AdvMode.FEAT, onClick = { advMode = AdvMode.FEAT }, label = { Text("Feat") })
                     }
-                    val limit = if (asiMode == AsiMode.ONE) 1 else 2
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Ability.entries.forEach { ability ->
-                            val picked = ability in asiPicks
-                            val score = payload.abilityScores.score(ability)
-                            FilterChip(
-                                selected = picked,
-                                enabled = score < 20 && (picked || asiPicks.size < limit),
-                                onClick = { asiPicks = if (picked) asiPicks - ability else asiPicks + ability },
-                                label = { Text("${ability.abbreviation} $score") },
-                            )
+                    if (advMode == AdvMode.ASI) {
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            FilterChip(selected = asiMode == AsiMode.ONE, onClick = { asiMode = AsiMode.ONE; asiPicks = emptyList() }, label = { Text("+2 to one") })
+                            FilterChip(selected = asiMode == AsiMode.TWO, onClick = { asiMode = AsiMode.TWO; asiPicks = emptyList() }, label = { Text("+1 to two") })
+                        }
+                        val limit = if (asiMode == AsiMode.ONE) 1 else 2
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Ability.entries.forEach { ability ->
+                                val picked = ability in asiPicks
+                                val score = payload.abilityScores.score(ability)
+                                FilterChip(
+                                    selected = picked,
+                                    enabled = score < 20 && (picked || asiPicks.size < limit),
+                                    onClick = { asiPicks = if (picked) asiPicks - ability else asiPicks + ability },
+                                    label = { Text("${ability.abbreviation} $score") },
+                                )
+                            }
+                        }
+                    } else {
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            availableFeats.forEach { f ->
+                                FilterChip(selected = featId == f.id, onClick = { featId = f.id; halfFeatPick = null }, label = { Text(f.name) })
+                            }
+                        }
+                        pickedFeat?.let { f ->
+                            Text(f.description, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            if (f.grantsAbilityIncrease) {
+                                Text("+1 to:", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    f.halfFeatAbilities.forEach { a ->
+                                        val score = payload.abilityScores.score(a)
+                                        FilterChip(
+                                            selected = halfFeatPick == a,
+                                            enabled = score < 20,
+                                            onClick = { halfFeatPick = a },
+                                            label = { Text("${a.abbreviation} $score") },
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
-                    Text("Feats as an alternative arrive with the feats catalogue.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         },
@@ -158,6 +205,7 @@ internal fun LevelUpWizard(payload: DnD5ePayload, onApplyIntent: (CharacterInten
                             hpChoice = if (hpMode == HpMode.ROLL) HpChoice.Rolled(rolledDie!!) else HpChoice.Average,
                             subclass = subclass,
                             abilityIncreases = asi,
+                            feat = if (needsAsi && advMode == AdvMode.FEAT) featId else null,
                             className = klass?.name ?: classId.slugToTitle(),
                         ),
                     )

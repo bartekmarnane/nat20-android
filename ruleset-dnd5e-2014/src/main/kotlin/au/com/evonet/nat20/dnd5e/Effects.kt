@@ -24,6 +24,18 @@ val DnD5ePayload.effectiveSkillProficiencies: List<String>
     get() = (selectedSkills + RaceTraits.grantedSkills(race)).distinct()
 
 /**
+ * Extra max HP per character level from always-on feats: Tough (+2/level). Stored
+ * [DnD5ePayload.maxHp] is the *base*; this folds in via [effectiveMaxHp] so a
+ * single rule drives every HP clamp + display (mirrors the 2024 edition).
+ */
+val DnD5ePayload.bonusMaxHpPerLevel: Int
+    get() = if ("tough" in chosenFeats) 2 else 0
+
+/** The character's real max HP — stored base plus the per-level feat riders. */
+val DnD5ePayload.effectiveMaxHp: Int
+    get() = maxHp + bonusMaxHpPerLevel * level
+
+/**
  * Synthesises the always-on class effects that ride the same modifier pipeline:
  * Barbarian Unarmored Defense (10 + DEX + CON) and Monk Unarmored Defense
  * (10 + DEX + WIS, no shield). Only relevant while unarmored — the AC calculator

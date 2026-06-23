@@ -88,6 +88,8 @@ data class DnD5ePayload(
     val relentlessEnduranceUsed: Boolean = false,
     /** Optional content sources enabled for this character (supplement toggles, A19). Empty = SRD/PHB only. */
     val enabledSources: List<String> = emptyList(),
+    /** Feat ids taken in place of an Ability Score Improvement (A11). Resolved through [Feats]. */
+    val chosenFeats: List<String> = emptyList(),
 ) : CharacterPayload {
 
     /** Total character level = sum of all class entry levels, floored at 1. */

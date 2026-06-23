@@ -30,6 +30,8 @@ import au.com.evonet.nat20.dnd5e.DnD5eCatalog
 import au.com.evonet.nat20.dnd5e.MarkDeathSave
 import au.com.evonet.nat20.dnd5e.RaceTraits
 import au.com.evonet.nat20.dnd5e.RollDeathSave
+import au.com.evonet.nat20.dnd5e.Feats
+import au.com.evonet.nat20.dnd5e.effectiveMaxHp
 import au.com.evonet.nat20.dnd5e.effectiveSkillProficiencies
 import au.com.evonet.nat20.dnd5e.SetInitiative
 import au.com.evonet.nat20.dnd5e.SetInspiration
@@ -96,6 +98,15 @@ internal fun StatsPage(payload: DnD5ePayload, onLevelUp: () -> Unit) {
                         check = CheckRoll("${ability.abbreviation} save", bonuses)
                     },
                 )
+            }
+        }
+        if (payload.chosenFeats.isNotEmpty()) {
+            SectionCard("Feats") {
+                payload.chosenFeats.forEach { id ->
+                    val feat = Feats.feat(id)
+                    Text(feat?.name ?: id.slugToTitle(), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                    feat?.description?.let { Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                }
             }
         }
         if (payload.level < DnD5ePayload.MAX_LEVEL) {
@@ -176,7 +187,7 @@ internal fun CombatPage(character: Character, payload: DnD5ePayload, onApplyInte
     var rollingInit by remember { mutableStateOf(false) }
     CodexPage {
         SectionCard("Hit Points") {
-            StatLine("Current / Max", "${payload.currentHp} / ${payload.maxHp}")
+            StatLine("Current / Max", "${payload.currentHp} / ${payload.effectiveMaxHp}")
             if (payload.temporaryHp > 0) StatLine("Temporary", "+${payload.temporaryHp}")
         }
         if (payload.currentHp == 0 || !payload.deathSaves.isCleared) {

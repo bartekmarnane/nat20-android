@@ -65,7 +65,7 @@ data class TakeDamage(
         // Relentless Endurance (Half-Orc): the first time per long rest the character is reduced to 0
         // but not killed outright (overkill ≥ HP max), drop to 1 HP instead.
         var relentless = false
-        val overkill = hpDamage >= payload.currentHp + payload.maxHp
+        val overkill = hpDamage >= payload.currentHp + payload.effectiveMaxHp
         if (newHp == 0 && payload.currentHp > 0 && !payload.relentlessEnduranceUsed && !overkill && RaceTraits.hasRelentlessEndurance(payload.race)) {
             newHp = 1
             relentless = true
@@ -83,7 +83,7 @@ data class TakeDamage(
             previousHp = payload.currentHp,
             newHp = newHp,
             tempAbsorbed = tempAbsorbed,
-            maxHp = payload.maxHp,
+            maxHp = payload.effectiveMaxHp,
             resistanceApplied = resisted,
             concentrationCheckDC = concentrationDc,
         )
@@ -100,7 +100,7 @@ data class Heal(
         if (amount <= 0) throw CharacterIntentError.Invalid("Heal amount must be positive")
         val payload = character.dnd5ePayload()
 
-        val newHp = minOf(payload.maxHp, payload.currentHp + amount)
+        val newHp = minOf(payload.effectiveMaxHp, payload.currentHp + amount)
         val revived = payload.currentHp == 0 && newHp > 0 && !payload.deathSaves.isCleared
         val updated = payload.copy(
             currentHp = newHp,
@@ -111,7 +111,7 @@ data class Heal(
             source = source,
             previousHp = payload.currentHp,
             newHp = newHp,
-            maxHp = payload.maxHp,
+            maxHp = payload.effectiveMaxHp,
             revived = revived,
         )
         return IntentResult(character.copy(payload = updated), event)
@@ -374,7 +374,7 @@ data class UseItem(
         }
 
         val newHp = if (healingRolled != null && healingRolled > 0) {
-            minOf(payload.maxHp, payload.currentHp + healingRolled)
+            minOf(payload.effectiveMaxHp, payload.currentHp + healingRolled)
         } else {
             payload.currentHp
         }
@@ -745,7 +745,7 @@ data class SpendHitDie(
         val payload = character.dnd5ePayload()
         if (payload.currentHitDice <= 0) throw CharacterIntentError.Invalid("No hit dice remaining")
 
-        val newHp = minOf(payload.maxHp, payload.currentHp + healingRolled)
+        val newHp = minOf(payload.effectiveMaxHp, payload.currentHp + healingRolled)
         val updated = payload.copy(hitDiceSpent = payload.hitDiceSpent + 1)
         val event = HitDieSpentEvent(
             healingRolled = healingRolled,
@@ -826,7 +826,7 @@ class ShortRest : CharacterIntent {
 class LongRest : CharacterIntent {
     override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
         val payload = character.dnd5ePayload()
-        val hpRestored = payload.maxHp - payload.currentHp
+        val hpRestored = payload.effectiveMaxHp - payload.currentHp
         val tempCleared = payload.temporaryHp
         val maxSlots = payload.maxSpellSlots
         val maxPact = payload.maxPactSlots
@@ -837,7 +837,7 @@ class LongRest : CharacterIntent {
         val deathSavesCleared = !payload.deathSaves.isCleared
         val exhaustionAfter = Exhaustion.clamp(payload.exhaustionLevel - 1)
         val updated = payload.copy(
-            currentHp = payload.maxHp,
+            currentHp = payload.effectiveMaxHp,
             temporaryHp = 0,
             currentSpellSlots = maxSlots,
             currentPactSlots = maxPact,
@@ -884,8 +884,10 @@ data class LevelUp(
     val hpChoice: HpChoice = HpChoice.Average,
     /** Subclass id chosen this level-up (only valid at the class's subclass level). */
     val subclass: String? = null,
-    /** Ability Score Improvement applied this level-up — at most +2 total, capped at 20. */
+    /** Ability Score Improvement applied this level-up — at most +2 total, capped at 20. (A half-feat's +1 rides here.) */
     val abilityIncreases: Map<Ability, Int> = emptyMap(),
+    /** A feat taken in place of the ASI (A11); recorded on [DnD5ePayload.chosenFeats]. */
+    val feat: String? = null,
     /** Display name for the journal (catalogue-resolved by the caller). */
     val className: String = "",
 ) : CharacterIntent {
@@ -919,6 +921,9 @@ data class LevelUp(
         if (abilityIncreases.values.sum() > 2 || abilityIncreases.values.any { it < 0 }) {
             throw CharacterIntentError.Invalid("An Ability Score Improvement grants at most +2 total")
         }
+        if (feat != null && Feats.feat(feat) == null) {
+            throw CharacterIntentError.Invalid("Unknown feat $feat")
+        }
 
         val previousLevel = payload.level
         val updatedClasses = payload.classes.toMutableList()
@@ -951,11 +956,16 @@ data class LevelUp(
         }
         val newPactSlots = payload.currentPactSlots + maxOf(0, leveled.maxPactSlots - payload.maxPactSlots)
 
+        // Stored maxHp is the *base*; a per-level rider (an already-held or newly-taken
+        // Tough) tops a full character up via [bonusMaxHpPerLevel]. A feat taken *this*
+        // level boosts only the max (through effectiveMaxHp), not the rolled current — RAW.
+        val newFeats = if (feat != null && feat !in payload.chosenFeats) payload.chosenFeats + feat else payload.chosenFeats
         val updated = leveled.copy(
             maxHp = payload.maxHp + hpGained,
-            currentHp = payload.currentHp + hpGained,
+            currentHp = payload.currentHp + hpGained + payload.bonusMaxHpPerLevel,
             currentSpellSlots = newCurrentSlots,
             currentPactSlots = newPactSlots,
+            chosenFeats = newFeats,
         )
         val event = LeveledUpEvent(
             classId = classId,
@@ -968,6 +978,7 @@ data class LevelUp(
             hpGained = hpGained,
             subclass = subclass,
             abilityIncreases = abilityIncreases,
+            feat = feat,
         )
         return IntentResult(character.copy(payload = updated), event)
     }
