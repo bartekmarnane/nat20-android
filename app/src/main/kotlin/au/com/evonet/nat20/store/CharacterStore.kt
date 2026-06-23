@@ -47,6 +47,7 @@ class CharacterStore(
     private val campaigns: CampaignRepository,
     private val registry: RulesetRegistry,
     private val chronicleService: ChronicleService,
+    private val narrationStyle: () -> au.com.evonet.nat20.chronicle.NarrationStyle = { au.com.evonet.nat20.chronicle.NarrationStyle.CHRONICLER },
 ) : ViewModel() {
 
     val roster: StateFlow<List<Character>> = characters.characters
@@ -175,6 +176,7 @@ class CharacterStore(
                         character = context,
                         priorParagraphs = prior,
                         now = Instant.now(),
+                        style = narrationStyle(),
                     ) ?: continue
                     produced.add(chronicle)
                 }
@@ -205,8 +207,9 @@ class CharacterStore(
             campaigns: CampaignRepository,
             registry: RulesetRegistry,
             chronicleService: ChronicleService,
+            narrationStyle: () -> au.com.evonet.nat20.chronicle.NarrationStyle = { au.com.evonet.nat20.chronicle.NarrationStyle.CHRONICLER },
         ): ViewModelProvider.Factory = viewModelFactory {
-            initializer { CharacterStore(characters, campaigns, registry, chronicleService) }
+            initializer { CharacterStore(characters, campaigns, registry, chronicleService, narrationStyle) }
         }
     }
 }

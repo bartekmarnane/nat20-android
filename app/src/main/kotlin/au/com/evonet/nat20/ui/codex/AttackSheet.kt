@@ -25,7 +25,9 @@ import androidx.compose.ui.unit.dp
 import au.com.evonet.nat20.dnd5e.AttackMath
 import au.com.evonet.nat20.dnd5e.DamageRiders
 import au.com.evonet.nat20.dnd5e.DnD5ePayload
+import au.com.evonet.nat20.dnd5e.ItemKind
 import au.com.evonet.nat20.dnd5e.MakeAttack
+import au.com.evonet.nat20.dnd5e.WeaponProperties
 import au.com.evonet.nat20.dnd5e.equippedWeapons
 import au.com.evonet.nat20.dnd5e.core.AttackOutcome
 import au.com.evonet.nat20.dnd5e.core.RollResult
@@ -58,6 +60,8 @@ internal fun AttackSheet(payload: DnD5ePayload, onApplyIntent: (CharacterIntent)
         if (weapon != null && DamageRiders.sneakAttackEligible(weapon)) DamageRiders.sneakAttackSpec(rogueLevel) else null
     }
     val availableSlots = (1..9).filter { (payload.currentSpellSlots[it] ?: 0) > 0 }
+    // Ranged weapons spend a piece of ammunition per attack (first matching stack).
+    val ammo = if (weapon?.kind == WeaponProperties.Kind.RANGED) payload.inventory.firstOrNull { it.kind == ItemKind.AMMUNITION && it.quantity > 0 } else null
     var sneakOn by remember(weaponName, outcome) { mutableStateOf(false) }
     var sneakDamage by remember(weaponName, outcome) { mutableStateOf<Int?>(null) }
     var smiteSlot by remember(weaponName, outcome) { mutableStateOf<Int?>(null) }
@@ -84,11 +88,18 @@ internal fun AttackSheet(payload: DnD5ePayload, onApplyIntent: (CharacterIntent)
                         }
                     }
 
+                    if (ammo != null) {
+                        Text("Ammunition: ${ammo.name} (${ammo.quantity})", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    } else if (weapon?.kind == WeaponProperties.Kind.RANGED) {
+                        Text("No ammunition — add some on the Items tab.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
+                    }
+
                     // Step 1 — attack roll.
                     SectionLabel("Attack roll")
                     RollResultView(
                         baseSpec = RollSpec.d(1, 20),
                         bonuses = attack.attackBonuses,
+                        luckyReroll = payload.race.contains("halfling", ignoreCase = true),
                         onSettled = { result ->
                             attackTotal = result.total
                             outcome = when {
@@ -199,6 +210,7 @@ internal fun AttackSheet(payload: DnD5ePayload, onApplyIntent: (CharacterIntent)
                             target = target.ifBlank { null },
                             riders = if (outcome == AttackOutcome.MISS) emptyList() else riders,
                             expendSlotLevel = smiteSlot.takeIf { outcome != AttackOutcome.MISS },
+                            ammoItemId = ammo?.id, // a loosed arrow is spent on hit or miss
                         ),
                     )
                     onDismiss()

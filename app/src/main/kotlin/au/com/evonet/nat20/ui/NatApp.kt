@@ -87,6 +87,7 @@ fun NatApp() {
             container.campaignRepository,
             container.rulesetRegistry,
             container.chronicleService,
+            narrationStyle = { container.appSettings.narrationStyle.value },
         ),
     )
     val nav = rememberNavController()

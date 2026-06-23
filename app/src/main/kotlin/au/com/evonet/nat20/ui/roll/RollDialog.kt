@@ -25,6 +25,7 @@ fun RollDialog(
     spec: RollSpec,
     bonuses: List<RollBonus> = emptyList(),
     allowAdvantageToggle: Boolean = true,
+    luckyReroll: Boolean = false,
     onSettled: (RollResult) -> Unit = {},
     onDismiss: () -> Unit,
 ) {
@@ -37,6 +38,7 @@ fun RollDialog(
                     baseSpec = spec,
                     bonuses = bonuses,
                     allowAdvantageToggle = allowAdvantageToggle,
+                    luckyReroll = luckyReroll,
                     onSettled = onSettled,
                 )
             }

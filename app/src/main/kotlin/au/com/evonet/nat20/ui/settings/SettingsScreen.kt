@@ -28,7 +28,7 @@ import au.com.evonet.nat20.settings.AppearanceMode
  * to Credits & Licenses. Narration style and the reference catalogues (Spell
  * Library / Item Catalog) join once that content lands.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun SettingsScreen(
     appSettings: AppSettings,
@@ -44,6 +44,7 @@ fun SettingsScreen(
     onBack: () -> Unit,
 ) {
     val appearance by appSettings.appearance.collectAsState()
+    val narration by appSettings.narrationStyle.collectAsState()
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -90,6 +91,23 @@ fun SettingsScreen(
                             selected = appearance == mode,
                             onClick = { appSettings.setAppearance(mode) },
                             label = { Text(mode.label()) },
+                        )
+                    }
+                }
+            }
+
+            SettingSection("Narration") {
+                Text(
+                    "The voice the AI chronicler writes session recaps in.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    au.com.evonet.nat20.chronicle.NarrationStyle.entries.forEach { s ->
+                        FilterChip(
+                            selected = narration == s,
+                            onClick = { appSettings.setNarrationStyle(s) },
+                            label = { Text(s.label) },
                         )
                     }
                 }

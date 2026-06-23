@@ -63,6 +63,7 @@ internal fun StatsPage(payload: DnD5ePayload, onLevelUp: () -> Unit) {
     val perceptionProficient = "perception" in payload.effectiveSkillProficiencies
     var check by remember { mutableStateOf<CheckRoll?>(null) }
     val effectiveScores = payload.effectiveAbilityScores
+    val isHalfling = payload.race.contains("halfling", ignoreCase = true)
     CodexPage {
         SectionCard("Abilities") {
             Ability.entries.chunked(3).forEach { row ->
@@ -73,7 +74,7 @@ internal fun StatsPage(payload: DnD5ePayload, onLevelUp: () -> Unit) {
                             ability, effectiveScores,
                             Modifier
                                 .weight(1f)
-                                .clickable { check = CheckRoll("${ability.abbreviation} check", listOf(RollBonus(ability.abbreviation, mod))) },
+                                .clickable { check = CheckRoll("${ability.abbreviation} check", listOf(RollBonus(ability.abbreviation, mod)), lucky = isHalfling) },
                         )
                     }
                 }
@@ -95,7 +96,7 @@ internal fun StatsPage(payload: DnD5ePayload, onLevelUp: () -> Unit) {
                     onClick = {
                         val bonuses = checkBonuses(ability.abbreviation, abilityMod, proficient, prof) +
                             (if (effectBonus != 0) listOf(RollBonus("Effects", effectBonus)) else emptyList())
-                        check = CheckRoll("${ability.abbreviation} save", bonuses)
+                        check = CheckRoll("${ability.abbreviation} save", bonuses, lucky = isHalfling)
                     },
                 )
             }
@@ -121,6 +122,7 @@ internal fun SkillsPage(payload: DnD5ePayload) {
     val prof = Proficiency.bonus(payload.level)
     var check by remember { mutableStateOf<CheckRoll?>(null) }
     val effectiveScores = payload.effectiveAbilityScores
+    val isHalfling = payload.race.contains("halfling", ignoreCase = true)
     val anySkillBonus = payload.temporarySkillBonus("__any__")
     CodexPage {
         SectionCard("Skills") {
@@ -136,7 +138,7 @@ internal fun SkillsPage(payload: DnD5ePayload) {
                         .clickable {
                             val bonuses = checkBonuses(skill.ability.abbreviation, abilityMod, proficient, prof) +
                                 (if (effectBonus != 0) listOf(RollBonus("Effects", effectBonus)) else emptyList())
-                            check = CheckRoll("${skill.name} check", bonuses)
+                            check = CheckRoll("${skill.name} check", bonuses, lucky = isHalfling)
                         }
                         .padding(vertical = 2.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -158,7 +160,7 @@ internal fun SkillsPage(payload: DnD5ePayload) {
 }
 
 /** A pending d20 check the roll dialog will present (transient — not journaled). */
-internal data class CheckRoll(val title: String, val bonuses: List<RollBonus>)
+internal data class CheckRoll(val title: String, val bonuses: List<RollBonus>, val lucky: Boolean = false)
 
 /** Builds the bonus chips for a d20 check: ability mod + proficiency when proficient. */
 private fun checkBonuses(ability: String, abilityMod: Int, proficient: Boolean, prof: Int): List<RollBonus> =
@@ -174,6 +176,7 @@ private fun CheckRollDialog(check: CheckRoll, onDismiss: () -> Unit) {
         spec = RollSpec.d(1, 20),
         bonuses = check.bonuses,
         allowAdvantageToggle = true,
+        luckyReroll = check.lucky,
         onDismiss = onDismiss,
     )
 }

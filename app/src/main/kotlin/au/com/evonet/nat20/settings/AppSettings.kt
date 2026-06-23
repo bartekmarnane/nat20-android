@@ -1,6 +1,7 @@
 package au.com.evonet.nat20.settings
 
 import android.content.Context
+import au.com.evonet.nat20.chronicle.NarrationStyle
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,9 +25,18 @@ class AppSettings(context: Context) {
     private val _onboardingComplete = MutableStateFlow(prefs.getBoolean(KEY_ONBOARDING_COMPLETE, false))
     val onboardingComplete: StateFlow<Boolean> = _onboardingComplete.asStateFlow()
 
+    /** The AI chronicler's narration voice (A9). */
+    private val _narrationStyle = MutableStateFlow(readNarrationStyle())
+    val narrationStyle: StateFlow<NarrationStyle> = _narrationStyle.asStateFlow()
+
     fun setAppearance(mode: AppearanceMode) {
         prefs.edit().putString(KEY_APPEARANCE, mode.name).apply()
         _appearance.value = mode
+    }
+
+    fun setNarrationStyle(style: NarrationStyle) {
+        prefs.edit().putString(KEY_NARRATION_STYLE, style.name).apply()
+        _narrationStyle.value = style
     }
 
     fun setOnboardingComplete(value: Boolean) {
@@ -39,8 +49,14 @@ class AppSettings(context: Context) {
             ?.let { runCatching { AppearanceMode.valueOf(it) }.getOrNull() }
             ?: AppearanceMode.SYSTEM
 
+    private fun readNarrationStyle(): NarrationStyle =
+        prefs.getString(KEY_NARRATION_STYLE, null)
+            ?.let { runCatching { NarrationStyle.valueOf(it) }.getOrNull() }
+            ?: NarrationStyle.CHRONICLER
+
     private companion object {
         const val KEY_APPEARANCE = "appearance"
         const val KEY_ONBOARDING_COMPLETE = "onboarding.completed"
+        const val KEY_NARRATION_STYLE = "narration.style"
     }
 }

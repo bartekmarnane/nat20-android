@@ -93,6 +93,17 @@ class DamageRiderTests {
         val result = MakeAttack("Club", 12, AttackOutcome.HIT, damage = 5).applyTo(paladin(mapOf(1 to 2)), ruleset)
         assertEquals(2, result.character.payload().currentSpellSlots[1])
     }
+
+    @Test
+    fun `a ranged attack spends one piece of ammunition and removes the empty stack`() {
+        val arrows = InventoryItem("ar", "Arrows", ItemKind.AMMUNITION, quantity = 2)
+        val archer = fighter(level = 3, inventory = listOf(arrows))
+        val once = MakeAttack("Shortbow", 15, AttackOutcome.HIT, damage = 6, ammoItemId = "ar").applyTo(archer, ruleset)
+        assertEquals(1, once.character.payload().inventory.first { it.id == "ar" }.quantity)
+        // Spend the last arrow → the stack is removed.
+        val empty = MakeAttack("Shortbow", 15, AttackOutcome.MISS, ammoItemId = "ar").applyTo(once.character, ruleset)
+        assertFalse(empty.character.payload().inventory.any { it.id == "ar" })
+    }
 }
 
 class FightingStyleTests {
