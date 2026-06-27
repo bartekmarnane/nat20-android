@@ -38,7 +38,7 @@ import au.com.evonet.nat20.ui.reference.PathfinderActionsScreen
 import au.com.evonet.nat20.ui.reference.PathfinderItemCatalogScreen
 import au.com.evonet.nat20.ui.patron.PatronScreen
 import au.com.evonet.nat20.patron.PatronStore
-import au.com.evonet.nat20.ui.reference.SpellLibraryScreen
+import au.com.evonet.nat20.ui.reference.SpellLibraryShell
 import au.com.evonet.nat20.ui.roster.RosterScreen
 import au.com.evonet.nat20.ui.settings.CreditsScreen
 import au.com.evonet.nat20.ui.settings.SettingsScreen
@@ -143,7 +143,7 @@ fun NatApp() {
         }
 
         composable(Routes.SPELL_LIBRARY) {
-            SpellLibraryScreen(onBack = { nav.popBackStack() })
+            SpellLibraryShell(onBack = { nav.popBackStack() })
         }
 
         composable(Routes.MONSTER_CODEX) {
