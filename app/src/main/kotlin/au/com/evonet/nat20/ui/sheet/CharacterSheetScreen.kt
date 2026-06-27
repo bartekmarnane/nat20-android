@@ -62,10 +62,12 @@ fun CharacterSheetScreen(
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
+        containerColor = androidx.compose.ui.graphics.Color.Transparent,
         topBar = {
             TopAppBar(
                 title = { Text(character.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 navigationIcon = { TextButton(onClick = onBack) { Text("Back") } },
+                colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(containerColor = androidx.compose.ui.graphics.Color.Transparent),
                 actions = {
                     if (inCampaign) {
                         TextButton(onClick = { showActions = true }) { Text("Actions") }

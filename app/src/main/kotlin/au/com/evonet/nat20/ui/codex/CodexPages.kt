@@ -1,5 +1,6 @@
 package au.com.evonet.nat20.ui.codex
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -24,8 +26,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import au.com.evonet.nat20.ui.theme.natPalette
+import au.com.evonet.nat20.ui.theme.parchmentTile
 import au.com.evonet.nat20.dnd5e.ArmorClassCalculator
 import au.com.evonet.nat20.dnd5e.DnD5eCatalog
 import au.com.evonet.nat20.dnd5e.MarkDeathSave
@@ -595,13 +601,22 @@ internal fun CodexPage(content: @Composable () -> Unit) {
 
 @Composable
 internal fun SectionCard(title: String, content: @Composable () -> Unit) {
-    Card(Modifier.fillMaxWidth()) {
+    val palette = MaterialTheme.natPalette
+    androidx.compose.foundation.layout.Box(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .parchmentTile(strong = true)
+            .border(1.dp, palette.accentGold.copy(alpha = 0.55f), RoundedCornerShape(12.dp)),
+    ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
                 title.uppercase(),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary,
+                style = MaterialTheme.typography.labelLarge,
+                color = palette.accent,
+                letterSpacing = 1.5.sp,
             )
+            HorizontalDivider(color = palette.accentGold.copy(alpha = 0.45f), thickness = 1.dp)
             content()
         }
     }
@@ -610,23 +625,31 @@ internal fun SectionCard(title: String, content: @Composable () -> Unit) {
 @Composable
 private fun AbilityMedallion(ability: Ability, scores: AbilityScores, modifier: Modifier = Modifier) {
     val score = scores.score(ability)
-    Card(modifier) {
+    val palette = MaterialTheme.natPalette
+    androidx.compose.foundation.layout.Box(
+        modifier
+            .clip(RoundedCornerShape(10.dp))
+            .parchmentTile(strong = true)
+            .border(1.dp, palette.accentGold.copy(alpha = 0.5f), RoundedCornerShape(10.dp)),
+    ) {
         Column(
             Modifier.fillMaxWidth().padding(vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             Text(
-                ability.abbreviation,
+                ability.abbreviation.uppercase(),
                 style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = palette.accent,
+                letterSpacing = 1.sp,
             )
             Text(
                 AbilityScores.modifier(score).signed(),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.displaySmall,
+                fontSize = 26.sp,
+                color = palette.ink,
             )
-            Text(score.toString(), style = MaterialTheme.typography.bodyMedium)
+            Text(score.toString(), style = MaterialTheme.typography.bodyMedium, color = palette.inkSoft)
         }
     }
 }

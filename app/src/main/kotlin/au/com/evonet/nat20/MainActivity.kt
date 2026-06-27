@@ -13,6 +13,7 @@ import au.com.evonet.nat20.settings.AppearanceMode
 import au.com.evonet.nat20.ui.NatApp
 import au.com.evonet.nat20.ui.onboarding.OnboardingScreen
 import au.com.evonet.nat20.ui.theme.Nat20Theme
+import au.com.evonet.nat20.ui.theme.ParchmentSurface
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -29,15 +30,19 @@ class MainActivity : ComponentActivity() {
             }
             val onboardingComplete by appSettings.onboardingComplete.collectAsState()
             Nat20Theme(darkTheme = dark) {
-                // First run shows onboarding once; AI-aware copy reflects on-device AI availability.
-                Crossfade(targetState = onboardingComplete, label = "onboardingGate") { complete ->
-                    if (complete) {
-                        NatApp()
-                    } else {
-                        OnboardingScreen(
-                            aiAvailable = container.chronicleService.isAvailable,
-                            onComplete = { appSettings.setOnboardingComplete(true) },
-                        )
+                // The parchment ground (texture in light, candle-glow in dark) sits behind
+                // everything; screens that paint a transparent Scaffold let it show through.
+                ParchmentSurface(darkTheme = dark) {
+                    // First run shows onboarding once; AI-aware copy reflects on-device AI availability.
+                    Crossfade(targetState = onboardingComplete, label = "onboardingGate") { complete ->
+                        if (complete) {
+                            NatApp()
+                        } else {
+                            OnboardingScreen(
+                                aiAvailable = container.chronicleService.isAvailable,
+                                onComplete = { appSettings.setOnboardingComplete(true) },
+                            )
+                        }
                     }
                 }
             }

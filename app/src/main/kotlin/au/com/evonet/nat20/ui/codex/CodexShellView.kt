@@ -1,6 +1,7 @@
 package au.com.evonet.nat20.ui.codex
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,6 +29,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import au.com.evonet.nat20.ui.theme.natPalette
 import au.com.evonet.nat20.dnd5e.DnD5ePayload
 import au.com.evonet.nat20.dnd5e.core.Proficiency
 import au.com.evonet.nat20.domain.Character
@@ -103,7 +106,8 @@ private fun HeroHeader(character: Character, payload: DnD5ePayload) {
         Column(Modifier.weight(1f)) {
             Text(
                 character.name,
-                style = MaterialTheme.typography.headlineSmall,
+                style = MaterialTheme.typography.titleLarge,
+                fontSize = 26.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -118,17 +122,19 @@ private fun HeroHeader(character: Character, payload: DnD5ePayload) {
 
 @Composable
 private fun DropCap(initial: Char) {
+    val gold = MaterialTheme.natPalette.accentGold
     Box(
         Modifier
             .size(56.dp)
             .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.primary),
+            .background(MaterialTheme.colorScheme.primary)
+            .border(1.5.dp, gold, CircleShape),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             initial.toString(),
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.displaySmall,
+            fontSize = 28.sp,
             color = MaterialTheme.colorScheme.onPrimary,
         )
     }

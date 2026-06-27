@@ -57,10 +57,12 @@ fun RosterScreen(
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
+        containerColor = androidx.compose.ui.graphics.Color.Transparent,
         topBar = {
             TopAppBar(
                 title = { Text("Nat20") },
                 actions = { TextButton(onClick = onOpenSettings) { Text("Settings") } },
+                colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(containerColor = androidx.compose.ui.graphics.Color.Transparent),
             )
         },
         floatingActionButton = {
