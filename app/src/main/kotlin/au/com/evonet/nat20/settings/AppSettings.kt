@@ -25,7 +25,7 @@ class AppSettings(context: Context) {
     private val _onboardingComplete = MutableStateFlow(prefs.getBoolean(KEY_ONBOARDING_COMPLETE, false))
     val onboardingComplete: StateFlow<Boolean> = _onboardingComplete.asStateFlow()
 
-    /** The AI chronicler's narration voice (A9). */
+    /** The journal narration style — Simple (plain) or Storied (AI prose) (A9). */
     private val _narrationStyle = MutableStateFlow(readNarrationStyle())
     val narrationStyle: StateFlow<NarrationStyle> = _narrationStyle.asStateFlow()
 
@@ -52,7 +52,7 @@ class AppSettings(context: Context) {
     private fun readNarrationStyle(): NarrationStyle =
         prefs.getString(KEY_NARRATION_STYLE, null)
             ?.let { runCatching { NarrationStyle.valueOf(it) }.getOrNull() }
-            ?: NarrationStyle.CHRONICLER
+            ?: NarrationStyle.STORIED
 
     private companion object {
         const val KEY_APPEARANCE = "appearance"

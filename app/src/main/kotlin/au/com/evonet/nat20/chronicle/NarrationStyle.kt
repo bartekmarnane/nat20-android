@@ -1,13 +1,18 @@
 package au.com.evonet.nat20.chronicle
 
 /**
- * The voice the AI chronicler writes session recaps in (A9). [voice] is woven
- * into the system instruction; [label] shows in Settings. The default
- * [CHRONICLER] preserves the original archaic hand-written-journal tone.
+ * How the journal renders a committed session — port of the iOS
+ * `AppSettings.NarrationStyle`. [SIMPLE] shows plain template entries and never
+ * calls the on-device model; [STORIED] upgrades them to AI-generated prose.
+ * [label] / [blurb] show in Settings.
  */
-enum class NarrationStyle(val label: String, val voice: String) {
-    CHRONICLER("Chronicler", "in a slightly archaic, hand-written-journal voice."),
-    HEROIC("Heroic", "in a sweeping, triumphant heroic-saga voice."),
-    GRIM("Grim", "in a dark, somber, foreboding voice."),
-    WHIMSICAL("Whimsical", "in a light, witty, faintly humorous voice."),
+enum class NarrationStyle(val label: String, val blurb: String) {
+    SIMPLE(
+        "Simple",
+        "Journal entries read as plain facts — \"Took 5 slashing damage — goblin\".",
+    ),
+    STORIED(
+        "Storied",
+        "Journal entries read as atmospheric narratives — a short past-tense sentence drawn from your character's situation.",
+    ),
 }

@@ -52,6 +52,7 @@ import au.com.evonet.nat20.ui.theme.natPalette
 @Composable
 fun SettingsScreen(
     appSettings: AppSettings,
+    narrationAvailable: Boolean,
     isPatron: Boolean,
     onOpenPatron: () -> Unit,
     onOpenSpellLibrary: () -> Unit,
@@ -75,24 +76,28 @@ fun SettingsScreen(
             Modifier.fillMaxSize(),
             contentPadding = PaddingValues(start = 22.dp, end = 22.dp, top = 6.dp, bottom = 28.dp),
         ) {
-            item {
-                SectionLabel("Narration", Modifier.padding(top = 6.dp, bottom = 8.dp))
-                Text(
-                    "The voice the AI chronicler writes session recaps in.",
-                    fontFamily = Cormorant, fontStyle = FontStyle.Italic, fontSize = 15.sp,
-                    color = palette.inkSoft, modifier = Modifier.padding(bottom = 10.dp),
-                )
-                SegmentedPills(
-                    options = NarrationStyle.entries,
-                    selected = narration,
-                    label = { it.label },
-                    onSelect = { appSettings.setNarrationStyle(it) },
-                    equalWeight = false,
-                )
+            // Storied narration needs on-device AI; mirror iOS and hide the whole
+            // section when it's unavailable.
+            if (narrationAvailable) {
+                item {
+                    SectionLabel("Narration", Modifier.padding(top = 6.dp, bottom = 8.dp))
+                    SegmentedPills(
+                        options = NarrationStyle.entries,
+                        selected = narration,
+                        label = { it.label },
+                        onSelect = { appSettings.setNarrationStyle(it) },
+                        equalWeight = true,
+                    )
+                    Text(
+                        narration.blurb,
+                        fontFamily = Cormorant, fontStyle = FontStyle.Italic, fontSize = 15.sp,
+                        color = palette.inkSoft, modifier = Modifier.padding(top = 10.dp),
+                    )
+                }
             }
 
             item {
-                SectionLabel("Appearance", Modifier.padding(top = 18.dp, bottom = 8.dp))
+                SectionLabel("Appearance", Modifier.padding(top = if (narrationAvailable) 18.dp else 6.dp, bottom = 8.dp))
                 SegmentedPills(
                     options = AppearanceMode.entries,
                     selected = appearance,

@@ -35,21 +35,24 @@ class ChronicleService(private val generator: ChronicleGenerator) {
         character: CharacterContext,
         priorParagraphs: List<String>,
         now: Instant,
-        style: NarrationStyle = NarrationStyle.CHRONICLER,
+        style: NarrationStyle = NarrationStyle.STORIED,
     ): SessionChronicle? {
-        if (!generator.isAvailable) return null
+        // Simple narration never calls the on-device model — the journal shows
+        // plain entries (mirrors iOS, where .simple is template-only).
+        if (style != NarrationStyle.STORIED || !generator.isAvailable) return null
         val prompt = buildUserPrompt(session, campaignName, character, priorParagraphs)
-        val text = generator.generate(instructions(style), prompt)?.trim()?.takeIf { it.isNotEmpty() }
+        val text = generator.generate(instructions(), prompt)?.trim()?.takeIf { it.isNotEmpty() }
             ?: return null
         return SessionChronicle(sessionId = session.id, paragraph = text, generatedAt = now)
     }
 
     companion object {
-        /** Builds the system instruction, weaving in the chosen [NarrationStyle]'s voice (A9). */
-        fun instructions(style: NarrationStyle = NarrationStyle.CHRONICLER): String =
+        /** Builds the system instruction. Storied prose uses one fixed atmospheric voice (A9). */
+        fun instructions(): String =
             "You are the chronicler of a Dungeons & Dragons campaign. You are given a numbered, " +
                 "ordered list of in-game events from one play session. Rewrite them as one short " +
-                "paragraph (2–4 sentences) of third-person past-tense prose, ${style.voice}\n\n" +
+                "paragraph (2–4 sentences) of third-person past-tense prose, in a slightly " +
+                "archaic, hand-written-journal voice.\n\n" +
                 "HARD RULES:\n" +
                 "- Reflect EVERY numbered event, in the exact order given. Never drop, merge, " +
                 "reorder, or flash back.\n" +

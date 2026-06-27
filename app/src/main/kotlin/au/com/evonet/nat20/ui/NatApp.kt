@@ -120,6 +120,7 @@ fun NatApp() {
         composable(Routes.SETTINGS) {
             SettingsScreen(
                 appSettings = container.appSettings,
+                narrationAvailable = container.chronicleService.isAvailable,
                 isPatron = isPatron,
                 onOpenPatron = { nav.navigate(Routes.PATRON) },
                 onOpenSpellLibrary = { nav.navigate(Routes.SPELL_LIBRARY) },
