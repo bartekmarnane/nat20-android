@@ -99,6 +99,10 @@ private fun NatPalette.materialColors(dark: Boolean) = if (dark) {
         background = parchment, onBackground = ink,
         surface = Color(0xFF221C14), onSurface = ink,
         surfaceVariant = Color(0xFF2A2114), onSurfaceVariant = inkSoft,
+        // Container roles (used by chips, FABs) — warm, never the baseline purple.
+        primaryContainer = Color(0xFF2E2614), onPrimaryContainer = ink,
+        secondaryContainer = Color(0xFF332B19), onSecondaryContainer = ink,
+        tertiaryContainer = Color(0xFF35221C), onTertiaryContainer = ink,
         // Override every container role so stray Material Cards read warm, not the baseline purple.
         surfaceBright = Color(0xFF3A2F1C), surfaceDim = Color(0xFF0E0B07),
         surfaceContainerLowest = Color(0xFF0A0805), surfaceContainerLow = Color(0xFF181309),
@@ -115,6 +119,9 @@ private fun NatPalette.materialColors(dark: Boolean) = if (dark) {
         background = parchment, onBackground = ink,
         surface = cream, onSurface = ink,
         surfaceVariant = Color(0xFFEFE2BC), onSurfaceVariant = inkSoft,
+        primaryContainer = Color(0xFFEAD6A6), onPrimaryContainer = ink,
+        secondaryContainer = Color(0xFFE3CF9C), onSecondaryContainer = ink,
+        tertiaryContainer = Color(0xFFE9C9B0), onTertiaryContainer = ink,
         surfaceBright = Color(0xFFF5E6C4), surfaceDim = Color(0xFFDCC9A0),
         surfaceContainerLowest = Color(0xFFF8EFD6), surfaceContainerLow = Color(0xFFF3E8C9),
         surfaceContainer = Color(0xFFEEE2BC), surfaceContainerHigh = Color(0xFFE8DAB0),
