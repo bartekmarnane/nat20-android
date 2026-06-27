@@ -123,7 +123,7 @@ fun RosterScreen(
                     SwipeToDismissBox(
                         state = dismissState,
                         enableDismissFromStartToEnd = false,
-                        backgroundContent = { DeleteSwipeBackground() },
+                        backgroundContent = { DeleteSwipeBackground(dismissState) },
                     ) {
                         CharacterIndexCard(character, onClick = { onSelect(character) })
                     }
@@ -312,10 +312,15 @@ private fun BottomCta(canCreate: Boolean, onNew: () -> Unit, onUpgrade: () -> Un
 }
 
 @Composable
-private fun DeleteSwipeBackground() {
+private fun DeleteSwipeBackground(state: androidx.compose.material3.SwipeToDismissBoxState) {
+    // Only paint while the card is actually being swiped left — otherwise the
+    // label bleeds through the translucent parchment card at rest.
+    if (state.dismissDirection != SwipeToDismissBoxValue.EndToStart) return
     Box(
         Modifier
             .fillMaxSize()
+            .clip(RoundedCornerShape(4.dp))
+            .background(MaterialTheme.colorScheme.error.copy(alpha = 0.14f))
             .padding(horizontal = 24.dp),
         contentAlignment = Alignment.CenterEnd,
     ) {
