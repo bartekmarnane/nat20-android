@@ -92,6 +92,14 @@ data class DnD5ePayload(
     val chosenFeats: List<String> = emptyList(),
     /** Fighting Style ids chosen (Fighter L1, Paladin/Ranger L2). Resolved through [FightingStyles]. */
     val fightingStyles: List<String> = emptyList(),
+    /** Metamagic option ids known (Sorcerer). Resolved through [Metamagics] (A11). */
+    val metamagicKnown: List<String> = emptyList(),
+    /** Eldritch Invocation ids known (Warlock). Resolved through [Invocations] (A11). */
+    val invocationsKnown: List<String> = emptyList(),
+    /** The Warlock's chosen Pact Boon id (level 3); null until chosen. Resolved through [PactBoons] (A11). */
+    val pactBoon: String? = null,
+    /** Skill ids the character has Expertise in (Rogue/Bard) — proficiency counts double (A11). */
+    val expertiseSkills: List<String> = emptyList(),
 ) : CharacterPayload {
 
     /** Total character level = sum of all class entry levels, floored at 1. */

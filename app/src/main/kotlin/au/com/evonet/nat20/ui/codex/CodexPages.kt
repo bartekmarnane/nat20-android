@@ -35,7 +35,18 @@ import au.com.evonet.nat20.dnd5e.Feats
 import au.com.evonet.nat20.dnd5e.effectiveMaxHp
 import au.com.evonet.nat20.dnd5e.effectiveSkillProficiencies
 import au.com.evonet.nat20.dnd5e.ExpendSpellSlot
+import au.com.evonet.nat20.dnd5e.Invocations
+import au.com.evonet.nat20.dnd5e.Metamagics
+import au.com.evonet.nat20.dnd5e.PactBoons
 import au.com.evonet.nat20.dnd5e.RollCheck
+import au.com.evonet.nat20.dnd5e.expertiseEligibleSkills
+import au.com.evonet.nat20.dnd5e.expertiseSlots
+import au.com.evonet.nat20.dnd5e.hasExpertise
+import au.com.evonet.nat20.dnd5e.invocationsKnownCount
+import au.com.evonet.nat20.dnd5e.metamagicKnownCount
+import au.com.evonet.nat20.dnd5e.pactBoonAvailable
+import au.com.evonet.nat20.dnd5e.skillProficiencyMultiplier
+import au.com.evonet.nat20.dnd5e.warlockLevel
 import au.com.evonet.nat20.dnd5e.SetInitiative
 import au.com.evonet.nat20.dnd5e.SetInspiration
 import au.com.evonet.nat20.dnd5e.SpendHitDie
@@ -66,7 +77,7 @@ import au.com.evonet.nat20.ui.slugToTitle
 // ── Pages ────────────────────────────────────────────────────────────────────
 
 @Composable
-internal fun StatsPage(payload: DnD5ePayload, onApplyIntent: (CharacterIntent) -> Unit, onLevelUp: () -> Unit) {
+internal fun StatsPage(character: Character, payload: DnD5ePayload, onApplyIntent: (CharacterIntent) -> Unit, onSave: (Character) -> Unit, onLevelUp: () -> Unit) {
     val prof = Proficiency.bonus(payload.level)
     val proficientSaves = payload.primaryClass()?.savingThrowAbilities()?.toSet().orEmpty()
     val perceptionProficient = "perception" in payload.effectiveSkillProficiencies
@@ -119,11 +130,96 @@ internal fun StatsPage(payload: DnD5ePayload, onApplyIntent: (CharacterIntent) -
                 }
             }
         }
+        ClassChoicesCard(character, payload, onSave)
         if (payload.level < DnD5ePayload.MAX_LEVEL) {
             Button(onClick = onLevelUp, modifier = Modifier.fillMaxWidth()) { Text("Level Up") }
         }
     }
     check?.let { CheckRollDialog(it, onApplyIntent) { check = null } }
+}
+
+/**
+ * The deep-class build choices (A11): Sorcerer Metamagic, Warlock Invocations +
+ * Pact Boon, Rogue/Bard Expertise. Each is a character-building edit (like
+ * spells-known), so it persists via a direct [onSave] payload copy rather than a
+ * journaled intent. Only the sections the character has earned slots for appear.
+ */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+private fun ClassChoicesCard(character: Character, payload: DnD5ePayload, onSave: (Character) -> Unit) {
+    val metamagicSlots = payload.metamagicKnownCount
+    val invocationSlots = payload.invocationsKnownCount
+    val expertiseSlots = payload.expertiseSlots
+    val pactBoon = payload.pactBoonAvailable
+    if (metamagicSlots == 0 && invocationSlots == 0 && expertiseSlots == 0 && !pactBoon) return
+
+    fun save(updated: DnD5ePayload) = onSave(character.copy(payload = updated))
+
+    SectionCard("Class Choices") {
+        if (metamagicSlots > 0) {
+            ChoiceGroup("Metamagic (${payload.metamagicKnown.size}/$metamagicSlots)", Metamagics.all, { it.id }, { it.name },
+                selected = payload.metamagicKnown.toSet(),
+                canAddMore = payload.metamagicKnown.size < metamagicSlots,
+            ) { id, on -> save(payload.copy(metamagicKnown = toggle(payload.metamagicKnown, id, on))) }
+        }
+        if (pactBoon) {
+            ChoiceGroup("Pact Boon", PactBoons.all, { it.id }, { it.name },
+                selected = setOfNotNull(payload.pactBoon),
+                canAddMore = true,
+                single = true,
+            ) { id, on -> save(payload.copy(pactBoon = if (on) id else null)) }
+        }
+        if (invocationSlots > 0) {
+            val available = Invocations.all.filter {
+                it.isAvailable(
+                    payload.warlockLevel,
+                    payload.pactBoon,
+                    (payload.cantripsKnown + payload.spellsKnown.values.flatten() + payload.preparedSpells.values.flatten()).toSet(),
+                ) || it.id in payload.invocationsKnown
+            }
+            ChoiceGroup("Eldritch Invocations (${payload.invocationsKnown.size}/$invocationSlots)", available, { it.id }, { it.name },
+                selected = payload.invocationsKnown.toSet(),
+                canAddMore = payload.invocationsKnown.size < invocationSlots,
+            ) { id, on -> save(payload.copy(invocationsKnown = toggle(payload.invocationsKnown, id, on))) }
+        }
+        if (expertiseSlots > 0) {
+            val eligible = payload.expertiseEligibleSkills.map { it to (DnD5eCatalog.skill(it)?.name ?: it) }
+            ChoiceGroup("Expertise (${payload.expertiseSkills.size}/$expertiseSlots)", eligible, { it.first }, { it.second },
+                selected = payload.expertiseSkills.toSet(),
+                canAddMore = payload.expertiseSkills.size < expertiseSlots,
+            ) { id, on -> save(payload.copy(expertiseSkills = toggle(payload.expertiseSkills, id, on).filter { payload.hasExpertise(it) || it in payload.expertiseEligibleSkills })) }
+        }
+    }
+}
+
+private fun toggle(list: List<String>, id: String, on: Boolean): List<String> =
+    if (on) (list + id).distinct() else list - id
+
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+private fun <T> ChoiceGroup(
+    title: String,
+    options: List<T>,
+    id: (T) -> String,
+    label: (T) -> String,
+    selected: Set<String>,
+    canAddMore: Boolean,
+    single: Boolean = false,
+    onToggle: (String, Boolean) -> Unit,
+) {
+    Text(title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+    androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        options.forEach { opt ->
+            val key = id(opt)
+            val on = key in selected
+            androidx.compose.material3.FilterChip(
+                selected = on,
+                enabled = on || canAddMore,
+                onClick = { onToggle(key, if (single) true else !on) },
+                label = { Text(label(opt)) },
+            )
+        }
+    }
 }
 
 @Composable
@@ -138,21 +234,26 @@ internal fun SkillsPage(payload: DnD5ePayload, onApplyIntent: (CharacterIntent) 
             DnD5eCatalog.skills.forEachIndexed { index, skill ->
                 if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
                 val proficient = skill.id in payload.effectiveSkillProficiencies
+                val expertise = payload.hasExpertise(skill.id) && proficient
+                val profMult = payload.skillProficiencyMultiplier(skill.id)
                 val abilityMod = effectiveScores.modifier(skill.ability)
                 val effectBonus = payload.temporarySkillBonus(skill.id) + anySkillBonus
-                val mod = abilityMod + (if (proficient) prof else 0) + effectBonus
+                val mod = abilityMod + prof * profMult + effectBonus
                 Row(
                     Modifier
                         .fillMaxWidth()
                         .clickable {
-                            val bonuses = checkBonuses(skill.ability.abbreviation, abilityMod, proficient, prof) +
-                                (if (effectBonus != 0) listOf(RollBonus("Effects", effectBonus)) else emptyList())
+                            val bonuses = buildList {
+                                add(RollBonus(skill.ability.abbreviation, abilityMod))
+                                if (profMult > 0) add(RollBonus(if (expertise) "Expertise" else "Proficiency", prof * profMult))
+                                if (effectBonus != 0) add(RollBonus("Effects", effectBonus))
+                            }
                             check = CheckRoll("${skill.name} check", bonuses, lucky = isHalfling)
                         }
                         .padding(vertical = 2.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    ProficiencyDot(proficient)
+                    ProficiencyDot(proficient, expertise)
                     Text(skill.name, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f).padding(start = 8.dp))
                     Text(
                         skill.ability.abbreviation,
@@ -571,9 +672,9 @@ private fun ProficiencyLine(label: String, value: String, proficient: Boolean, o
 }
 
 @Composable
-private fun ProficiencyDot(proficient: Boolean) {
+private fun ProficiencyDot(proficient: Boolean, expertise: Boolean = false) {
     Text(
-        if (proficient) "●" else "○",
+        if (expertise) "◉" else if (proficient) "●" else "○",
         style = MaterialTheme.typography.bodySmall,
         color = if (proficient) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
     )
