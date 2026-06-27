@@ -99,6 +99,11 @@ private fun NatPalette.materialColors(dark: Boolean) = if (dark) {
         background = parchment, onBackground = ink,
         surface = Color(0xFF221C14), onSurface = ink,
         surfaceVariant = Color(0xFF2A2114), onSurfaceVariant = inkSoft,
+        // Override every container role so stray Material Cards read warm, not the baseline purple.
+        surfaceBright = Color(0xFF3A2F1C), surfaceDim = Color(0xFF0E0B07),
+        surfaceContainerLowest = Color(0xFF0A0805), surfaceContainerLow = Color(0xFF181309),
+        surfaceContainer = Color(0xFF1F190F), surfaceContainerHigh = Color(0xFF2A2114),
+        surfaceContainerHighest = Color(0xFF342A19),
         outline = inkMute, outlineVariant = accentBrown,
         error = danger, onError = cream,
     )
@@ -110,6 +115,10 @@ private fun NatPalette.materialColors(dark: Boolean) = if (dark) {
         background = parchment, onBackground = ink,
         surface = cream, onSurface = ink,
         surfaceVariant = Color(0xFFEFE2BC), onSurfaceVariant = inkSoft,
+        surfaceBright = Color(0xFFF5E6C4), surfaceDim = Color(0xFFDCC9A0),
+        surfaceContainerLowest = Color(0xFFF8EFD6), surfaceContainerLow = Color(0xFFF3E8C9),
+        surfaceContainer = Color(0xFFEEE2BC), surfaceContainerHigh = Color(0xFFE8DAB0),
+        surfaceContainerHighest = Color(0xFFE2D3A4),
         outline = inkMute, outlineVariant = accentGold,
         error = danger, onError = cream,
     )
