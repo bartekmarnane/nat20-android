@@ -52,6 +52,7 @@ class DnD5eRuleset : Ruleset {
         is ConcentrationSaveRolledEvent -> "dnd5e.concentrationSave"
         is EffectAppliedEvent -> "dnd5e.effectApplied"
         is EffectCancelledEvent -> "dnd5e.effectCancelled"
+        is RoundAdvancedEvent -> "dnd5e.roundAdvanced"
         is DeathSaveMarkedEvent -> "dnd5e.deathSave"
         is DeathSaveRolledEvent -> "dnd5e.deathSaveRoll"
         is AttackEvent -> "dnd5e.attack"
@@ -90,6 +91,7 @@ class DnD5eRuleset : Ruleset {
         is ConcentrationSaveRolledEvent -> json.encodeToString(ConcentrationSaveRolledEvent.serializer(), event)
         is EffectAppliedEvent -> json.encodeToString(EffectAppliedEvent.serializer(), event)
         is EffectCancelledEvent -> json.encodeToString(EffectCancelledEvent.serializer(), event)
+        is RoundAdvancedEvent -> json.encodeToString(RoundAdvancedEvent.serializer(), event)
         is DeathSaveMarkedEvent -> json.encodeToString(DeathSaveMarkedEvent.serializer(), event)
         is DeathSaveRolledEvent -> json.encodeToString(DeathSaveRolledEvent.serializer(), event)
         is AttackEvent -> json.encodeToString(AttackEvent.serializer(), event)
@@ -128,6 +130,7 @@ class DnD5eRuleset : Ruleset {
         "dnd5e.concentrationSave" -> this.json.decodeFromString(ConcentrationSaveRolledEvent.serializer(), json)
         "dnd5e.effectApplied" -> this.json.decodeFromString(EffectAppliedEvent.serializer(), json)
         "dnd5e.effectCancelled" -> this.json.decodeFromString(EffectCancelledEvent.serializer(), json)
+        "dnd5e.roundAdvanced" -> this.json.decodeFromString(RoundAdvancedEvent.serializer(), json)
         "dnd5e.deathSave" -> this.json.decodeFromString(DeathSaveMarkedEvent.serializer(), json)
         "dnd5e.deathSaveRoll" -> this.json.decodeFromString(DeathSaveRolledEvent.serializer(), json)
         "dnd5e.attack" -> this.json.decodeFromString(AttackEvent.serializer(), json)

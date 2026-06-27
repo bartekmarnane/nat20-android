@@ -29,6 +29,7 @@ import au.com.evonet.nat20.dnd5e.AdjustExhaustion
 import au.com.evonet.nat20.dnd5e.ApplyCondition
 import au.com.evonet.nat20.dnd5e.ClearCondition
 import au.com.evonet.nat20.dnd5e.DnD5ePayload
+import au.com.evonet.nat20.dnd5e.effectImposedConditions
 import au.com.evonet.nat20.dnd5e.core.Condition
 import au.com.evonet.nat20.dnd5e.core.Exhaustion
 import au.com.evonet.nat20.domain.CharacterIntent
@@ -44,8 +45,12 @@ import au.com.evonet.nat20.domain.CharacterIntent
 internal fun ConditionsSection(payload: DnD5ePayload, onApplyIntent: (CharacterIntent) -> Unit) {
     var showAdd by remember { mutableStateOf(false) }
 
+    // Conditions imposed by an active effect (Greater Invisibility → Invisible); they clear
+    // with their effect, so they show as read-only chips rather than tap-to-clear.
+    val imposed = payload.effectImposedConditions.filterNot { c -> payload.activeConditions.any { it.equals(c, ignoreCase = true) } }
+
     SectionCard("Conditions") {
-        if (payload.activeConditions.isEmpty()) {
+        if (payload.activeConditions.isEmpty() && imposed.isEmpty()) {
             Text(
                 "No conditions.",
                 style = MaterialTheme.typography.bodyMedium,
@@ -58,6 +63,14 @@ internal fun ConditionsSection(payload: DnD5ePayload, onApplyIntent: (CharacterI
                         onClick = { onApplyIntent(ClearCondition(name)) },
                         label = { Text(name) },
                         trailingIcon = { Text("✕", style = MaterialTheme.typography.labelMedium) },
+                    )
+                }
+                imposed.forEach { name ->
+                    AssistChip(
+                        enabled = false,
+                        onClick = {},
+                        label = { Text(name) },
+                        trailingIcon = { Text("⟲", style = MaterialTheme.typography.labelMedium) },
                     )
                 }
             }

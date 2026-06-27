@@ -786,6 +786,36 @@ data class ApplyEffect(
 }
 
 /**
+ * Advances the encounter by one round (A17 round decay): every effect with a
+ * [EffectDuration.Rounds] duration ticks down one; those reaching zero drop off
+ * (concentration is released if the lapsing effect held it). Effects with other
+ * durations are untouched. No-op if nothing is round-bound.
+ */
+class AdvanceRound : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        val payload = character.dnd5ePayload()
+        val rounded = payload.activeEffects.filter { it.duration is EffectDuration.Rounds }
+        if (rounded.isEmpty()) return IntentResult(character, RoundAdvancedEvent(expired = emptyList()))
+
+        val expired = mutableListOf<String>()
+        val next = payload.activeEffects.mapNotNull { effect ->
+            val dur = effect.duration
+            if (dur !is EffectDuration.Rounds) return@mapNotNull effect
+            if (dur.count <= 1) { expired += effect.name; null } else effect.copy(duration = EffectDuration.Rounds(dur.count - 1))
+        }
+        val stillConcentrating = next.any { it.concentrationOwner }
+        val updated = payload.copy(
+            activeEffects = next,
+            concentratingOn = if (!stillConcentrating) null else payload.concentratingOn,
+        )
+        return IntentResult(character.copy(payload = updated), RoundAdvancedEvent(expired = expired))
+    }
+
+    override fun equals(other: Any?): Boolean = other is AdvanceRound
+    override fun hashCode(): Int = javaClass.hashCode()
+}
+
+/**
  * Spends one hit die to heal during a short rest. [healingRolled] is the final
  * HP to restore (die roll + CON mod, computed in the picker — kept out of the
  * pure domain), clamped to max HP. Rejected if no hit dice remain.

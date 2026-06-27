@@ -495,6 +495,15 @@ data class EffectCancelledEvent(
     override val summary: String get() = "Lost the $name effect"
 }
 
+/** A combat round elapsed (A17); any round-bound effects that lapsed are named. */
+@Serializable
+data class RoundAdvancedEvent(
+    val expired: List<String> = emptyList(),
+) : CharacterEvent {
+    override val summary: String
+        get() = if (expired.isEmpty()) "A round passes" else "A round passes — ${expired.joinToString(", ")} ended"
+}
+
 @Serializable
 data class InspirationChangedEvent(
     val hasInspiration: Boolean,

@@ -27,10 +27,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import au.com.evonet.nat20.dnd5e.AdvanceRound
+import au.com.evonet.nat20.dnd5e.ApplyEffect
 import au.com.evonet.nat20.dnd5e.DnD5ePayload
 import au.com.evonet.nat20.dnd5e.EndConcentration
 import au.com.evonet.nat20.dnd5e.CancelEffect
 import au.com.evonet.nat20.dnd5e.RollConcentrationSave
+import au.com.evonet.nat20.dnd5e.SpellEffectCatalog
 import au.com.evonet.nat20.dnd5e.savingThrowBonus
 import au.com.evonet.nat20.dnd5e.core.ACOverrideFormula
 import au.com.evonet.nat20.dnd5e.core.Ability
@@ -56,9 +59,10 @@ private val DebuffRed = Color(0xFF8C1A1A)
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun EffectsSection(payload: DnD5ePayload, onApplyIntent: (CharacterIntent) -> Unit) {
-    if (payload.concentratingOn == null && payload.activeEffects.isEmpty()) return
     var detail by remember { mutableStateOf<ActiveEffect?>(null) }
     var savingFocus by remember { mutableStateOf<String?>(null) }
+    var receivingAlly by remember { mutableStateOf(false) }
+    val hasRoundBound = payload.activeEffects.any { it.duration is EffectDuration.Rounds }
 
     SectionCard("Active Effects") {
         payload.concentratingOn?.let { focus ->
@@ -75,6 +79,26 @@ internal fun EffectsSection(payload: DnD5ePayload, onApplyIntent: (CharacterInte
                 payload.activeEffects.forEach { e -> EffectChip(e) { detail = e } }
             }
         }
+        // Free-text rules the engine doesn't model mechanically (e.g. "Double speed, extra action").
+        val freeText = payload.activeEffects.flatMap { e -> e.modifiers.filterIsInstance<EffectModifier.FreeText>().map { e.name to it.text } }
+        if (freeText.isNotEmpty()) {
+            freeText.forEach { (name, text) ->
+                Text("• $name: $text", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (hasRoundBound) {
+                OutlinedButton(onClick = { onApplyIntent(AdvanceRound()) }) { Text("Advance round") }
+            }
+            OutlinedButton(onClick = { receivingAlly = true }) { Text("Receive ally's spell") }
+        }
+    }
+
+    if (receivingAlly) {
+        AllySpellDialog(onApply = { spellId, caster ->
+            SpellEffectCatalog.allyCast(spellId, caster)?.let { onApplyIntent(ApplyEffect(it)) }
+            receivingAlly = false
+        }, onDismiss = { receivingAlly = false })
     }
 
     detail?.let { e ->
@@ -168,7 +192,49 @@ private fun EffectChip(effect: ActiveEffect, onClick: () -> Unit) {
         if (summary != null) {
             Text("  $summary", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
+        (effect.duration as? EffectDuration.Rounds)?.let { r ->
+            Text("  ${r.count} rd", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = tone)
+        }
     }
+}
+
+/**
+ * Picks a spell an ally cast on the character (A17 ally-cast effects): a buff from
+ * the TARGET_PICKED catalogue + the caster's name → an [ApplyEffect] carrying an
+ * ExternalCaster source (the ally holds any concentration, not this character).
+ */
+@Composable
+private fun AllySpellDialog(onApply: (String, String) -> Unit, onDismiss: () -> Unit) {
+    var caster by remember { mutableStateOf("") }
+    var spellId by remember { mutableStateOf<String?>(null) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Receive an ally's spell") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                androidx.compose.material3.OutlinedTextField(
+                    value = caster,
+                    onValueChange = { caster = it },
+                    label = { Text("Caster (optional)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                SpellEffectCatalog.targetable.forEach { (id, template) ->
+                    Row(
+                        Modifier.fillMaxWidth().clickable { spellId = id }.padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(if (spellId == id) "●" else "○", color = MaterialTheme.colorScheme.primary)
+                        Text("  ${template.name}", style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(enabled = spellId != null, onClick = { onApply(spellId!!, caster) }) { Text("Apply") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+    )
 }
 
 @Composable

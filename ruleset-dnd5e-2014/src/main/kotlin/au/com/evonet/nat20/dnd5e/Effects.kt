@@ -144,3 +144,21 @@ val DnD5ePayload.effectiveDamageResistances: Set<String>
 /** Free-text advantage descriptors from effects, for display (Rage: "STR checks and saves"). */
 val DnD5ePayload.advantageDescriptors: List<String>
     get() = activeEffects.flatMap { e -> e.modifiers.mapNotNull { (it as? EffectModifier.AdvantageOn)?.descriptor } }
+
+/** Conditions an effect imposes (Greater Invisibility → Invisible), for the condition fold. */
+val DnD5ePayload.effectImposedConditions: List<String>
+    get() = activeEffects.flatMap { e -> e.modifiers.mapNotNull { (it as? EffectModifier.Condition)?.name } }
+
+/**
+ * Every condition affecting the character: the manually-tracked [activeConditions]
+ * plus any imposed by an active effect (A17 condition hook). Effect-sourced ones
+ * clear automatically when the effect ends, so they aren't stored in
+ * [activeConditions]. De-duplicated case-insensitively, manual entries first.
+ */
+val DnD5ePayload.effectiveConditions: List<String>
+    get() = (activeConditions + effectImposedConditions)
+        .distinctBy { it.lowercase() }
+
+/** Free-text notes from effects, surfaced on the sheet for rules the engine doesn't model mechanically. */
+val DnD5ePayload.effectFreeText: List<String>
+    get() = activeEffects.flatMap { e -> e.modifiers.mapNotNull { (it as? EffectModifier.FreeText)?.text } }

@@ -12,6 +12,7 @@ import au.com.evonet.nat20.domain.Character
 import au.com.evonet.nat20.domain.CharacterIntentError
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -268,5 +269,84 @@ class EffectCatalogueCodecTests {
             assertFalse(typeId == "dnd5e.unknown")
             assertEquals(event, ruleset.decodeEvent(ruleset.encodeEvent(event), typeId))
         }
+    }
+}
+
+// ── A17 long-tail: condition fold, round decay, ally-cast, catalogue growth ─────
+
+class EffectLongTailTests {
+    @Test
+    fun `an effect's condition modifier folds into effectiveConditions and clears with the effect`() {
+        val invis = effect("Greater Invisibility", EffectModifier.Condition("Invisible"), id = "ge")
+        val p = character(effects = listOf(invis), concentratingOn = "Greater Invisibility").payload()
+        assertTrue("Invisible" in p.effectiveConditions)
+        assertFalse("Invisible" in p.activeConditions) // not stored — folded, not persisted
+
+        val after = CancelEffect("ge").applyTo(character(effects = listOf(invis)), ruleset).character.payload()
+        assertFalse("Invisible" in after.effectiveConditions)
+    }
+
+    @Test
+    fun `effectiveConditions merges manual and effect-imposed without duplicates`() {
+        val invis = effect("Invisibility", EffectModifier.Condition("Invisible"))
+        val payload = DnD5ePayload(
+            classes = listOf(ClassEntry("wizard", 5)),
+            activeConditions = listOf("Prone", "Invisible"),
+            activeEffects = listOf(invis),
+        )
+        assertEquals(listOf("Prone", "Invisible"), payload.effectiveConditions)
+    }
+
+    @Test
+    fun `advance round ticks down a rounds-bound effect and drops it at zero, releasing concentration`() {
+        val twoRounds = effect("Bardic Buff", EffectModifier.AttackBonus(2), duration = EffectDuration.Rounds(2), concentration = true, id = "b")
+        val c0 = character(effects = listOf(twoRounds), concentratingOn = "Bardic Buff")
+
+        val r1 = AdvanceRound().applyTo(c0, ruleset)
+        val p1 = (r1.character.payload as DnD5ePayload)
+        assertEquals(EffectDuration.Rounds(1), p1.activeEffects.single().duration)
+        assertEquals("Bardic Buff", p1.concentratingOn)
+
+        val r2 = AdvanceRound().applyTo(r1.character, ruleset)
+        val p2 = (r2.character.payload as DnD5ePayload)
+        assertTrue(p2.activeEffects.isEmpty())
+        assertNull(p2.concentratingOn)
+        assertTrue((r2.event as RoundAdvancedEvent).expired.contains("Bardic Buff"))
+    }
+
+    @Test
+    fun `advance round leaves non-round effects untouched`() {
+        val rage = effect("Rage", EffectModifier.DamageBonus(2), duration = EffectDuration.UntilCancelled)
+        val after = AdvanceRound().applyTo(character(effects = listOf(rage)), ruleset).character.payload()
+        assertEquals(1, after.activeEffects.size)
+    }
+
+    @Test
+    fun `round advanced event round-trips`() {
+        val event = RoundAdvancedEvent(expired = listOf("Shield", "Hex"))
+        val typeId = ruleset.eventTypeId(event)
+        assertFalse(typeId == "dnd5e.unknown")
+        assertEquals(event, ruleset.decodeEvent(ruleset.encodeEvent(event), typeId))
+    }
+
+    @Test
+    fun `an ally-cast effect applies via ApplyEffect with an ExternalCaster source`() {
+        val bless = ActiveEffect(
+            ActiveEffect.newId(), "Bless", EffectSource.ExternalCaster("Cleric Mara", "bless"),
+            listOf(EffectModifier.AttackBonus(2), EffectModifier.SaveBonus(null, 2)),
+            EffectDuration.Concentration, concentrationOwner = false,
+        )
+        val after = ApplyEffect(bless).applyTo(character(), ruleset).character.payload()
+        assertEquals(2, after.effectAttackBonus)
+        assertNull(after.concentratingOn) // the ally concentrates, not us
+    }
+
+    @Test
+    fun `the spell and item catalogues grew their long tail and decode the new entries`() {
+        assertTrue(SpellEffectCatalog.template("greater-invisibility")!!.modifiers.any { it is EffectModifier.Condition })
+        assertNotNull(SpellEffectCatalog.template("foresight"))
+        assertNotNull(SpellEffectCatalog.template("fire-shield"))
+        assertNotNull(ItemEffectCatalog.effectFor("ring-of-protection"))
+        assertNotNull(ClassFeatureEffectCatalog.template("reckless-attack"))
     }
 }
