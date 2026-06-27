@@ -55,11 +55,9 @@ fun SettingsScreen(
     isPatron: Boolean,
     onOpenPatron: () -> Unit,
     onOpenSpellLibrary: () -> Unit,
-    onOpenMonsterCodex2014: () -> Unit,
-    onOpenItemCatalog2014: () -> Unit,
     onOpenMonsterCodex: () -> Unit,
+    onOpenItemCatalog2014: () -> Unit,
     onOpenItemCatalog: () -> Unit,
-    onOpenPfMonsterCodex: () -> Unit,
     onOpenPfItemCatalog: () -> Unit,
     onOpenPfActions: () -> Unit,
     onOpenCredits: () -> Unit,
@@ -122,11 +120,9 @@ fun SettingsScreen(
                 SectionLabel("Reference", Modifier.padding(top = 18.dp, bottom = 8.dp))
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     SettingsTile("Spell Library", "Browse every SRD spell", onOpenSpellLibrary)
-                    SettingsTile("Monster Codex (2014)", "Browse the SRD bestiary", onOpenMonsterCodex2014)
+                    SettingsTile("Monster Codex", "Browse the SRD bestiary", onOpenMonsterCodex)
                     SettingsTile("Item Catalog (2014)", "Browse SRD weapons, armor, and gear", onOpenItemCatalog2014)
-                    SettingsTile("Monster Codex (2024)", "Browse the 2024 SRD bestiary", onOpenMonsterCodex)
                     SettingsTile("Item Catalog (2024)", "Browse 2024 weapons, armor, and masteries", onOpenItemCatalog)
-                    SettingsTile("Monster Core (PF2e)", "Browse the ORC bestiary", onOpenPfMonsterCodex)
                     SettingsTile("Item Catalog (PF2e)", "Browse weapons, armor, and shields", onOpenPfItemCatalog)
                     SettingsTile("Actions (PF2e)", "The three-action economy reference", onOpenPfActions)
                 }

@@ -18,10 +18,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -39,9 +36,10 @@ import au.com.evonet.nat20.dnd5e.MonsterCatalog
  * of the 2024 [MonsterCodex2024Screen], reading the [Monster] display accessors.
  * Attribution: SRD 5.1 / 5e-database (CC BY 4.0).
  */
+/** Chromeless D&D 5e (2014) bestiary body for the [ReferenceTabShell]. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MonsterCodexScreen(onBack: () -> Unit) {
+fun MonsterCodexBody() {
     var query by remember { mutableStateOf("") }
     var crFilter by remember { mutableStateOf<Double?>(null) }
     var expanded by remember { mutableStateOf<String?>(null) }
@@ -53,40 +51,30 @@ fun MonsterCodexScreen(onBack: () -> Unit) {
         }
     }
 
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        topBar = {
-            TopAppBar(
-                title = { Text("Monster Codex") },
-                navigationIcon = { TextButton(onClick = onBack) { Text("Back") } },
-            )
-        },
-    ) { inner ->
-        Column(Modifier.padding(inner).fillMaxSize()) {
-            OutlinedTextField(
-                value = query,
-                onValueChange = { query = it },
-                label = { Text("Search ${MonsterCatalog.all.size} monsters") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-            )
-            LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(CrFilters) { cr ->
-                    FilterChip(
-                        selected = crFilter == cr,
-                        onClick = { crFilter = if (crFilter == cr) null else cr },
-                        label = { Text("CR ${crLabel(cr)}") },
-                    )
-                }
+    Column(Modifier.fillMaxSize()) {
+        OutlinedTextField(
+            value = query,
+            onValueChange = { query = it },
+            label = { Text("Search ${MonsterCatalog.all.size} monsters") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+        )
+        LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(CrFilters) { cr ->
+                FilterChip(
+                    selected = crFilter == cr,
+                    onClick = { crFilter = if (crFilter == cr) null else cr },
+                    label = { Text("CR ${crLabel(cr)}") },
+                )
             }
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                items(monsters, key = { it.index }) { monster ->
-                    MonsterRow(monster, expanded == monster.index) { expanded = if (expanded == monster.index) null else monster.index }
-                }
+        }
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            items(monsters, key = { it.index }) { monster ->
+                MonsterRow(monster, expanded == monster.index) { expanded = if (expanded == monster.index) null else monster.index }
             }
         }
     }

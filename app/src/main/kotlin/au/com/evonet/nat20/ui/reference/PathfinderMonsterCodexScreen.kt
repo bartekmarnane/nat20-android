@@ -18,10 +18,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -39,9 +36,10 @@ import au.com.evonet.nat20.pf2e.PFMonsterCatalog
  * Mirrors the 2024 Monster Codex. Attribution: PF2e Remaster Monster Core, ORC
  * License, via Archives of Nethys.
  */
+/** Chromeless Pathfinder 2e Monster Core body for the [ReferenceTabShell]. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PathfinderMonsterCodexScreen(onBack: () -> Unit) {
+fun PathfinderMonsterCodexBody() {
     var query by remember { mutableStateOf("") }
     var levelFilter by remember { mutableStateOf<Int?>(null) }
     var expanded by remember { mutableStateOf<String?>(null) }
@@ -53,24 +51,19 @@ fun PathfinderMonsterCodexScreen(onBack: () -> Unit) {
         }
     }
 
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        topBar = { TopAppBar(title = { Text("Monster Core") }, navigationIcon = { TextButton(onClick = onBack) { Text("Back") } }) },
-    ) { inner ->
-        Column(Modifier.padding(inner).fillMaxSize()) {
-            OutlinedTextField(
-                value = query, onValueChange = { query = it },
-                label = { Text("Search ${PFMonsterCatalog.all.size} creatures") }, singleLine = true,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-            )
-            LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(LevelFilters) { lvl ->
-                    FilterChip(levelFilter == lvl, { levelFilter = if (levelFilter == lvl) null else lvl }, label = { Text("Lv $lvl") })
-                }
+    Column(Modifier.fillMaxSize()) {
+        OutlinedTextField(
+            value = query, onValueChange = { query = it },
+            label = { Text("Search ${PFMonsterCatalog.all.size} creatures") }, singleLine = true,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+        )
+        LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(LevelFilters) { lvl ->
+                FilterChip(levelFilter == lvl, { levelFilter = if (levelFilter == lvl) null else lvl }, label = { Text("Lv $lvl") })
             }
-            LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                items(monsters, key = { it.id }) { m -> MonsterRow(m, expanded == m.id) { expanded = if (expanded == m.id) null else m.id } }
-            }
+        }
+        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            items(monsters, key = { it.id }) { m -> MonsterRow(m, expanded == m.id) { expanded = if (expanded == m.id) null else m.id } }
         }
     }
 }
