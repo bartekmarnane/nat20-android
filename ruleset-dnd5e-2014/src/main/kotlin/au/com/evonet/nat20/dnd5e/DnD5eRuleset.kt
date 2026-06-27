@@ -56,6 +56,7 @@ class DnD5eRuleset : Ruleset {
         is DeathSaveRolledEvent -> "dnd5e.deathSaveRoll"
         is AttackEvent -> "dnd5e.attack"
         is InitiativeEvent -> "dnd5e.initiative"
+        is CheckRolledEvent -> "dnd5e.check"
         is ConditionAppliedEvent -> "dnd5e.conditionApplied"
         is ConditionClearedEvent -> "dnd5e.conditionCleared"
         is ExhaustionChangedEvent -> "dnd5e.exhaustion"
@@ -93,6 +94,7 @@ class DnD5eRuleset : Ruleset {
         is DeathSaveRolledEvent -> json.encodeToString(DeathSaveRolledEvent.serializer(), event)
         is AttackEvent -> json.encodeToString(AttackEvent.serializer(), event)
         is InitiativeEvent -> json.encodeToString(InitiativeEvent.serializer(), event)
+        is CheckRolledEvent -> json.encodeToString(CheckRolledEvent.serializer(), event)
         is ConditionAppliedEvent -> json.encodeToString(ConditionAppliedEvent.serializer(), event)
         is ConditionClearedEvent -> json.encodeToString(ConditionClearedEvent.serializer(), event)
         is ExhaustionChangedEvent -> json.encodeToString(ExhaustionChangedEvent.serializer(), event)
@@ -130,6 +132,7 @@ class DnD5eRuleset : Ruleset {
         "dnd5e.deathSaveRoll" -> this.json.decodeFromString(DeathSaveRolledEvent.serializer(), json)
         "dnd5e.attack" -> this.json.decodeFromString(AttackEvent.serializer(), json)
         "dnd5e.initiative" -> this.json.decodeFromString(InitiativeEvent.serializer(), json)
+        "dnd5e.check" -> this.json.decodeFromString(CheckRolledEvent.serializer(), json)
         "dnd5e.conditionApplied" -> this.json.decodeFromString(ConditionAppliedEvent.serializer(), json)
         "dnd5e.conditionCleared" -> this.json.decodeFromString(ConditionClearedEvent.serializer(), json)
         "dnd5e.exhaustion" -> this.json.decodeFromString(ExhaustionChangedEvent.serializer(), json)

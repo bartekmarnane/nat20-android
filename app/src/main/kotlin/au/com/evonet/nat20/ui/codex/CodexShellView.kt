@@ -70,8 +70,8 @@ fun CodexShellView(
             modifier = Modifier.weight(1f).fillMaxWidth(),
         ) { page ->
             when (tabs[page]) {
-                CodexTab.STATS -> StatsPage(payload) { levelingUp = true }
-                CodexTab.SKILLS -> SkillsPage(payload)
+                CodexTab.STATS -> StatsPage(payload, onApplyIntent) { levelingUp = true }
+                CodexTab.SKILLS -> SkillsPage(payload, onApplyIntent)
                 CodexTab.COMBAT -> CombatPage(character, payload, onApplyIntent)
                 CodexTab.SPELLS -> SpellsPage(character, payload, onBrowseSpells, onApplyIntent, onSave)
                 CodexTab.ITEMS -> ItemsPage(character, payload, onApplyIntent, onSave)

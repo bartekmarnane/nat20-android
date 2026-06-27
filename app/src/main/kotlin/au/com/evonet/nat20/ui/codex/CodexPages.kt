@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
@@ -33,11 +34,17 @@ import au.com.evonet.nat20.dnd5e.RollDeathSave
 import au.com.evonet.nat20.dnd5e.Feats
 import au.com.evonet.nat20.dnd5e.effectiveMaxHp
 import au.com.evonet.nat20.dnd5e.effectiveSkillProficiencies
+import au.com.evonet.nat20.dnd5e.ExpendSpellSlot
+import au.com.evonet.nat20.dnd5e.RollCheck
 import au.com.evonet.nat20.dnd5e.SetInitiative
 import au.com.evonet.nat20.dnd5e.SetInspiration
 import au.com.evonet.nat20.dnd5e.SpendHitDie
 import au.com.evonet.nat20.dnd5e.equippedWeapons
 import au.com.evonet.nat20.dnd5e.initiativeBonus
+import au.com.evonet.nat20.dnd5e.maxPactSlots
+import au.com.evonet.nat20.dnd5e.pactSlotLevel
+import au.com.evonet.nat20.dnd5e.totalCurrentSlots
+import au.com.evonet.nat20.dnd5e.totalMaxSlots
 import au.com.evonet.nat20.dnd5e.core.DeathSaveOutcome
 import au.com.evonet.nat20.dnd5e.DnD5ePayload
 import au.com.evonet.nat20.dnd5e.effectiveAbilityScores
@@ -48,16 +55,18 @@ import au.com.evonet.nat20.dnd5e.core.AbilityScores
 import au.com.evonet.nat20.dnd5e.core.DnD5eClasses
 import au.com.evonet.nat20.dnd5e.core.Proficiency
 import au.com.evonet.nat20.dnd5e.core.RollBonus
+import au.com.evonet.nat20.dnd5e.core.RollResult
 import au.com.evonet.nat20.dnd5e.core.RollSpec
 import au.com.evonet.nat20.domain.Character
 import au.com.evonet.nat20.domain.CharacterIntent
 import au.com.evonet.nat20.ui.roll.RollDialog
+import au.com.evonet.nat20.ui.roll.RollResultView
 import au.com.evonet.nat20.ui.slugToTitle
 
 // ── Pages ────────────────────────────────────────────────────────────────────
 
 @Composable
-internal fun StatsPage(payload: DnD5ePayload, onLevelUp: () -> Unit) {
+internal fun StatsPage(payload: DnD5ePayload, onApplyIntent: (CharacterIntent) -> Unit, onLevelUp: () -> Unit) {
     val prof = Proficiency.bonus(payload.level)
     val proficientSaves = payload.primaryClass()?.savingThrowAbilities()?.toSet().orEmpty()
     val perceptionProficient = "perception" in payload.effectiveSkillProficiencies
@@ -114,11 +123,11 @@ internal fun StatsPage(payload: DnD5ePayload, onLevelUp: () -> Unit) {
             Button(onClick = onLevelUp, modifier = Modifier.fillMaxWidth()) { Text("Level Up") }
         }
     }
-    check?.let { CheckRollDialog(it) { check = null } }
+    check?.let { CheckRollDialog(it, onApplyIntent) { check = null } }
 }
 
 @Composable
-internal fun SkillsPage(payload: DnD5ePayload) {
+internal fun SkillsPage(payload: DnD5ePayload, onApplyIntent: (CharacterIntent) -> Unit) {
     val prof = Proficiency.bonus(payload.level)
     var check by remember { mutableStateOf<CheckRoll?>(null) }
     val effectiveScores = payload.effectiveAbilityScores
@@ -156,10 +165,10 @@ internal fun SkillsPage(payload: DnD5ePayload) {
             }
         }
     }
-    check?.let { CheckRollDialog(it) { check = null } }
+    check?.let { CheckRollDialog(it, onApplyIntent) { check = null } }
 }
 
-/** A pending d20 check the roll dialog will present (transient — not journaled). */
+/** A pending d20 check the roll dialog will present. */
 internal data class CheckRoll(val title: String, val bonuses: List<RollBonus>, val lucky: Boolean = false)
 
 /** Builds the bonus chips for a d20 check: ability mod + proficiency when proficient. */
@@ -169,15 +178,65 @@ private fun checkBonuses(ability: String, abilityMod: Int, proficient: Boolean, 
         if (proficient) add(RollBonus("Proficiency", prof))
     }
 
+/**
+ * Presents a d20 check (A16 roll primitive) and, optionally, judges it against a
+ * DC and logs the pass/fail to the journal (A15) via [RollCheck]. A "Set DC"
+ * toggle reveals a ± stepper; "Log to journal" appears once the dice settle.
+ */
 @Composable
-private fun CheckRollDialog(check: CheckRoll, onDismiss: () -> Unit) {
-    RollDialog(
-        title = check.title,
-        spec = RollSpec.d(1, 20),
-        bonuses = check.bonuses,
-        allowAdvantageToggle = true,
-        luckyReroll = check.lucky,
-        onDismiss = onDismiss,
+private fun CheckRollDialog(check: CheckRoll, onApplyIntent: (CharacterIntent) -> Unit, onDismiss: () -> Unit) {
+    var settled by remember { mutableStateOf<RollResult?>(null) }
+    var useDc by remember { mutableStateOf(false) }
+    var dc by remember { mutableStateOf(15) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(check.title) },
+        text = {
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                RollResultView(
+                    baseSpec = RollSpec.d(1, 20),
+                    bonuses = check.bonuses,
+                    allowAdvantageToggle = true,
+                    luckyReroll = check.lucky,
+                    onSettled = { settled = it },
+                )
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text("Judge vs DC", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                    TextButton(onClick = { useDc = !useDc }) { Text(if (useDc) "On" else "Off") }
+                }
+                if (useDc) {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(onClick = { dc = (dc - 1).coerceAtLeast(1) }) { Text("−") }
+                        Text("DC $dc", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                        OutlinedButton(onClick = { dc = (dc + 1).coerceAtMost(40) }) { Text("+") }
+                    }
+                    settled?.let { r ->
+                        val pass = r.total >= dc
+                        Text(
+                            if (pass) "Success — ${r.total} ≥ $dc" else "Failure — ${r.total} < $dc",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (pass) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            val result = settled
+            if (result != null) {
+                TextButton(onClick = {
+                    onApplyIntent(RollCheck(check.title, result.total, result.naturalD20, if (useDc) dc else null))
+                    onDismiss()
+                }) { Text("Log to journal") }
+            } else {
+                TextButton(onClick = onDismiss) { Text("Done") }
+            }
+        },
+        dismissButton = if (settled != null) {
+            { TextButton(onClick = onDismiss) { Text("Close") } }
+        } else {
+            null
+        },
     )
 }
 
@@ -230,6 +289,7 @@ internal fun CombatPage(character: Character, payload: DnD5ePayload, onApplyInte
                 Text(if (payload.equippedWeapons.isEmpty()) "Equip a weapon to attack" else "Make an attack")
             }
         }
+        SpellSlotsTile(payload, onApplyIntent)
         SectionCard("Hit Dice") {
             StatLine("Available", "${payload.currentHitDice} / ${payload.maxHitDice}")
             payload.classes.forEach { entry ->
@@ -287,6 +347,39 @@ internal fun CombatPage(character: Character, payload: DnD5ePayload, onApplyInte
             onSettled = { result -> onApplyIntent(SetInitiative(result.total)) },
             onDismiss = { rollingInit = false },
         )
+    }
+}
+
+/**
+ * A compact Combat-tab tile to expend a spell slot without casting a specific
+ * spell (A15) — e.g. fuelling Divine Smite or a slot-cost feature mid-combat,
+ * reachable from Combat rather than only the Spells tab. Each tap on "−" drains
+ * one slot of that level via [ExpendSpellSlot] (pact slots merged in by level).
+ */
+@Composable
+private fun SpellSlotsTile(payload: DnD5ePayload, onApplyIntent: (CharacterIntent) -> Unit) {
+    val maxSlots = payload.totalMaxSlots
+    if (maxSlots.isEmpty()) return
+    SectionCard("Spell Slots") {
+        maxSlots.keys.sorted().forEach { level ->
+            val max = maxSlots[level] ?: 0
+            val remaining = payload.totalCurrentSlots[level] ?: 0
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                val isPact = payload.pactSlotLevel == level && payload.maxPactSlots > 0
+                Text(
+                    "Level $level" + if (isPact) " (incl. pact)" else "",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.weight(1f),
+                )
+                Text(
+                    "●".repeat(remaining) + "○".repeat((max - remaining).coerceAtLeast(0)),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(end = 8.dp),
+                )
+                OutlinedButton(enabled = remaining > 0, onClick = { onApplyIntent(ExpendSpellSlot(level)) }) { Text("Expend") }
+            }
+        }
     }
 }
 

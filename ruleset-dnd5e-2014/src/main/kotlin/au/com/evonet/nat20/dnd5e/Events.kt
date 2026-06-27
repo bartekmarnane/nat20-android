@@ -404,6 +404,35 @@ data class InitiativeEvent(
     override val summary: String get() = if (value != null) "Rolled initiative: $value" else "Cleared initiative"
 }
 
+/**
+ * An ability / skill / saving-throw check rolled via the A16 die primitive and
+ * logged to the journal (A15). When a [dc] is supplied the outcome is judged
+ * (pass/fail); without one it's a plain roll record. The roll itself happens in
+ * the UI — this just carries the result.
+ */
+@Serializable
+data class CheckRolledEvent(
+    val label: String,
+    val total: Int,
+    val naturalD20: Int? = null,
+    val dc: Int? = null,
+    val success: Boolean? = null,
+) : CharacterEvent {
+    override val summary: String
+        get() {
+            val nat = when (naturalD20) {
+                20 -> " (natural 20!)"
+                1 -> " (natural 1)"
+                else -> ""
+            }
+            return when {
+                dc != null && success == true -> "$label: rolled $total vs DC $dc — success$nat"
+                dc != null && success == false -> "$label: rolled $total vs DC $dc — failure$nat"
+                else -> "$label: rolled $total$nat"
+            }
+        }
+}
+
 @Serializable
 data class DeathSaveRolledEvent(
     val d20: Int,

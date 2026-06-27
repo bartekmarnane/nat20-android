@@ -35,6 +35,8 @@ fun SettingsScreen(
     isPatron: Boolean,
     onOpenPatron: () -> Unit,
     onOpenSpellLibrary: () -> Unit,
+    onOpenMonsterCodex2014: () -> Unit,
+    onOpenItemCatalog2014: () -> Unit,
     onOpenMonsterCodex: () -> Unit,
     onOpenItemCatalog: () -> Unit,
     onOpenPfMonsterCodex: () -> Unit,
@@ -116,6 +118,12 @@ fun SettingsScreen(
             SettingSection("Reference") {
                 Row(Modifier.fillMaxWidth().clickable(onClick = onOpenSpellLibrary).padding(vertical = 8.dp)) {
                     Text("Spell Library", style = MaterialTheme.typography.bodyLarge)
+                }
+                Row(Modifier.fillMaxWidth().clickable(onClick = onOpenMonsterCodex2014).padding(vertical = 8.dp)) {
+                    Text("Monster Codex (2014)", style = MaterialTheme.typography.bodyLarge)
+                }
+                Row(Modifier.fillMaxWidth().clickable(onClick = onOpenItemCatalog2014).padding(vertical = 8.dp)) {
+                    Text("Item Catalog (2014)", style = MaterialTheme.typography.bodyLarge)
                 }
                 Row(Modifier.fillMaxWidth().clickable(onClick = onOpenMonsterCodex).padding(vertical = 8.dp)) {
                     Text("Monster Codex (2024)", style = MaterialTheme.typography.bodyLarge)

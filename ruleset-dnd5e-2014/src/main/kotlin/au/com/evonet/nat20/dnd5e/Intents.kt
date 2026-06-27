@@ -255,6 +255,29 @@ data class SetInitiative(
     }
 }
 
+/**
+ * Logs an ability / skill / saving-throw check to the journal (A15). Logging-only
+ * (like [MakeAttack]) — it doesn't mutate the character. When a [dc] is supplied
+ * the pass/fail is judged here so the journal records the outcome, not just the
+ * number. The d20 + bonuses were rolled in the UI via the A16 primitive.
+ */
+data class RollCheck(
+    val label: String,
+    val total: Int,
+    val naturalD20: Int? = null,
+    val dc: Int? = null,
+) : CharacterIntent {
+    override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
+        if (label.isBlank()) throw CharacterIntentError.Invalid("Check needs a label")
+        // Natural 20/1 don't auto-succeed/fail on ability checks (RAW); judge by total.
+        val success = dc?.let { total >= it }
+        return IntentResult(
+            character,
+            CheckRolledEvent(label = label.trim(), total = total, naturalD20 = naturalD20, dc = dc, success = success),
+        )
+    }
+}
+
 /** Applies a condition (standard or house-rule) by name; idempotent (case-insensitive). */
 data class ApplyCondition(
     val name: String,

@@ -288,3 +288,36 @@ class CombatCodecTests {
         }
     }
 }
+
+class RollCheckTests {
+    @Test
+    fun `a judged check records pass or fail against the dc`() {
+        val pass = RollCheck("Stealth check", total = 18, naturalD20 = 15, dc = 15).applyTo(fighter(), ruleset).event as CheckRolledEvent
+        assertTrue(pass.success == true)
+        assertTrue(pass.summary.contains("success"))
+
+        val fail = RollCheck("Stealth check", total = 9, naturalD20 = 6, dc = 15).applyTo(fighter(), ruleset).event as CheckRolledEvent
+        assertFalse(fail.success!!)
+        assertTrue(fail.summary.contains("failure"))
+    }
+
+    @Test
+    fun `a check without a dc is a plain roll record with no judged outcome`() {
+        val event = RollCheck("STR check", total = 14, naturalD20 = 11).applyTo(fighter(), ruleset).event as CheckRolledEvent
+        assertNull(event.success)
+        assertTrue(event.summary.contains("rolled 14"))
+    }
+
+    @Test
+    fun `a blank label is rejected`() {
+        assertThrows(CharacterIntentError.Invalid::class.java) { RollCheck("  ", total = 10).applyTo(fighter(), ruleset) }
+    }
+
+    @Test
+    fun `check events round-trip through the codec`() {
+        val event = CheckRolledEvent("Athletics check", total = 21, naturalD20 = 20, dc = 18, success = true)
+        val typeId = ruleset.eventTypeId(event)
+        assertFalse(typeId == "dnd5e.unknown")
+        assertEquals(event, ruleset.decodeEvent(ruleset.encodeEvent(event), typeId))
+    }
+}

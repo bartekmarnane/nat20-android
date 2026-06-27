@@ -32,7 +32,9 @@ import au.com.evonet.nat20.ui.editor.DnD5eWizardScreen
 import au.com.evonet.nat20.ui.journal.JournalScreen
 import au.com.evonet.nat20.ui.past.PastAdventuresScreen
 import au.com.evonet.nat20.ui.reference.ItemCatalog2024Screen
+import au.com.evonet.nat20.ui.reference.ItemCatalogScreen
 import au.com.evonet.nat20.ui.reference.MonsterCodex2024Screen
+import au.com.evonet.nat20.ui.reference.MonsterCodexScreen
 import au.com.evonet.nat20.ui.reference.PathfinderActionsScreen
 import au.com.evonet.nat20.ui.reference.PathfinderItemCatalogScreen
 import au.com.evonet.nat20.ui.reference.PathfinderMonsterCodexScreen
@@ -64,6 +66,8 @@ private object Routes {
     const val SETTINGS = "settings"
     const val CREDITS = "credits"
     const val SPELL_LIBRARY = "spell-library"
+    const val MONSTER_CODEX_2014 = "monster-codex-2014"
+    const val ITEM_CATALOG_2014 = "item-catalog-2014"
     const val MONSTER_CODEX = "monster-codex-2024"
     const val ITEM_CATALOG = "item-catalog-2024"
     const val PF_MONSTER_CODEX = "monster-codex-pf2e"
@@ -123,6 +127,8 @@ fun NatApp() {
                 isPatron = isPatron,
                 onOpenPatron = { nav.navigate(Routes.PATRON) },
                 onOpenSpellLibrary = { nav.navigate(Routes.SPELL_LIBRARY) },
+                onOpenMonsterCodex2014 = { nav.navigate(Routes.MONSTER_CODEX_2014) },
+                onOpenItemCatalog2014 = { nav.navigate(Routes.ITEM_CATALOG_2014) },
                 onOpenMonsterCodex = { nav.navigate(Routes.MONSTER_CODEX) },
                 onOpenItemCatalog = { nav.navigate(Routes.ITEM_CATALOG) },
                 onOpenPfMonsterCodex = { nav.navigate(Routes.PF_MONSTER_CODEX) },
@@ -143,6 +149,14 @@ fun NatApp() {
 
         composable(Routes.SPELL_LIBRARY) {
             SpellLibraryScreen(onBack = { nav.popBackStack() })
+        }
+
+        composable(Routes.MONSTER_CODEX_2014) {
+            MonsterCodexScreen(onBack = { nav.popBackStack() })
+        }
+
+        composable(Routes.ITEM_CATALOG_2014) {
+            ItemCatalogScreen(onBack = { nav.popBackStack() })
         }
 
         composable(Routes.MONSTER_CODEX) {
