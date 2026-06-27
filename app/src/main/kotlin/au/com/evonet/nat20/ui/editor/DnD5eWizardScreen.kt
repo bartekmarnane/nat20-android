@@ -45,7 +45,9 @@ import au.com.evonet.nat20.dnd5e.ClassEntry
 import au.com.evonet.nat20.dnd5e.DnD5eCatalog
 import au.com.evonet.nat20.dnd5e.DnD5ePayload
 import au.com.evonet.nat20.dnd5e.DnD5eRuleset
+import au.com.evonet.nat20.dnd5e.Feats
 import au.com.evonet.nat20.dnd5e.FightingStyles
+import au.com.evonet.nat20.dnd5e.effectiveMaxHp
 import au.com.evonet.nat20.dnd5e.Race
 import au.com.evonet.nat20.dnd5e.withFullSpellSlots
 import au.com.evonet.nat20.dnd5e.core.Ability
@@ -66,8 +68,37 @@ import kotlin.math.max
 private enum class WizStep(val title: String) {
     NAME("Name"), RACE("Race"), CLASS("Class"), BACKGROUND("Background"),
     ABILITIES("Abilities"), SKILLS("Skills"), FIGHTING_STYLE("Fighting Style"),
-    SPELLS("Spells"), REVIEW("Review"),
+    SPELLS("Spells"), ADVANCEMENTS("Advancements"), REVIEW("Review"),
 }
+
+/** The shape of a single advancement-level choice for an above-level-1 build (A11). */
+private enum class AdvKind { ASI_ONE, ASI_TWO, FEAT }
+
+private data class AdvState(
+    val kind: AdvKind = AdvKind.ASI_ONE,
+    val abilities: List<Ability> = emptyList(),
+    val featId: String? = null,
+    val half: Ability? = null,
+) {
+    /** The ability bumps this choice contributes (+2/one, +1/two, or a half-feat's +1). */
+    fun bumps(): Map<Ability, Int> = when (kind) {
+        AdvKind.ASI_ONE -> abilities.take(1).associateWith { 2 }
+        AdvKind.ASI_TWO -> abilities.take(2).associateWith { 1 }
+        AdvKind.FEAT -> half?.let { mapOf(it to 1) }.orEmpty()
+    }
+
+    val chosenFeat: String? get() = featId.takeIf { kind == AdvKind.FEAT }
+
+    fun isComplete(): Boolean = when (kind) {
+        AdvKind.ASI_ONE -> abilities.size == 1
+        AdvKind.ASI_TWO -> abilities.size == 2
+        AdvKind.FEAT -> featId != null && (Feats.feat(featId)?.grantsAbilityIncrease != true || half != null)
+    }
+}
+
+/** Levels at or below [level] where [classId] grants an Ability Score Improvement. */
+private fun asiLevels(classId: String?, level: Int): List<Int> =
+    if (classId == null) emptyList() else (1..level).filter { LevelUpMath.grantsAbilityScoreImprovement(classId, it) }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -85,6 +116,8 @@ fun DnD5eWizardScreen(existing: Character?, onSave: (Character) -> Unit, onCance
     var fightingStyle by rememberSaveable { mutableStateOf(source?.fightingStyles?.firstOrNull()) }
     var chosenCantrips by remember { mutableStateOf(source?.cantripsKnown?.toSet().orEmpty()) }
     var chosenSpells by remember { mutableStateOf((source?.spellsKnown.orEmpty().values.flatten() + source?.preparedSpells.orEmpty().values.flatten()).toSet()) }
+    var subclass by rememberSaveable { mutableStateOf(source?.classes?.firstOrNull()?.subclass) }
+    var advs by remember { mutableStateOf<Map<Int, AdvState>>(emptyMap()) }
 
     val race = raceId?.let(DnD5eCatalog::race)
     val klass = classId?.let(DnD5eCatalog::characterClass)
@@ -97,8 +130,15 @@ fun DnD5eWizardScreen(existing: Character?, onSave: (Character) -> Unit, onCance
     val grantsStyle = klass != null && FightingStyles.grantsBy(klass.id, level)
     // The Spells step appears only for classes that cast at level 1 (full casters + Warlock).
     val castsAtCreation = klass != null && CastingProgression.forClass(klass.id) in setOf(CastingProgression.FULL, CastingProgression.WARLOCK)
+    // Above level 1, an Advancements step captures the subclass + each ASI-level choice earned so far.
+    val advLevels = asiLevels(classId, level)
+    val needsSubclass = klass != null && level >= klass.subclassLevel
+    val needsAdvancements = klass != null && (needsSubclass || advLevels.isNotEmpty())
+    val isSpellcaster = klass != null && CastingProgression.forClass(klass.id) != CastingProgression.NONE
     val steps = WizStep.entries.filter {
-        (it != WizStep.FIGHTING_STYLE || grantsStyle) && (it != WizStep.SPELLS || castsAtCreation)
+        (it != WizStep.FIGHTING_STYLE || grantsStyle) &&
+            (it != WizStep.SPELLS || castsAtCreation) &&
+            (it != WizStep.ADVANCEMENTS || needsAdvancements)
     }
     val step = steps[stepIndex.coerceIn(0, steps.lastIndex)]
 
@@ -111,12 +151,23 @@ fun DnD5eWizardScreen(existing: Character?, onSave: (Character) -> Unit, onCance
         WizStep.SKILLS -> klass != null && chosenSkills.size == klass.skillChoiceCount
         WizStep.FIGHTING_STYLE -> fightingStyle != null
         WizStep.SPELLS -> true
+        WizStep.ADVANCEMENTS -> (!needsSubclass || subclass != null) && advLevels.all { (advs[it] ?: AdvState()).isComplete() }
         WizStep.REVIEW -> true
     }
 
     fun build(): Character {
         val k = klass!!
-        val conMod = AbilityScores.modifier(finalScores.constitution)
+        // Fold the advancement ASIs/half-feats into the scores (capped at 20) + collect chosen feats.
+        var scores = finalScores
+        val feats = mutableListOf<String>()
+        if (needsAdvancements) {
+            for (lvl in advLevels) {
+                val choice = advs[lvl] ?: AdvState()
+                for ((ability, inc) in choice.bumps()) scores = scores.with(ability, minOf(20, scores.score(ability) + inc))
+                choice.chosenFeat?.let { feats += it }
+            }
+        }
+        val conMod = AbilityScores.modifier(scores.constitution)
         val maxHp = LevelUpMath.firstLevelHp(k.hitDie, conMod) +
             LevelUpMath.averageGain(k.hitDie) * (level - 1)
         // Spell picks (A11): cantrips to cantripsKnown; 1st-level spells to the prepared or known list per class.
@@ -125,17 +176,18 @@ fun DnD5eWizardScreen(existing: Character?, onSave: (Character) -> Unit, onCance
         val prepares = CastingProgression.usesPreparation(k.id)
         val payload = DnD5ePayload(
             race = raceId.orEmpty(),
-            classes = listOf(ClassEntry(k.id, level)),
-            abilityScores = finalScores,
+            classes = listOf(ClassEntry(k.id, level, subclass = subclass.takeIf { needsSubclass })),
+            abilityScores = scores,
             maxHp = maxHp,
-            currentHp = maxHp,
             background = backgroundId.orEmpty(),
             selectedSkills = (backgroundSkills + chosenSkills).distinct(),
             fightingStyles = listOfNotNull(fightingStyle.takeIf { grantsStyle }),
+            chosenFeats = feats.distinct(),
             cantripsKnown = cantrips,
             spellsKnown = if (spellList.isNotEmpty() && !prepares) mapOf(k.id to spellList) else emptyMap(),
             preparedSpells = if (spellList.isNotEmpty() && prepares) mapOf(k.id to spellList) else emptyMap(),
         ).withFullSpellSlots() // casters start the day with all slots
+            .let { it.copy(currentHp = it.effectiveMaxHp) } // start at full incl. Tough / feat riders
         return if (existing == null) {
             Character.new(name.trim(), DnD5eRuleset(), payload, Instant.now())
         } else {
@@ -172,6 +224,11 @@ fun DnD5eWizardScreen(existing: Character?, onSave: (Character) -> Unit, onCance
                     WizStep.SKILLS -> SkillsStep(klass, backgroundSkills, chosenSkills) { chosenSkills = it }
                     WizStep.FIGHTING_STYLE -> FightingStyleStep(fightingStyle) { fightingStyle = it }
                     WizStep.SPELLS -> SpellsStep(klass, chosenCantrips, chosenSpells, { chosenCantrips = it }, { chosenSpells = it })
+                    WizStep.ADVANCEMENTS -> AdvancementsStep(
+                        klass, level, needsSubclass, advLevels, finalScores, isSpellcaster, subclass, advs,
+                        onSubclass = { subclass = it },
+                        onAdv = { lvl, st -> advs = advs + (lvl to st) },
+                    )
                     WizStep.REVIEW -> ReviewStep(name, race, klass, level, background, finalScores, backgroundSkills + chosenSkills)
                 }
             }
@@ -335,6 +392,84 @@ private fun FightingStyleStep(selected: String?, onPick: (String) -> Unit) {
         }
     }
 }
+
+/**
+ * The above-level-1 creation step (A11): pick the subclass earned by [level] and,
+ * for each Ability-Score-Improvement level reached, allocate a +2/one, +1/two, or
+ * a prereq-filtered feat (half-feats get their +1). Mirrors the 2024 wizard's
+ * Advancements step; reuses the same `LevelUp` machinery via the folded payload.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun AdvancementsStep(
+    klass: CharacterClass?,
+    level: Int,
+    needsSubclass: Boolean,
+    advLevels: List<Int>,
+    scores: AbilityScores,
+    isSpellcaster: Boolean,
+    subclass: String?,
+    advs: Map<Int, AdvState>,
+    onSubclass: (String) -> Unit,
+    onAdv: (Int, AdvState) -> Unit,
+) {
+    klass ?: return
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Text("Your ${klass.name} is level $level — make the choices earned along the way.", style = MaterialTheme.typography.bodyLarge)
+
+        if (needsSubclass && klass.subclasses.isNotEmpty()) {
+            StepLabel("Subclass (level ${klass.subclassLevel})")
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                klass.subclasses.forEach { s -> FilterChip(subclass == s.id, { onSubclass(s.id) }, label = { Text(s.name) }) }
+            }
+        }
+
+        advLevels.forEach { lvl ->
+            val state = advs[lvl] ?: AdvState()
+            StepLabel("Level $lvl — Ability Score Improvement or Feat")
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(state.kind == AdvKind.ASI_ONE, { onAdv(lvl, AdvState(AdvKind.ASI_ONE)) }, label = { Text("+2 one") })
+                FilterChip(state.kind == AdvKind.ASI_TWO, { onAdv(lvl, AdvState(AdvKind.ASI_TWO)) }, label = { Text("+1 two") })
+                FilterChip(state.kind == AdvKind.FEAT, { onAdv(lvl, AdvState(AdvKind.FEAT)) }, label = { Text("Feat") })
+            }
+            when (state.kind) {
+                AdvKind.ASI_ONE, AdvKind.ASI_TWO -> {
+                    val limit = if (state.kind == AdvKind.ASI_ONE) 1 else 2
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Ability.entries.forEach { a ->
+                            val picked = a in state.abilities
+                            FilterChip(
+                                picked,
+                                enabled = scores.score(a) < 20 && (picked || state.abilities.size < limit),
+                                onClick = { onAdv(lvl, state.copy(abilities = if (picked) state.abilities - a else state.abilities + a)) },
+                                label = { Text("${a.abbreviation} ${scores.score(a)}") },
+                            )
+                        }
+                    }
+                }
+                AdvKind.FEAT -> {
+                    val available = Feats.available(scores, isSpellcaster)
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        available.forEach { f -> FilterChip(state.featId == f.id, { onAdv(lvl, state.copy(featId = f.id, half = null)) }, label = { Text(f.name) }) }
+                    }
+                    state.featId?.let { Feats.feat(it) }?.let { f ->
+                        Text(f.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        if (f.grantsAbilityIncrease) {
+                            Text("+1 ability score:", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                f.halfFeatAbilities.forEach { a -> FilterChip(state.half == a, enabled = scores.score(a) < 20, onClick = { onAdv(lvl, state.copy(half = a)) }, label = { Text("${a.abbreviation} ${scores.score(a)}") }) }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun StepLabel(text: String) =
+    Text(text.uppercase(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
 
 @Composable
 private fun ReviewStep(name: String, race: Race?, klass: CharacterClass?, level: Int, background: Background?, scores: AbilityScores, skills: List<String>) {
