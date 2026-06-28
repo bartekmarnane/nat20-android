@@ -134,22 +134,26 @@ fun SpellLibraryBody() {
 @Composable
 fun SpellLibrary2024Body() {
     val all = remember {
-        // The 2024 SRD catalogue carries no V/S/M component data, so this tab
-        // shows no component badges (rather than guessing them).
+        // The 2024 SRD catalogue has no V/S/M components, so (matching iOS) the
+        // badges are Concentration / Ritual flags and the meta is "school · lists".
         DnD5e2024Catalog.spellLibrary.sortedWith(compareBy({ it.level }, { it.name })).map { s ->
             SpellRowModel(
                 id = s.id,
                 name = s.name,
                 meta = listOfNotNull(
                     s.school.replaceFirstChar(Char::uppercase).takeIf { it.isNotBlank() },
-                    if (s.concentration) "Concentration" else null,
-                    if (s.ritual) "Ritual" else null,
+                    s.classNames.sorted().joinToString(" / ").takeIf { it.isNotBlank() },
                 ).joinToString(" · "),
                 monogram = s.school.firstOrNull()?.uppercase() ?: "•",
-                badges = emptyList(),
+                badges = buildList {
+                    if (s.concentration) add(SpellBadge("C", true))
+                    if (s.ritual) add(SpellBadge("R", true))
+                },
                 group = s.level,
                 detailLines = buildList {
                     if (s.school.isNotBlank()) add("School" to s.school.replaceFirstChar(Char::uppercase))
+                    if (s.concentration) add("Concentration" to "Yes")
+                    if (s.ritual) add("Ritual" to "Yes")
                     if (s.classNames.isNotEmpty()) add("Classes" to s.classNames.joinToString(", "))
                 },
                 description = s.description,
