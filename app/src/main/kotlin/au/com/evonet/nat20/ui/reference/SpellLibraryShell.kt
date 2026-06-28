@@ -134,12 +134,9 @@ fun SpellLibraryBody() {
 @Composable
 fun SpellLibrary2024Body() {
     val all = remember {
-        // The 2024 SRD catalogue doesn't carry V/S/M components; 93% of its spells
-        // share an id with the 2014 SRD (which does), so reuse those. The ~25
-        // 2024-only spells fall back to the common Verbal+Somatic pattern.
-        val components2014 = DnD5eCatalog.spellLibrary.associate { it.index to it.components }
+        // The 2024 SRD catalogue carries no V/S/M component data, so this tab
+        // shows no component badges (rather than guessing them).
         DnD5e2024Catalog.spellLibrary.sortedWith(compareBy({ it.level }, { it.name })).map { s ->
-            val components = components2014[s.id] ?: listOf("V", "S")
             SpellRowModel(
                 id = s.id,
                 name = s.name,
@@ -149,15 +146,10 @@ fun SpellLibrary2024Body() {
                     if (s.ritual) "Ritual" else null,
                 ).joinToString(" · "),
                 monogram = s.school.firstOrNull()?.uppercase() ?: "•",
-                badges = listOf(
-                    SpellBadge("V", "V" in components),
-                    SpellBadge("S", "S" in components),
-                    SpellBadge("M", "M" in components),
-                ),
+                badges = emptyList(),
                 group = s.level,
                 detailLines = buildList {
                     if (s.school.isNotBlank()) add("School" to s.school.replaceFirstChar(Char::uppercase))
-                    add("Components" to components.joinToString(", "))
                     if (s.classNames.isNotEmpty()) add("Classes" to s.classNames.joinToString(", "))
                 },
                 description = s.description,
