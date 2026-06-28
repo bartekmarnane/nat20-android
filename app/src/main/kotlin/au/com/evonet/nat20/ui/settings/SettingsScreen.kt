@@ -57,9 +57,7 @@ fun SettingsScreen(
     onOpenPatron: () -> Unit,
     onOpenSpellLibrary: () -> Unit,
     onOpenMonsterCodex: () -> Unit,
-    onOpenItemCatalog2014: () -> Unit,
     onOpenItemCatalog: () -> Unit,
-    onOpenPfItemCatalog: () -> Unit,
     onOpenPfActions: () -> Unit,
     onOpenCredits: () -> Unit,
     onBack: () -> Unit,
@@ -126,9 +124,7 @@ fun SettingsScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     SettingsTile("Spell Library", "Browse every SRD spell", onOpenSpellLibrary)
                     SettingsTile("Monster Codex", "Browse the SRD bestiary", onOpenMonsterCodex)
-                    SettingsTile("Item Catalog (2014)", "Browse SRD weapons, armor, and gear", onOpenItemCatalog2014)
-                    SettingsTile("Item Catalog (2024)", "Browse 2024 weapons, armor, and masteries", onOpenItemCatalog)
-                    SettingsTile("Item Catalog (PF2e)", "Browse weapons, armor, and shields", onOpenPfItemCatalog)
+                    SettingsTile("Item Catalog", "Browse weapons, armor, and gear", onOpenItemCatalog)
                     SettingsTile("Actions (PF2e)", "The three-action economy reference", onOpenPfActions)
                 }
             }

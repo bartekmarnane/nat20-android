@@ -31,11 +31,9 @@ import au.com.evonet.nat20.ui.editor.PathfinderWizardScreen
 import au.com.evonet.nat20.ui.editor.DnD5eWizardScreen
 import au.com.evonet.nat20.ui.journal.JournalScreen
 import au.com.evonet.nat20.ui.past.PastAdventuresScreen
-import au.com.evonet.nat20.ui.reference.ItemCatalog2024Screen
-import au.com.evonet.nat20.ui.reference.ItemCatalogScreen
+import au.com.evonet.nat20.ui.reference.ItemCatalogShell
 import au.com.evonet.nat20.ui.reference.MonsterCodexShell
 import au.com.evonet.nat20.ui.reference.PathfinderActionsScreen
-import au.com.evonet.nat20.ui.reference.PathfinderItemCatalogScreen
 import au.com.evonet.nat20.ui.patron.PatronScreen
 import au.com.evonet.nat20.patron.PatronStore
 import au.com.evonet.nat20.ui.reference.SpellLibraryShell
@@ -65,9 +63,7 @@ private object Routes {
     const val CREDITS = "credits"
     const val SPELL_LIBRARY = "spell-library"
     const val MONSTER_CODEX = "monster-codex"
-    const val ITEM_CATALOG_2014 = "item-catalog-2014"
-    const val ITEM_CATALOG = "item-catalog-2024"
-    const val PF_ITEM_CATALOG = "item-catalog-pf2e"
+    const val ITEM_CATALOG = "item-catalog"
     const val PF_ACTIONS = "actions-pf2e"
     const val PATRON = "patron"
     const val ARG_ID = "id"
@@ -125,9 +121,7 @@ fun NatApp() {
                 onOpenPatron = { nav.navigate(Routes.PATRON) },
                 onOpenSpellLibrary = { nav.navigate(Routes.SPELL_LIBRARY) },
                 onOpenMonsterCodex = { nav.navigate(Routes.MONSTER_CODEX) },
-                onOpenItemCatalog2014 = { nav.navigate(Routes.ITEM_CATALOG_2014) },
                 onOpenItemCatalog = { nav.navigate(Routes.ITEM_CATALOG) },
-                onOpenPfItemCatalog = { nav.navigate(Routes.PF_ITEM_CATALOG) },
                 onOpenPfActions = { nav.navigate(Routes.PF_ACTIONS) },
                 onOpenCredits = { nav.navigate(Routes.CREDITS) },
                 onBack = { nav.popBackStack() },
@@ -150,16 +144,8 @@ fun NatApp() {
             MonsterCodexShell(onBack = { nav.popBackStack() })
         }
 
-        composable(Routes.ITEM_CATALOG_2014) {
-            ItemCatalogScreen(onBack = { nav.popBackStack() })
-        }
-
         composable(Routes.ITEM_CATALOG) {
-            ItemCatalog2024Screen(onBack = { nav.popBackStack() })
-        }
-
-        composable(Routes.PF_ITEM_CATALOG) {
-            PathfinderItemCatalogScreen(onBack = { nav.popBackStack() })
+            ItemCatalogShell(onBack = { nav.popBackStack() })
         }
 
         composable(Routes.PF_ACTIONS) {
