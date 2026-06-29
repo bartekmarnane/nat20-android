@@ -36,10 +36,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import au.com.evonet.nat20.dnd5e.DnD5eCatalog
 import au.com.evonet.nat20.dnd5e2024.Armors2024
+import au.com.evonet.nat20.dnd5e2024.Gears2024
 import au.com.evonet.nat20.dnd5e2024.Weapons2024
 import au.com.evonet.nat20.pf2e.PfArmors
 import au.com.evonet.nat20.pf2e.PfShields
 import au.com.evonet.nat20.pf2e.PfWeapons
+import au.com.evonet.nat20.pf2e.RuneKind
+import au.com.evonet.nat20.pf2e.Runes
 import au.com.evonet.nat20.ui.theme.Cinzel
 import au.com.evonet.nat20.ui.theme.Cormorant
 import au.com.evonet.nat20.ui.theme.EbGaramond
@@ -119,7 +122,7 @@ fun ItemCatalogBody2014() {
 
 @Composable
 fun ItemCatalog2024Body() {
-    ItemCatalogBody(listOf("Weapons", "Armor")) { category, q ->
+    ItemCatalogBody(listOf("Weapons", "Armor", "Gear")) { category, q ->
         when (category) {
             "Weapons" -> Weapons2024.all.filter { matches(it.name, q) }.map { w ->
                 ItemRowModel(
@@ -134,7 +137,7 @@ fun ItemCatalog2024Body() {
                     w.mastery.summary,
                 )
             }
-            else -> Armors2024.all.filter { matches(it.name, q) }.map { a ->
+            "Armor" -> Armors2024.all.filter { matches(it.name, q) }.map { a ->
                 val dexRule = when (a.category.dexCap) { null -> "+ full DEX"; 0 -> "DEX ignored"; else -> "+ DEX (max +${a.category.dexCap})" }
                 ItemRowModel(
                     a.id, a.name,
@@ -144,13 +147,26 @@ fun ItemCatalog2024Body() {
                     "",
                 )
             }
+            else -> Gears2024.all.filter { matches(it.name, q) }.map { g ->
+                ItemRowModel(
+                    g.id, g.name,
+                    g.acBonus?.let { "Shield · +$it AC" } ?: g.cost,
+                    g.cost,
+                    buildList {
+                        g.acBonus?.let { add("AC Bonus" to "+$it") }
+                        add("Cost" to g.cost)
+                        g.weight?.let { add("Weight" to "$it lb") }
+                    },
+                    g.description,
+                )
+            }
         }
     }
 }
 
 @Composable
 fun ItemCatalogPfBody() {
-    ItemCatalogBody(listOf("Weapons", "Armor", "Shields")) { category, q ->
+    ItemCatalogBody(listOf("Weapons", "Armor", "Shields", "Runes")) { category, q ->
         when (category) {
             "Weapons" -> PfWeapons.all.filter { matches(it.name, q) }.map { w ->
                 ItemRowModel(
@@ -174,13 +190,26 @@ fun ItemCatalogPfBody() {
                     a.summary,
                 )
             }
-            else -> PfShields.all.filter { matches(it.name, q) }.map { s ->
+            "Shields" -> PfShields.all.filter { matches(it.name, q) }.map { s ->
                 ItemRowModel(
                     s.id, s.name,
                     "Raised +${s.raisedAcBonus} AC · Hardness ${s.hardness}",
                     null,
                     listOf("Raised AC" to "+${s.raisedAcBonus}", "Hardness" to "${s.hardness}", "HP" to "${s.hp}"),
                     "",
+                )
+            }
+            else -> Runes.propertyRunes.filter { matches(it.name, q) }.map { r ->
+                ItemRowModel(
+                    "rune-${r.id}", r.name,
+                    "${if (r.kind == RuneKind.WEAPON) "Weapon" else "Armor"} rune · Level ${r.level}",
+                    "${r.price} gp",
+                    listOf(
+                        "Kind" to if (r.kind == RuneKind.WEAPON) "Weapon" else "Armor",
+                        "Level" to "${r.level}",
+                        "Price" to "${r.price} gp",
+                    ),
+                    r.summary,
                 )
             }
         }
