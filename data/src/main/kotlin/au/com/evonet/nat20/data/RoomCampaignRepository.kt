@@ -15,6 +15,10 @@ class RoomCampaignRepository(
         dao.observeForCharacter(characterId.toString())
             .map { rows -> rows.map(codec::toDomain) }
 
+    override fun activeCampaignNames(): Flow<Map<UUID, String>> =
+        dao.observeActiveCampaignNames()
+            .map { rows -> rows.associate { UUID.fromString(it.characterId) to it.name } }
+
     override suspend fun campaign(id: UUID): Campaign? =
         dao.byId(id.toString())?.let(codec::toDomain)
 

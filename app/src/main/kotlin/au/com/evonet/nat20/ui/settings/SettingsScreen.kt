@@ -123,8 +123,8 @@ fun SettingsScreen(
                 SectionLabel("Reference", Modifier.padding(top = 18.dp, bottom = 8.dp))
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     SettingsTile("Spell Library", "Browse every SRD spell", onOpenSpellLibrary)
+                    SettingsTile("Item Catalog", "Browse SRD weapons, armor, and gear", onOpenItemCatalog)
                     SettingsTile("Monster Codex", "Browse the SRD bestiary", onOpenMonsterCodex)
-                    SettingsTile("Item Catalog", "Browse weapons, armor, and gear", onOpenItemCatalog)
                     SettingsTile("Actions (PF2e)", "The three-action economy reference", onOpenPfActions)
                 }
             }

@@ -42,12 +42,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.util.UUID
 import au.com.evonet.nat20.dnd5e.DnD5ePayload
 import au.com.evonet.nat20.dnd5e2024.DnD5e2024Payload
 import au.com.evonet.nat20.domain.Character
@@ -72,6 +78,7 @@ import au.com.evonet.nat20.ui.theme.natPalette
 @Composable
 fun RosterScreen(
     characters: List<Character>,
+    campaignNames: Map<UUID, String>,
     canCreate: Boolean,
     onSelect: (Character) -> Unit,
     onNew: () -> Unit,
@@ -113,6 +120,9 @@ fun RosterScreen(
                 contentPadding = PaddingValues(horizontal = 22.dp, vertical = 4.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
+                if (characters.isEmpty()) {
+                    item { EmptyStateTile() }
+                }
                 items(characters, key = { it.id }) { character ->
                     val dismissState = rememberSwipeToDismissBoxState(
                         confirmValueChange = { target ->
@@ -125,7 +135,7 @@ fun RosterScreen(
                         enableDismissFromStartToEnd = false,
                         backgroundContent = { DeleteSwipeBackground(dismissState) },
                     ) {
-                        CharacterIndexCard(character, onClick = { onSelect(character) })
+                        CharacterIndexCard(character, campaignNames[character.id], onClick = { onSelect(character) })
                     }
                 }
                 if (inlineCta) {
@@ -194,10 +204,54 @@ private fun heroSubtitle(count: Int): String = when (count) {
     else -> "$count souls under your hand."
 }
 
+// ── Empty state ────────────────────────────────────────────────────────────────
+
+/** The blank-roster tile: dashed accent border, matching the iOS `emptyStateTile`. */
+@Composable
+private fun EmptyStateTile() {
+    val palette = MaterialTheme.natPalette
+    val accent = palette.accent.copy(alpha = 0.33f)
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(4.dp))
+            .background(palette.tile.copy(alpha = 0.66f))
+            .drawBehind {
+                drawRoundRect(
+                    color = accent,
+                    cornerRadius = CornerRadius(4.dp.toPx()),
+                    style = Stroke(
+                        width = 1.4.dp.toPx(),
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(4.dp.toPx(), 3.dp.toPx())),
+                    ),
+                )
+            }
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Text(
+            "The page is blank.",
+            fontFamily = Cormorant,
+            fontStyle = FontStyle.Italic,
+            fontSize = 20.sp,
+            color = palette.ink,
+        )
+        Text(
+            "Forge your first character and the codex will fill itself.",
+            fontFamily = ImFell,
+            fontStyle = FontStyle.Italic,
+            fontSize = 13.sp,
+            color = palette.inkSoft,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
 // ── Character card ─────────────────────────────────────────────────────────────
 
 @Composable
-private fun CharacterIndexCard(character: Character, onClick: () -> Unit) {
+private fun CharacterIndexCard(character: Character, campaignName: String?, onClick: () -> Unit) {
     val palette = MaterialTheme.natPalette
     Row(
         Modifier
@@ -228,8 +282,14 @@ private fun CharacterIndexCard(character: Character, onClick: () -> Unit) {
             }
             Text(character.classAndLevel(), fontFamily = Cormorant, fontStyle = FontStyle.Italic, fontSize = 15.sp, color = palette.inkSoft, maxLines = 1)
             Spacer(Modifier.height(6.dp))
-            // The roster doesn't yet receive campaign data; iOS shows the campaign name here.
-            Text("No campaign yet", fontFamily = ImFell, fontStyle = FontStyle.Italic, fontSize = 13.sp, color = palette.inkMute, maxLines = 1)
+            if (campaignName != null) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Diamond(size = 4.dp, fill = palette.accent)
+                    Text(campaignName, fontFamily = Cormorant, fontStyle = FontStyle.Italic, fontSize = 13.sp, color = palette.ink, maxLines = 1)
+                }
+            } else {
+                Text("No campaign yet", fontFamily = ImFell, fontStyle = FontStyle.Italic, fontSize = 13.sp, color = palette.inkMute, maxLines = 1)
+            }
         }
         Icon(
             Icons.AutoMirrored.Filled.KeyboardArrowRight,

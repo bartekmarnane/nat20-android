@@ -115,9 +115,9 @@ internal fun AttackSheet(payload: DnD5ePayload, onApplyIntent: (CharacterIntent)
                     if (attackTotal != null) {
                         SectionLabel("Outcome")
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            OutcomeChip("Hit", outcome == AttackOutcome.HIT) { outcome = AttackOutcome.HIT; weaponDamage = null }
                             OutcomeChip("Miss", outcome == AttackOutcome.MISS) { outcome = AttackOutcome.MISS; weaponDamage = null }
-                            OutcomeChip("Crit", outcome == AttackOutcome.CRITICAL) { outcome = AttackOutcome.CRITICAL; weaponDamage = null }
+                            OutcomeChip("Hit", outcome == AttackOutcome.HIT) { outcome = AttackOutcome.HIT; weaponDamage = null }
+                            OutcomeChip("Critical", outcome == AttackOutcome.CRITICAL) { outcome = AttackOutcome.CRITICAL; weaponDamage = null }
                         }
                     }
 
@@ -215,7 +215,15 @@ internal fun AttackSheet(payload: DnD5ePayload, onApplyIntent: (CharacterIntent)
                     )
                     onDismiss()
                 },
-            ) { Text("Log attack") }
+            ) {
+                Text(
+                    when (outcome) {
+                        AttackOutcome.MISS -> "Record miss"
+                        AttackOutcome.CRITICAL -> "Record critical hit"
+                        else -> "Record hit"
+                    },
+                )
+            }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
     )

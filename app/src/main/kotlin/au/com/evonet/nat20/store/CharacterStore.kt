@@ -53,6 +53,10 @@ class CharacterStore(
     val roster: StateFlow<List<Character>> = characters.characters
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    /** Active campaign name per character id — the roster cards' campaign line. */
+    val activeCampaignNames: StateFlow<Map<UUID, String>> = campaigns.activeCampaignNames()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
+
     private val _generatingChronicles = MutableStateFlow<Set<UUID>>(emptySet())
     /** Campaigns whose chronicle is currently being (re)generated — drives the journal's indicator. */
     val generatingChronicles: StateFlow<Set<UUID>> = _generatingChronicles.asStateFlow()

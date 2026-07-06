@@ -42,12 +42,12 @@ import au.com.evonet.nat20.domain.NoteKind
 
 /** The quick in-campaign actions; the detailed pickers live on the codex tabs. */
 private enum class Act(val label: String) {
-    DAMAGE("Damage"),
+    DAMAGE("Take damage"),
     HEAL("Heal"),
-    TEMP_HP("Temp HP"),
+    TEMP_HP("Gain temp HP"),
     SHORT_REST("Short Rest"),
     LONG_REST("Long Rest"),
-    NOTE("Note"),
+    NOTE("Add journal entry"),
 }
 
 /**
@@ -164,7 +164,7 @@ private fun AmountPicker(title: String, onBack: () -> Unit, onConfirm: (Int) -> 
 private fun NotePicker(onBack: () -> Unit, onConfirm: (String, NoteKind?) -> Unit) {
     var text by remember { mutableStateOf("") }
     var kind by remember { mutableStateOf<NoteKind?>(null) }
-    Text("Note", style = MaterialTheme.typography.titleLarge)
+    Text("Add to Journal", style = MaterialTheme.typography.titleLarge)
     OutlinedTextField(
         value = text,
         onValueChange = { text = it },
@@ -183,7 +183,7 @@ private fun NotePicker(onBack: () -> Unit, onConfirm: (String, NoteKind?) -> Uni
     }
     PickerButtons(
         onBack = onBack,
-        confirmLabel = "Add Note",
+        confirmLabel = "Add to Journal",
         confirmEnabled = text.isNotBlank(),
         onConfirm = { onConfirm(text, kind) },
     )

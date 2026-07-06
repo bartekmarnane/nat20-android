@@ -96,8 +96,10 @@ fun NatApp() {
     NavHost(navController = nav, startDestination = Routes.ROSTER) {
         composable(Routes.ROSTER) {
             var chooseEdition by remember { mutableStateOf(false) }
+            val campaignNames by store.activeCampaignNames.collectAsState()
             RosterScreen(
                 characters = characters,
+                campaignNames = campaignNames,
                 canCreate = PatronStore.canCreateMore(characters.size, isPatron),
                 onSelect = { nav.navigate(Routes.sheet(it.id)) },
                 onNew = { chooseEdition = true },

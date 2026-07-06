@@ -12,6 +12,9 @@ interface CampaignRepository {
     /** Live stream of a character's campaigns, newest-started first. */
     fun campaignsForCharacter(characterId: UUID): Flow<List<Campaign>>
 
+    /** Live stream of every active campaign's name, keyed by character id (roster campaign line). */
+    fun activeCampaignNames(): Flow<Map<UUID, String>>
+
     /** One campaign by id, or null. */
     suspend fun campaign(id: UUID): Campaign?
 

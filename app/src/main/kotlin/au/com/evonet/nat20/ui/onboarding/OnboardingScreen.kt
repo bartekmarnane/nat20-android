@@ -84,7 +84,7 @@ fun OnboardingScreen(aiAvailable: Boolean, onComplete: () -> Unit) {
             }
 
             Button(onClick = { advance() }, modifier = Modifier.fillMaxWidth()) {
-                Text(if (isLast) "Begin" else "Continue")
+                Text("Continue")
             }
         }
     }
@@ -207,9 +207,9 @@ private fun onboardingPages(ai: Boolean): List<OnboardingPage> = listOf(
         label = "Characters",
         title = if (ai) "Forge a hero by hand — or conjure one whole." else "Forge a hero, choice by choice.",
         body = if (ai) {
-            "Build by hand, step by step, or let Nat20 conjure a ready-to-play hero in moments. Until a campaign begins, every detail is yours to change."
+            "Build by hand, step by step, or let Nat20 conjure a ready-to-play hero in moments — across all three rulesets: 5th Edition (2014), 5th Edition (2024), and Pathfinder 2e. Until a campaign begins, every detail is yours to change."
         } else {
-            "Build your hero by hand, choice by choice. Until a campaign begins, every detail is yours to change."
+            "Build your hero by hand, choice by choice, across all three rulesets: 5th Edition (2014), 5th Edition (2024), and Pathfinder 2e. Until a campaign begins, every detail is yours to change."
         },
         art = { DieFace() },
     ),

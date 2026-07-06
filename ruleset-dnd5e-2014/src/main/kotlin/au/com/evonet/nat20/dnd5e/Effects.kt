@@ -52,6 +52,13 @@ val DnD5ePayload.effectiveMaxHp: Int
     get() = maxHp + bonusMaxHpPerLevel * level
 
 /**
+ * Effective walking speed in feet, resolved from the catalogue race (dwarves 25,
+ * wood elf 35, most others 30). Falls back to 30 when the race is unset or unknown.
+ */
+val DnD5ePayload.effectiveSpeed: Int
+    get() = DnD5eCatalog.race(race)?.speed ?: 30
+
+/**
  * Synthesises the always-on class effects that ride the same modifier pipeline:
  * Barbarian Unarmored Defense (10 + DEX + CON) and Monk Unarmored Defense
  * (10 + DEX + WIS, no shield). Only relevant while unarmored — the AC calculator

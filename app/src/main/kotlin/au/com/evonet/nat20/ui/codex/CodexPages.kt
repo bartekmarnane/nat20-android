@@ -40,6 +40,7 @@ import au.com.evonet.nat20.dnd5e.RollDeathSave
 import au.com.evonet.nat20.dnd5e.Feats
 import au.com.evonet.nat20.dnd5e.effectiveMaxHp
 import au.com.evonet.nat20.dnd5e.effectiveSkillProficiencies
+import au.com.evonet.nat20.dnd5e.effectiveSpeed
 import au.com.evonet.nat20.dnd5e.ExpendSpellSlot
 import au.com.evonet.nat20.dnd5e.Invocations
 import au.com.evonet.nat20.dnd5e.Metamagics
@@ -364,7 +365,7 @@ internal fun CombatPage(character: Character, payload: DnD5ePayload, onApplyInte
         }
         SectionCard("Defense & Movement") {
             StatLine("Armor Class", acBreakdown.total.toString())
-            // Spell-out the AC sources so the number is legible (speed defaults to 30).
+            // Spell-out the AC sources so the number is legible.
             Text(
                 acBreakdown.rows.joinToString(" + ") { "${it.label} ${it.value.signed()}" },
                 style = MaterialTheme.typography.labelSmall,
@@ -389,7 +390,7 @@ internal fun CombatPage(character: Character, payload: DnD5ePayload, onApplyInte
                     TextButton(onClick = { onApplyIntent(SetInitiative(null)) }) { Text("Clear") }
                 }
             }
-            StatLine("Speed", "30 ft")
+            StatLine("Speed", "${payload.effectiveSpeed} ft")
         }
         SectionCard("Attack") {
             Button(onClick = { attacking = true }, enabled = payload.equippedWeapons.isNotEmpty(), modifier = Modifier.fillMaxWidth()) {
