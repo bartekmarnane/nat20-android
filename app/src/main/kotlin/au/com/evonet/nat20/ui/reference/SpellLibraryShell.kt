@@ -88,6 +88,10 @@ private data class SpellRowModel(
     val group: Int,
     val detailLines: List<Pair<String, String>>,
     val description: String,
+    /// Caster classes able to cast this spell (display names). Drives the
+    /// class filter chips. Empty for rulesets that categorise differently
+    /// (e.g. PF2e traditions), which suppresses the class filter row.
+    val classes: List<String> = emptyList(),
 )
 
 private fun groupLabel(level: Int, pathfinder: Boolean): String = when {
@@ -125,6 +129,7 @@ fun SpellLibraryBody() {
                     if (s.classNames.isNotEmpty()) add("Classes" to s.classNames.joinToString(", "))
                 },
                 description = s.description + s.higherLevelText.takeIf { it.isNotBlank() }?.let { "\n\nAt Higher Levels. $it" }.orEmpty(),
+                classes = s.classNames,
             )
         }
     }
@@ -157,6 +162,7 @@ fun SpellLibrary2024Body() {
                     if (s.classNames.isNotEmpty()) add("Classes" to s.classNames.joinToString(", "))
                 },
                 description = s.description,
+                classes = s.classNames,
             )
         }
     }
@@ -195,20 +201,29 @@ fun SpellLibraryPfBody() {
 private fun GroupedSpellList(models: List<SpellRowModel>, pathfinder: Boolean, searchHint: String) {
     var query by remember { mutableStateOf("") }
     var levelFilter by remember { mutableStateOf<Int?>(null) }
+    var classFilter by remember { mutableStateOf<String?>(null) }
     var detail by remember { mutableStateOf<SpellRowModel?>(null) }
 
-    val filtered = remember(models, query, levelFilter) {
+    val filtered = remember(models, query, levelFilter, classFilter) {
         models.filter { m ->
             (levelFilter == null || m.group == levelFilter) &&
+                (classFilter == null || m.classes.any { it.equals(classFilter, ignoreCase = true) }) &&
                 (query.isBlank() || m.name.contains(query.trim(), ignoreCase = true) || m.meta.contains(query.trim(), ignoreCase = true))
         }
     }
     val grouped = remember(filtered) { filtered.groupBy { it.group }.toSortedMap() }
     val levels = remember(models) { models.map { it.group }.distinct().sorted() }
+    // Class chips are derived from the catalogue itself, so they always match
+    // the data (and pick up supplements). Empty for PF2e (tradition-based),
+    // which hides the row entirely.
+    val classes = remember(models) { models.flatMap { it.classes }.distinct().sorted() }
 
     Column(Modifier.fillMaxSize()) {
         ReferenceSearchField(query, { query = it }, searchHint, Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
         FilterPillRow(levels, levelFilter, pathfinder, onSelect = { levelFilter = it })
+        if (classes.isNotEmpty()) {
+            ClassFilterPillRow(classes, classFilter, onSelect = { classFilter = it })
+        }
         LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)) {
             grouped.forEach { (level, rows) ->
                 item(key = "h$level") { ReferenceSectionHeader(groupLabel(level, pathfinder), rows.size) }
@@ -229,6 +244,16 @@ private fun FilterPillRow(levels: List<Int>, selected: Int?, pathfinder: Boolean
         levels.forEach { lvl ->
             val label = when { lvl == 0 -> "Cantrip"; pathfinder -> "R $lvl"; else -> "Lv $lvl" }
             ReferencePill(label, selected == lvl) { onSelect(if (selected == lvl) null else lvl) }
+        }
+    }
+}
+
+@Composable
+private fun ClassFilterPillRow(classes: List<String>, selected: String?, onSelect: (String?) -> Unit) {
+    ReferencePillRow {
+        ReferencePill("All Classes", selected == null) { onSelect(null) }
+        classes.forEach { cls ->
+            ReferencePill(cls, selected == cls) { onSelect(if (selected == cls) null else cls) }
         }
     }
 }

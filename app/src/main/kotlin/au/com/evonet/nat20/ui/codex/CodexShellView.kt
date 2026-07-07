@@ -111,10 +111,18 @@ private fun HeroHeader(character: Character, payload: DnD5ePayload) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
+            // Two lines to match the iOS HeroRow: the race, then "Level N Class".
             Text(
-                heroSubtitle(payload),
+                heroRaceLine(payload),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+            )
+            Text(
+                heroClassAndLevelLine(payload),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
             )
         }
     }
@@ -165,13 +173,13 @@ private fun CodexTabBar(tabs: List<CodexTab>, selected: Int, onSelect: (Int) -> 
     }
 }
 
-private fun heroSubtitle(payload: DnD5ePayload): String {
-    val race = payload.race.takeIf { it.isNotEmpty() }?.slugToTitle()
-    val classes = payload.classes
-        .takeIf { it.isNotEmpty() }
-        ?.joinToString(" / ") { "${it.classId.slugToTitle()} ${it.level}" }
-        ?: "Level ${payload.level}"
-    return listOfNotNull(race, classes).joinToString(" · ")
+private fun heroRaceLine(payload: DnD5ePayload): String =
+    payload.race.takeIf { it.isNotEmpty() }?.slugToTitle() ?: "Unknown race"
+
+private fun heroClassAndLevelLine(payload: DnD5ePayload): String {
+    val primary = (payload.classes.firstOrNull()?.classId ?: payload.characterClass)
+        .takeIf { it.isNotEmpty() }?.slugToTitle() ?: "Adventurer"
+    return "Level ${payload.level} $primary"
 }
 
 /** Proficiency bonus shown in a few pages; centralised here. */

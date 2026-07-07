@@ -69,20 +69,29 @@ Phases ordered so shared infrastructure lands first; each later phase is mostly
 mechanical once its atoms exist. Sizes: S < 1 session, M ≈ 1 session,
 L ≈ 2–3 sessions, XL ≈ 4+.
 
-## P0 — Bug fixes & trivial parity (S)
+## P0 — Bug fixes & trivial parity (S) — DONE 2026-07-02
 
-- [ ] Effective speed on Combat tab (bug above).
-- [ ] Real campaign name on roster cards (bug above).
-- [ ] Full Credits attributions with links (compliance bug above).
-- [ ] Settings Reference tile order → Spell Library, Item Catalog, Monster
-      Codex (+ Custom Creatures once P8); "Browse **SRD** weapons…" subtitle.
-- [ ] Wording sweep: "Continue" (not "Begin") on onboarding last page;
-      onboarding Characters copy mentions all three rulesets; actions tile
-      labels ("Take damage", "Gain temp HP", "Add journal entry"); "Critical"
-      not "Crit"; commit labels ("Record hit/miss/…", "Add to Journal").
-- [ ] Roster empty state tile ("The page is blank. / Forge your first
-      character…" dashed tile).
-- [ ] Hero subtitle format: two lines (race / "Level N Class") to match iOS.
+- [x] Effective speed on Combat tab — added `DnD5ePayload.effectiveSpeed`
+      (catalogue race speed, 30 fallback); Combat tab uses it.
+- [x] Real campaign name on roster cards — new `CampaignDao.observeActiveCampaignNames`
+      → `CharacterStore.activeCampaignNames` StateFlow → roster card shows diamond +
+      name when in a campaign, else "No campaign yet".
+- [x] Full Credits attributions with links (compliance) — all 6 game-content
+      entries (SRD 5.1/5.2, 5e-bits, Open5e, PF Monster Core ORC, AoN) with
+      verbatim license text + clickable links, 4 typefaces, OFL link; rebuilt on
+      parchment chrome (also closes most of its P2 re-theme).
+- [x] Settings Reference tile order → Spell Library, Item Catalog, Monster Codex;
+      "Browse SRD weapons…" subtitle. (Custom Creatures still pending P8.)
+- [x] Wording sweep: onboarding always "Continue"; Characters copy names all
+      three rulesets; actions tiles "Take damage"/"Gain temp HP"/"Add journal
+      entry"; NotePicker "Add to Journal"; attack outcome "Critical" + Miss/Hit/
+      Critical order; dynamic commit label "Record hit/miss/critical hit".
+- [x] Roster empty-state dashed tile ("The page is blank." / "Forge your first
+      character…").
+- [x] Hero subtitle: two lines (race / "Level N Class") on the 2014 codex shell.
+      (2024/PF2e hero headers re-themed in P6/P7.)
+
+Build green, `./gradlew test lint` pass, `:app:assembleDebug` succeeds.
 
 ## P1 — Shared chrome foundation (M–L)
 
