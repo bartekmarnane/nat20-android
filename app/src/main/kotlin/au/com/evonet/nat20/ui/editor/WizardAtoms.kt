@@ -3,6 +3,7 @@ package au.com.evonet.nat20.ui.editor
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -11,12 +12,18 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -444,5 +451,123 @@ fun WizardSubSectionCard(
             }
         }
         content()
+    }
+}
+
+// ── Review atoms (shared by every ruleset's Review step) ─────────────────────
+
+/** Review section header: small-caps accent title, fading rule, optional pencil-jump button. */
+@Composable
+fun ReviewSectionHeader(title: String, onEdit: (() -> Unit)? = null) {
+    val palette = MaterialTheme.natPalette
+    Row(
+        Modifier.fillMaxWidth().padding(top = 18.dp, bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            title.uppercase(),
+            fontFamily = Cinzel,
+            fontWeight = FontWeight.Bold,
+            fontSize = 11.sp,
+            letterSpacing = 3.sp,
+            color = palette.accent,
+        )
+        Box(
+            Modifier
+                .padding(horizontal = 10.dp)
+                .weight(1f)
+                .height(1.dp)
+                .background(Brush.horizontalGradient(listOf(palette.accent.copy(alpha = 0.33f), Color.Transparent))),
+        )
+        if (onEdit != null) {
+            Box(
+                Modifier
+                    .size(24.dp)
+                    .clip(CircleShape)
+                    .background(palette.tileStrong)
+                    .border(1.dp, palette.accent.copy(alpha = 0.4f), CircleShape)
+                    .clickable(onClick = onEdit),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    Icons.Filled.Edit,
+                    contentDescription = "Edit $title",
+                    tint = palette.accent,
+                    modifier = Modifier.size(12.dp),
+                )
+            }
+        }
+    }
+}
+
+/** A single labelled Review fact line ("—" when empty). */
+@Composable
+fun ReviewLine(label: String, value: String) {
+    val palette = MaterialTheme.natPalette
+    Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.Top) {
+        Text(
+            label.uppercase(),
+            fontFamily = Cinzel,
+            fontSize = 11.sp,
+            letterSpacing = 2.sp,
+            color = palette.inkMute,
+            modifier = Modifier.width(110.dp).padding(top = 2.dp),
+        )
+        if (value.isEmpty()) {
+            Text("—", fontFamily = Cormorant, fontStyle = FontStyle.Italic, fontSize = 15.sp, color = palette.inkMute)
+        } else {
+            Text(value, fontFamily = Cormorant, fontSize = 15.sp, color = palette.ink)
+        }
+    }
+}
+
+/** The bordered drop-cap initial from the roster hero, reused on Review steps. */
+@Composable
+fun ReviewDropCap(letter: String) {
+    val palette = MaterialTheme.natPalette
+    Box(Modifier.size(width = 58.dp, height = 70.dp), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(width = 58.dp, height = 70.dp).border(0.8.dp, palette.accent.copy(alpha = 0.53f)))
+        Box(
+            Modifier
+                .size(width = 52.dp, height = 64.dp)
+                .background(
+                    Brush.linearGradient(listOf(palette.accent.copy(alpha = 0.20f), palette.accent.copy(alpha = 0.067f))),
+                )
+                .border(1.4.dp, palette.accent),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                letter,
+                fontFamily = Cormorant,
+                fontStyle = FontStyle.Italic,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 34.sp,
+                color = palette.accent,
+            )
+            Box(Modifier.matchParentSize().border(2.dp, Color(0xFFFFFADC).copy(alpha = 0.6f)))
+        }
+    }
+}
+
+/** A background-granted skill: locked accent-gold capsule, not toggleable. */
+@Composable
+fun GrantedSkillChip(label: String) {
+    val palette = MaterialTheme.natPalette
+    Row(
+        Modifier
+            .clip(CircleShape)
+            .background(palette.accentGold.copy(alpha = 0.10f))
+            .border(1.dp, palette.accentGold.copy(alpha = 0.4f), CircleShape)
+            .padding(horizontal = 11.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Icon(
+            Icons.Filled.Lock,
+            contentDescription = "Granted by background",
+            tint = palette.accentGold,
+            modifier = Modifier.size(10.dp),
+        )
+        Text(label, fontFamily = Cormorant, fontSize = 13.sp, color = palette.ink)
     }
 }

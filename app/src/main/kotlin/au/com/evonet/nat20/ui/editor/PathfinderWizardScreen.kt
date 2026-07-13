@@ -179,13 +179,13 @@ fun PathfinderWizardScreen(
                     }
                     PfWiz.REVIEW -> {
                         val p = PathfinderBuilder.build(choices())
-                        ReviewLine("Name", name)
-                        ReviewLine("Ancestry", listOfNotNull(heritage?.slugToTitle(), ancestry?.name).joinToString(" "))
-                        ReviewLine("Background", background?.name ?: "—")
-                        ReviewLine("Class", "${cls?.name} · key ${keyAbility?.displayName}")
-                        ReviewLine("Abilities", PfAbility.entries.joinToString(" ") { "${it.abbreviation} ${p.abilityScores.score(it)}" })
-                        ReviewLine("HP", p.maxHp.toString())
-                        ReviewLine("Skills", p.skills.keys.joinToString { it.displayName }.ifEmpty { "—" })
+                        PfReviewLine("Name", name)
+                        PfReviewLine("Ancestry", listOfNotNull(heritage?.slugToTitle(), ancestry?.name).joinToString(" "))
+                        PfReviewLine("Background", background?.name ?: "—")
+                        PfReviewLine("Class", "${cls?.name} · key ${keyAbility?.displayName}")
+                        PfReviewLine("Abilities", PfAbility.entries.joinToString(" ") { "${it.abbreviation} ${p.abilityScores.score(it)}" })
+                        PfReviewLine("HP", p.maxHp.toString())
+                        PfReviewLine("Skills", p.skills.keys.joinToString { it.displayName }.ifEmpty { "—" })
                     }
                 }
             }
@@ -215,6 +215,6 @@ private fun BoostGroup(selected: List<PfAbility>, limit: Int, onChange: (List<Pf
 private fun PfLabel(text: String) = Text(text.uppercase(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
 
 @Composable
-private fun ReviewLine(label: String, value: String) {
+private fun PfReviewLine(label: String, value: String) {
     Column { Text(label.uppercase(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary); Text(value, style = MaterialTheme.typography.bodyLarge) }
 }

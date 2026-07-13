@@ -586,3 +586,69 @@ class Codec2024Tests {
         }
     }
 }
+
+class ArmorProficiency2024Tests {
+    @ParameterizedTest
+    @CsvSource(
+        "barbarian, LIGHT MEDIUM,       true",
+        "bard,      LIGHT,              false",
+        "cleric,    LIGHT MEDIUM,       true",
+        "druid,     LIGHT,              true",
+        "fighter,   LIGHT MEDIUM HEAVY, true",
+        "monk,      '',                 false",
+        "paladin,   LIGHT MEDIUM HEAVY, true",
+        "ranger,    LIGHT MEDIUM,       true",
+        "rogue,     LIGHT,              false",
+        "sorcerer,  '',                 false",
+        "warlock,   LIGHT,              false",
+        "wizard,    '',                 false",
+    )
+    fun `class armor training matches the 2024 PHB`(classId: String, categories: String, shield: Boolean) {
+        val k = DnD5e2024Catalog.characterClass(classId)!!
+        val expected = categories.split(" ").filter { it.isNotBlank() }.map { Armor2024.Category.valueOf(it) }.toSet()
+        assertEquals(expected, k.armorProficiencies)
+        assertEquals(shield, k.hasShieldProficiency)
+    }
+}
+
+class FightingStyle2024Tests {
+    @ParameterizedTest
+    @CsvSource("fighter, 1", "paladin, 2", "ranger, 2")
+    fun `martial classes gain a style at their grant level`(classId: String, grantLevel: Int) {
+        assertEquals(grantLevel, FightingStyle2024.grantLevel(classId))
+    }
+
+    @Test
+    fun `other classes never gain a style`() {
+        for (id in listOf("barbarian", "rogue", "wizard", "monk")) {
+            assertEquals(null, FightingStyle2024.grantLevel(id))
+        }
+    }
+}
+
+class Spellcasting2024CreationTests {
+    @ParameterizedTest
+    @CsvSource(
+        "sorcerer, 1, 4", "sorcerer, 4, 5", "sorcerer, 10, 6",
+        "cleric,   1, 3", "wizard,   3, 3", "wizard,   4, 4",
+        "bard,     1, 2", "druid,   10, 4", "warlock,  1, 2",
+        "paladin, 20, 0", "ranger,  20, 0", "fighter, 20, 0",
+    )
+    fun `cantrips known scale at levels 4 and 10 for casters only`(classId: String, level: Int, expected: Int) {
+        assertEquals(expected, Spellcasting2024Creation.cantripsKnown(classId, level))
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+        "wizard,   1, 4", "wizard,  2, 5", "wizard, 5, 8",
+        "bard,     1, 4", "cleric,  3, 6",
+        "sorcerer, 1, 2", "sorcerer, 4, 5",
+        "warlock,  1, 2", "warlock, 5, 4",
+        "ranger,   1, 2", "ranger,  5, 4",
+        "paladin,  1, 0", "paladin, 2, 0", "paladin, 3, 1",
+        "fighter, 20, 0",
+    )
+    fun `leveled spells known scale by caster tier`(classId: String, level: Int, expected: Int) {
+        assertEquals(expected, Spellcasting2024Creation.leveledSpellsKnown(classId, level))
+    }
+}
