@@ -40,4 +40,16 @@ internal object Migrations {
             db.execSQL("ALTER TABLE `characters` ADD COLUMN `summonsJson` TEXT NOT NULL DEFAULT '[]'")
         }
     }
+
+    /** v4 → v5 (parity #11): additive — create the homebrew custom_races table. */
+    val MIGRATION_4_5 = object : Migration(4, 5) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `custom_races` (" +
+                    "`id` TEXT NOT NULL, `raceId` TEXT NOT NULL, `name` TEXT NOT NULL, " +
+                    "`payloadJson` TEXT NOT NULL, `createdAt` TEXT NOT NULL, " +
+                    "`updatedAt` TEXT NOT NULL, PRIMARY KEY(`id`))",
+            )
+        }
+    }
 }

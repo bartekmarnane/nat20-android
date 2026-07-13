@@ -17,6 +17,8 @@ dependencies {
     // `api` because these value types leak into this module's public payload API.
     api(project(":ruleset-dnd5e-core"))
     implementation(libs.kotlinx.serialization.json)
+    // StateFlow appears in CustomRaceLibrary's public API (the app collects it).
+    api(libs.kotlinx.coroutines.core)
     testImplementation(libs.junit.jupiter)
 }
 

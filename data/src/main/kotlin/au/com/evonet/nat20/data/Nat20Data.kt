@@ -16,6 +16,7 @@ object Nat20Data {
     class Repositories internal constructor(
         val characters: CharacterRepository,
         val campaigns: CampaignRepository,
+        val customRaces: CustomRaceRepository,
     )
 
     fun create(context: Context, registry: RulesetRegistry): Repositories {
@@ -24,7 +25,12 @@ object Nat20Data {
             Nat20Database::class.java,
             DATABASE_NAME,
         )
-            .addMigrations(Migrations.MIGRATION_1_2, Migrations.MIGRATION_2_3, Migrations.MIGRATION_3_4)
+            .addMigrations(
+                Migrations.MIGRATION_1_2,
+                Migrations.MIGRATION_2_3,
+                Migrations.MIGRATION_3_4,
+                Migrations.MIGRATION_4_5,
+            )
             .build()
 
         val characterCodec = CharacterCodec(registry)
@@ -32,6 +38,7 @@ object Nat20Data {
         return Repositories(
             characters = RoomCharacterRepository(database.characterDao(), characterCodec),
             campaigns = RoomCampaignRepository(database.campaignDao(), campaignCodec),
+            customRaces = RoomCustomRaceRepository(database.customRaceDao()),
         )
     }
 }

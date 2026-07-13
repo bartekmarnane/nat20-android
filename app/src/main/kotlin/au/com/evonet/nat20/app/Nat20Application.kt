@@ -18,6 +18,10 @@ class Nat20Application : Application() {
         super.onCreate()
         container = AppContainer(this)
 
+        // Hydrate the homebrew race library from Room, then keep it persisted
+        // write-through (parity #11).
+        container.customRaceSync.start()
+
         if (BuildConfig.DEBUG) {
             container.applicationScope.launch {
                 container.characterRepository.seedIfEmpty(DemoCharacters.seed())

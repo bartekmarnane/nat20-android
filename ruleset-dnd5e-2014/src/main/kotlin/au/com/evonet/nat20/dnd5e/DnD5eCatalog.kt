@@ -12,7 +12,16 @@ import kotlinx.serialization.json.Json
 object DnD5eCatalog {
     private val json = Json { ignoreUnknownKeys = true }
 
-    val races: List<Race> by lazy { load("Races/5e-SRD-Races.json", Race.serializer()) }
+    /** The bundled SRD races; the public [races] overlays homebrews on top. */
+    private val srdRaces: List<Race> by lazy { load("Races/5e-SRD-Races.json", Race.serializer()) }
+
+    /**
+     * SRD races plus the player's homebrews ([CustomRaceLibrary]), appended
+     * after the bundled list sorted case-insensitively by name. Homebrews are
+     * always included — immune to any future source filtering.
+     */
+    val races: List<Race>
+        get() = srdRaces + CustomRaceLibrary.races.value.sortedBy { it.name.lowercase() }
     val classes: List<CharacterClass> by lazy {
         load("Classes/5e-SRD-Classes.json", CharacterClass.serializer())
     }

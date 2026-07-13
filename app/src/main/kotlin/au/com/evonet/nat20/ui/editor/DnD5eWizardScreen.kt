@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -34,6 +35,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -53,6 +55,7 @@ import androidx.compose.ui.unit.sp
 import au.com.evonet.nat20.dnd5e.Background
 import au.com.evonet.nat20.dnd5e.CharacterClass
 import au.com.evonet.nat20.dnd5e.ClassEntry
+import au.com.evonet.nat20.dnd5e.CustomRaceLibrary
 import au.com.evonet.nat20.dnd5e.DnD5eCatalog
 import au.com.evonet.nat20.dnd5e.DnD5ePayload
 import au.com.evonet.nat20.dnd5e.DnD5eRuleset
@@ -160,6 +163,12 @@ fun DnD5eWizardScreen(
     var equipmentSeeded by rememberSaveable { mutableStateOf(source?.inventory?.isNotEmpty() == true) }
     // Pencil-jump from Review: the footer collapses to a single "Done" back to Review.
     var editingFromReview by rememberSaveable { mutableStateOf(false) }
+    // Homebrew races (parity #11): collecting the library re-renders the Race
+    // step (picker + detail card) whenever a homebrew is saved or deleted.
+    val customRaces by CustomRaceLibrary.races.collectAsState()
+    val allRaces = remember(customRaces) { DnD5eCatalog.races }
+    var showRaceForm by rememberSaveable { mutableStateOf(false) }
+    var editingCustomRace by remember { mutableStateOf<Race?>(null) }
 
     val race = raceId?.let(DnD5eCatalog::race)
     val klass = classId?.let(DnD5eCatalog::characterClass)
@@ -310,8 +319,22 @@ fun DnD5eWizardScreen(
                 }
                 WizStep.RACE -> StepColumn {
                     WizardStepSection("Choose a Race", "Race grants ability bonuses, speed, vision, and starting traits.")
-                    WizardChipsPicker(DnD5eCatalog.races, { it.id == raceId }, { it.name }, large = true) { raceId = it.id }
-                    race?.let { RaceDetailCard(it) }
+                    WizardChipsPicker(allRaces, { it.id == raceId }, { it.name }, large = true) { raceId = it.id }
+                    Spacer(Modifier.height(10.dp))
+                    NewRaceButton {
+                        editingCustomRace = null
+                        showRaceForm = true
+                    }
+                    race?.let { picked ->
+                        RaceDetailCard(
+                            race = picked,
+                            isCustom = CustomRaceLibrary.isCustom(picked.id),
+                            onEdit = {
+                                editingCustomRace = picked
+                                showRaceForm = true
+                            },
+                        )
+                    }
                 }
                 WizStep.CLASS -> StepColumn {
                     Spacer(Modifier.height(18.dp))
@@ -385,6 +408,34 @@ fun DnD5eWizardScreen(
             }
         }
     }
+
+    // Homebrew race form (parity #11): save updates-or-adds in the library and
+    // selects the race; delete clears the wizard's selection if it matched.
+    // Saved characters keep a dangling race id on delete (iOS behaviour).
+    if (showRaceForm) {
+        CustomRaceFormDialog(
+            editing = editingCustomRace,
+            onSave = { saved ->
+                if (CustomRaceLibrary.races.value.any { it.id == saved.id }) {
+                    CustomRaceLibrary.update(saved)
+                } else {
+                    CustomRaceLibrary.add(saved)
+                }
+                raceId = saved.id
+                showRaceForm = false
+            },
+            onDelete = if (editingCustomRace == null) {
+                null
+            } else {
+                { deletedId ->
+                    CustomRaceLibrary.delete(deletedId)
+                    if (raceId == deletedId) raceId = null
+                    showRaceForm = false
+                }
+            },
+            onDismiss = { showRaceForm = false },
+        )
+    }
 }
 
 // ── Shared step scaffolding ──────────────────────────────────────────────────
@@ -413,18 +464,43 @@ private fun levelHint(level: Int): String = when (level) {
 // ── Race ─────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun RaceDetailCard(race: Race) {
+private fun RaceDetailCard(race: Race, isCustom: Boolean = false, onEdit: (() -> Unit)? = null) {
     val palette = MaterialTheme.natPalette
     Spacer(Modifier.height(12.dp))
     WizardDetailCard {
-        Text(
-            race.name,
-            fontFamily = Cormorant,
-            fontWeight = FontWeight.SemiBold,
-            fontStyle = FontStyle.Italic,
-            fontSize = 22.sp,
-            color = palette.accent,
-        )
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                race.name,
+                fontFamily = Cormorant,
+                fontWeight = FontWeight.SemiBold,
+                fontStyle = FontStyle.Italic,
+                fontSize = 22.sp,
+                color = palette.accent,
+                modifier = Modifier.weight(1f, fill = false),
+            )
+            if (isCustom) {
+                HomebrewBadge()
+                Spacer(Modifier.weight(1f))
+                if (onEdit != null) {
+                    Box(
+                        Modifier
+                            .size(28.dp)
+                            .clip(CircleShape)
+                            .background(palette.tileStrong)
+                            .border(1.dp, palette.accent.copy(alpha = 0.4f), CircleShape)
+                            .clickable(onClick = onEdit),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            Icons.Filled.Edit,
+                            contentDescription = "Edit homebrew race",
+                            tint = palette.accent,
+                            modifier = Modifier.size(13.dp),
+                        )
+                    }
+                }
+            }
+        }
         if (race.description.isNotEmpty()) {
             Text(
                 race.description,
