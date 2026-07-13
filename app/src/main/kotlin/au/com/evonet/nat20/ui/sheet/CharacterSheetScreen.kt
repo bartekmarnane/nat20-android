@@ -30,7 +30,6 @@ import au.com.evonet.nat20.domain.CharacterPhase
 import au.com.evonet.nat20.dnd5e.DnD5eRuleset
 import au.com.evonet.nat20.dnd5e2024.DnD5e2024Ruleset
 import au.com.evonet.nat20.pf2e.PathfinderRuleset
-import au.com.evonet.nat20.ui.actions.DnD5eActionsSheet
 import au.com.evonet.nat20.ui.codex.CodexShellView
 
 /**
@@ -61,17 +60,16 @@ fun CharacterSheetScreen(
     val inCampaign = character.phase is CharacterPhase.InCampaign
     var showStart by remember { mutableStateOf(false) }
     var showEnd by remember { mutableStateOf(false) }
-    var showActions by remember { mutableStateOf(false) }
 
     if (character.rulesetId == DnD5eRuleset.RULESET_ID) {
-        // 2014: the shell IS the chrome; dialogs stay hosted here below.
+        // 2014: the shell IS the chrome (it also hosts the #19 actions layer
+        // behind its Act pill); dialogs stay hosted here below.
         CodexShellView(
             character = character,
             activeCampaign = activeCampaign,
             hasPastAdventures = hasPastAdventures,
             onBack = onBack,
             onEdit = onEdit,
-            onAct = { showActions = true },
             onStartCampaign = { showStart = true },
             onEndCampaign = { showEnd = true },
             onOpenJournal = onOpenJournal,
@@ -92,7 +90,10 @@ fun CharacterSheetScreen(
                     colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(containerColor = androidx.compose.ui.graphics.Color.Transparent),
                     actions = {
                         if (inCampaign) {
-                            TextButton(onClick = { showActions = true }) { Text("Actions") }
+                            // No Actions button here: the old cross-ruleset sheet fired 2014
+                            // intents that always no-op'd on 2024/PF2e payloads. Those codices
+                            // carry their own interactive surfaces; a 2024 actions layer is
+                            // parity #24's problem.
                             TextButton(onClick = onOpenJournal) { Text("Journal") }
                         } else {
                             if (hasPastAdventures) {
@@ -135,13 +136,6 @@ fun CharacterSheetScreen(
                 TextButton(onClick = { showEnd = false; onEndCampaign() }) { Text("End") }
             },
             dismissButton = { TextButton(onClick = { showEnd = false }) { Text("Cancel") } },
-        )
-    }
-
-    if (showActions && activeCampaign != null) {
-        DnD5eActionsSheet(
-            onDismiss = { showActions = false },
-            onAct = onApplyIntent,
         )
     }
 }

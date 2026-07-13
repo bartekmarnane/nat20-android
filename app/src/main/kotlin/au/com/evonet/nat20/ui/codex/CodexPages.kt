@@ -781,9 +781,12 @@ private fun DeathSavesTile(ds: DeathSaves, modifier: Modifier = Modifier, onClic
     }
 }
 
-/** The full death-save management flow (roll + manual marks), kept from A7f-2. */
+/**
+ * The full death-save management flow (roll + manual marks), kept from A7f-2.
+ * Internal: the #19 Actions layer's "Mark death save" tile routes here too.
+ */
 @Composable
-private fun DeathSavesDialog(payload: DnD5ePayload, onApplyIntent: (CharacterIntent) -> Unit, onDismiss: () -> Unit) {
+internal fun DeathSavesDialog(payload: DnD5ePayload, onApplyIntent: (CharacterIntent) -> Unit, onDismiss: () -> Unit) {
     val ds = payload.deathSaves
     var rolling by remember { mutableStateOf(false) }
     AlertDialog(
