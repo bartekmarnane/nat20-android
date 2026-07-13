@@ -1,23 +1,10 @@
 package au.com.evonet.nat20.ui.actions
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import au.com.evonet.nat20.domain.CharacterIntent
 import au.com.evonet.nat20.pf2e.PFCoin
 import au.com.evonet.nat20.pf2e.PathfinderPayload
@@ -36,7 +23,6 @@ import au.com.evonet.nat20.pf2e.PfEquipShield
 import au.com.evonet.nat20.pf2e.PfGainTempHp
 import au.com.evonet.nat20.pf2e.PfHeal
 import au.com.evonet.nat20.pf2e.PfLearnSpell
-import au.com.evonet.nat20.pf2e.PfLevelUp
 import au.com.evonet.nat20.pf2e.PfRaiseShield
 import au.com.evonet.nat20.pf2e.PfRefocus
 import au.com.evonet.nat20.pf2e.PfRemoveFeat
@@ -48,11 +34,6 @@ import au.com.evonet.nat20.pf2e.PfSetWounded
 import au.com.evonet.nat20.pf2e.PfStrike
 import au.com.evonet.nat20.pf2e.PfTakeDamage
 import au.com.evonet.nat20.pf2e.PfTakeFeat
-import au.com.evonet.nat20.pf2e.ClassProgression
-import au.com.evonet.nat20.pf2e.core.AdvancementSchedule
-import au.com.evonet.nat20.pf2e.core.PfAbility
-import au.com.evonet.nat20.pf2e.core.PfSkill
-import au.com.evonet.nat20.pf2e.core.Proficiency
 
 /** The follow-up pickers this PF2e layer can mount full-screen (parity #35). */
 private enum class PfPicker {
@@ -71,8 +52,8 @@ private enum class PfPicker {
  * through the same [onApplyIntent] path the sheet used to fire inline (campaign-
  * logged upstream). Every mutation the old interactive tabs offered has a home
  * here; simple counter tiles (dying/wounded/hero/refocus/daily-prep/raise-shield)
- * fire directly, the rest open a picker. Level Up opens the (still-Material)
- * [PfLevelUpDialog] — its restyle is parity #36.
+ * fire directly, the rest open a picker. Level Up opens the parchment
+ * [PfLevelUpWizard] (parity #36).
  */
 @Composable
 internal fun PathfinderActionsLayer(
@@ -159,60 +140,7 @@ internal fun PathfinderActionsLayer(
         PfPicker.TAKE_FEAT -> PfTakeFeatPicker(payload, onCancel = { picker = null }, onTake = { id -> onApplyIntent(PfTakeFeat(id)); picker = null })
         PfPicker.REMOVE_FEAT -> PfRemoveFeatPicker(payload, onCancel = { picker = null }, onRemove = { id -> onApplyIntent(PfRemoveFeat(id)); picker = null })
         PfPicker.ADD_NOTE -> PfNotePicker(onCancel = { picker = null }, onAdd = { text -> onApplyIntent(PfAddNote(text)); picker = null })
-        PfPicker.LEVEL_UP -> PfLevelUpDialog(payload, onApply = { onApplyIntent(it); picker = null }, onDismiss = { picker = null })
+        PfPicker.LEVEL_UP -> PfLevelUpWizard(payload, onApplyIntent = onApplyIntent, onDismiss = { picker = null })
         null -> Unit
     }
-}
-
-/**
- * The Level-Up dialog (parity #36, kept Material for now — restyle pending).
- * PF2e HP + every proficiency-scaled statistic improve automatically; the player
- * only chooses the optional skill increase (odd levels) + four ability boosts
- * (levels 5/10/15/20). Relocated verbatim from the old `PathfinderSheetView`.
- */
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-internal fun PfLevelUpDialog(payload: PathfinderPayload, onApply: (PfLevelUp) -> Unit, onDismiss: () -> Unit) {
-    val newLevel = payload.level + 1
-    val grantsSkill = AdvancementSchedule.grantsSkillIncrease(newLevel)
-    val grantsBoosts = AdvancementSchedule.grantsAbilityBoosts(newLevel)
-    val maxRank = AdvancementSchedule.maxSkillRank(newLevel)
-    var skill by remember { mutableStateOf<PfSkill?>(null) }
-    var boosts by remember { mutableStateOf<List<PfAbility>>(emptyList()) }
-    val ready = (!grantsBoosts || boosts.size == 4)
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Level Up → $newLevel") },
-        text = {
-            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("HP and every proficiency-scaled statistic improve automatically.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                val jumps = ClassProgression.increasesAt(payload.className, newLevel)
-                if (jumps.isNotEmpty()) {
-                    Text("Class advances: " + jumps.joinToString(", ") { "${it.track.name.lowercase().replaceFirstChar(Char::uppercase)} → ${it.rank.displayName}" }, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-                }
-                if (grantsSkill) {
-                    Text("SKILL INCREASE (TO ≤ ${maxRank.displayName})".uppercase(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        PfSkill.entries.forEach { s ->
-                            val cur = payload.skills[s] ?: Proficiency.UNTRAINED
-                            val canRaise = (cur.next?.rank ?: 99) <= maxRank.rank
-                            FilterChip(skill == s, enabled = canRaise, onClick = { skill = if (skill == s) null else s }, label = { Text("${s.displayName} ${cur.letter}→${cur.next?.letter ?: "—"}") })
-                        }
-                    }
-                }
-                if (grantsBoosts) {
-                    Text("ABILITY BOOSTS (${boosts.size}/4)", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        PfAbility.entries.forEach { a ->
-                            val on = a in boosts
-                            FilterChip(on, enabled = on || boosts.size < 4, onClick = { boosts = if (on) boosts - a else boosts + a }, label = { Text("${a.abbreviation} ${payload.abilityScores.score(a)}") })
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = { TextButton(enabled = ready, onClick = { onApply(PfLevelUp(skill, boosts)) }) { Text("Level Up") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
-    )
 }
