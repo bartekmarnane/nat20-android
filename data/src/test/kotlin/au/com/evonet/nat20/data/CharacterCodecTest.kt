@@ -9,6 +9,7 @@ import au.com.evonet.nat20.domain.JournalProseKind
 import au.com.evonet.nat20.domain.Ruleset
 import au.com.evonet.nat20.domain.RulesetId
 import au.com.evonet.nat20.domain.RulesetRegistry
+import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertThrows
@@ -93,6 +94,29 @@ class CharacterCodecTest {
         assertEquals(original, codec.toDomain(entity))
         // And through the embedded JSON envelope (campaign snapshots).
         assertEquals(original, codec.decodeFromJson(codec.encodeToJson(original)))
+    }
+
+    @Test
+    fun `portrait bytes round-trip through the row and the JSON envelope`() {
+        // Distinct from summons: Character's ByteArray gives the data class
+        // reference equality, so compare the bytes explicitly (not assertEquals).
+        val portrait = byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 0x00, 0x42, 0x7F, 0x80.toByte())
+        val original = character(CharacterPhase.Building).copy(portraitData = portrait)
+
+        val entity = codec.toEntity(original)
+        assertArrayEquals(portrait, entity.portraitData)
+        assertArrayEquals(portrait, codec.toDomain(entity).portraitData)
+
+        // And through the Base64-carrying JSON envelope (campaign snapshots).
+        assertArrayEquals(portrait, codec.decodeFromJson(codec.encodeToJson(original)).portraitData)
+    }
+
+    @Test
+    fun `a null portrait stays null through both codecs`() {
+        val original = character(CharacterPhase.Building)
+        assertNull(codec.toEntity(original).portraitData)
+        assertNull(codec.toDomain(codec.toEntity(original)).portraitData)
+        assertNull(codec.decodeFromJson(codec.encodeToJson(original)).portraitData)
     }
 
     @Test

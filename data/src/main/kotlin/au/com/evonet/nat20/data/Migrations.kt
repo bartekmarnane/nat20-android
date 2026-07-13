@@ -52,4 +52,11 @@ internal object Migrations {
             )
         }
     }
+
+    /** v5 → v6 (parity #23): additive — nullable portrait BLOB column on characters. */
+    val MIGRATION_5_6 = object : Migration(5, 6) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE `characters` ADD COLUMN `portraitData` BLOB")
+        }
+    }
 }

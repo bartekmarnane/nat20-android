@@ -58,11 +58,11 @@ import java.util.UUID
 import au.com.evonet.nat20.dnd5e.DnD5ePayload
 import au.com.evonet.nat20.dnd5e2024.DnD5e2024Payload
 import au.com.evonet.nat20.domain.Character
+import au.com.evonet.nat20.ui.identity.CharacterPortraitFrame
 import au.com.evonet.nat20.ui.slugToTitle
 import au.com.evonet.nat20.ui.theme.Cinzel
 import au.com.evonet.nat20.ui.theme.Cormorant
 import au.com.evonet.nat20.ui.theme.Diamond
-import au.com.evonet.nat20.ui.theme.DropCapSquare
 import au.com.evonet.nat20.ui.theme.ImFell
 import au.com.evonet.nat20.ui.theme.OrnamentalDivider
 import au.com.evonet.nat20.ui.theme.Rosette
@@ -279,7 +279,10 @@ private fun CharacterIndexCard(character: Character, campaignName: String?, onCl
         verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        DropCapSquare(character.name.firstOrNull()?.uppercaseChar()?.toString() ?: "?")
+        CharacterPortraitFrame(
+            portraitData = character.portraitData,
+            fallbackLetter = character.name.firstOrNull()?.uppercaseChar()?.toString() ?: "?",
+        )
         Column(Modifier.weight(1f)) {
             Text(
                 character.name,

@@ -55,15 +55,17 @@ import au.com.evonet.nat20.domain.CharacterIntent
 import au.com.evonet.nat20.domain.CharacterPhase
 import au.com.evonet.nat20.ui.actions.ActionRoute
 import au.com.evonet.nat20.ui.actions.DnD5eActionsLayer
+import au.com.evonet.nat20.ui.identity.CharacterPortraitFrame
+import au.com.evonet.nat20.ui.identity.IdentitySheet
 import au.com.evonet.nat20.ui.slugToTitle
 import au.com.evonet.nat20.ui.theme.Cinzel
 import au.com.evonet.nat20.ui.theme.Cormorant
 import au.com.evonet.nat20.ui.theme.Diamond
-import au.com.evonet.nat20.ui.theme.DropCapSquare
 import au.com.evonet.nat20.ui.theme.NatPalette
 import au.com.evonet.nat20.ui.theme.OrnamentalDivider
 import au.com.evonet.nat20.ui.theme.natPalette
 import kotlinx.coroutines.launch
+import java.time.Instant
 
 /**
  * The persistent in-character codex (A7e / parity #12): the full iOS
@@ -101,6 +103,8 @@ fun CodexShellView(
     val pagerState = rememberPagerState(pageCount = { tabs.size })
     val scope = rememberCoroutineScope()
     var levelingUp by remember { mutableStateOf(false) }
+    // In-campaign only: tapping the hero opens the name/portrait identity sheet.
+    var editingIdentity by remember { mutableStateOf(false) }
     // Actions layer (parity #19): the Act pill opens the grouped sheet; most
     // tiles mount their own full-screen pickers inside the layer (slice B),
     // the few remaining tab-hosted mechanics route back into the shell here.
@@ -114,7 +118,12 @@ fun CodexShellView(
             onEdit = onEdit,
             onAct = { showActions = true },
         )
-        HeroRow(character, payload)
+        HeroRow(
+            character = character,
+            payload = payload,
+            editable = inCampaign,
+            onEditIdentity = { editingIdentity = true },
+        )
         CampaignRegion(
             inCampaign = inCampaign,
             campaignName = activeCampaign?.name,
@@ -149,6 +158,19 @@ fun CodexShellView(
 
     if (levelingUp) {
         LevelUpWizard(payload, onApplyIntent, onDismiss = { levelingUp = false })
+    }
+
+    if (editingIdentity) {
+        IdentitySheet(
+            initialName = character.name,
+            initialPortrait = character.portraitData,
+            onCancel = { editingIdentity = false },
+            onCommit = { newName, portrait ->
+                // Cosmetic metadata: save directly (unjournaled), not via an intent.
+                onSave(character.copy(name = newName, portraitData = portrait, updatedAt = Instant.now()))
+                editingIdentity = false
+            },
+        )
     }
 
     DnD5eActionsLayer(
@@ -282,14 +304,25 @@ private fun EditPill(palette: NatPalette, onEdit: () -> Unit) {
 // ── Hero row ───────────────────────────────────────────────────────────────────
 
 @Composable
-private fun HeroRow(character: Character, payload: DnD5ePayload) {
+private fun HeroRow(
+    character: Character,
+    payload: DnD5ePayload,
+    editable: Boolean,
+    onEditIdentity: () -> Unit,
+) {
     val palette = MaterialTheme.natPalette
     Row(
-        Modifier.fillMaxWidth().padding(top = 16.dp, start = 22.dp, end = 22.dp),
+        Modifier
+            .fillMaxWidth()
+            .then(if (editable) Modifier.clickable(onClick = onEditIdentity) else Modifier)
+            .padding(top = 16.dp, start = 22.dp, end = 22.dp),
         verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        DropCapSquare(character.name.firstOrNull()?.uppercaseChar()?.toString() ?: "?")
+        CharacterPortraitFrame(
+            portraitData = character.portraitData,
+            fallbackLetter = character.name.firstOrNull()?.uppercaseChar()?.toString() ?: "?",
+        )
         Column(Modifier.weight(1f)) {
             Text(
                 character.name,

@@ -30,4 +30,10 @@ data class PersistentCharacter(
     val updatedAt: String,
     /** Cross-ruleset summoned creatures (familiars, companions, summons), JSON-encoded. A18; defaults `[]`. */
     val summonsJson: String = "[]",
+    /**
+     * Optional user-supplied portrait, JPEG-encoded + downscaled at import (parity
+     * #23). Cross-ruleset, so it's a column here rather than in the payload blob.
+     * Added by Room migration v5→v6; nullable BLOB, defaults null.
+     */
+    val portraitData: ByteArray? = null,
 )

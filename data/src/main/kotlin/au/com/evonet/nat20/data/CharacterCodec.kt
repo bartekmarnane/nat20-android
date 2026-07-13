@@ -9,6 +9,7 @@ import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.time.Instant
+import java.util.Base64
 import java.util.UUID
 
 /**
@@ -25,6 +26,11 @@ class CharacterCodec(private val registry: RulesetRegistry) {
     private fun decodeSummons(text: String): List<Summon> =
         if (text.isBlank()) emptyList() else json.decodeFromString(summonsSerializer, text)
 
+    // Portraits are raw bytes: columnar rows keep the BLOB verbatim, but the JSON
+    // envelope (campaign snapshots) has no binary type, so it carries Base64.
+    private fun encodePortrait(bytes: ByteArray?): String? = bytes?.let { Base64.getEncoder().encodeToString(it) }
+    private fun decodePortrait(text: String?): ByteArray? = text?.let { Base64.getDecoder().decode(it) }
+
     /** Domain → row. The ruleset must be registered (it owns the encoder). */
     fun toEntity(character: Character): PersistentCharacter {
         val ruleset = registry.ruleset(character.rulesetId)
@@ -38,6 +44,7 @@ class CharacterCodec(private val registry: RulesetRegistry) {
             createdAt = character.createdAt.toString(),
             updatedAt = character.updatedAt.toString(),
             summonsJson = encodeSummons(character.summons),
+            portraitData = character.portraitData,
         )
     }
 
@@ -54,6 +61,7 @@ class CharacterCodec(private val registry: RulesetRegistry) {
             createdAt = Instant.parse(row.createdAt),
             updatedAt = Instant.parse(row.updatedAt),
             summons = decodeSummons(row.summonsJson),
+            portraitData = row.portraitData,
         )
     }
 
@@ -74,6 +82,7 @@ class CharacterCodec(private val registry: RulesetRegistry) {
             createdAt = character.createdAt.toString(),
             updatedAt = character.updatedAt.toString(),
             summonsJson = encodeSummons(character.summons),
+            portraitDataBase64 = encodePortrait(character.portraitData),
         )
         return json.encodeToString(CharacterEnvelope.serializer(), envelope)
     }
@@ -92,6 +101,7 @@ class CharacterCodec(private val registry: RulesetRegistry) {
             createdAt = Instant.parse(envelope.createdAt),
             updatedAt = Instant.parse(envelope.updatedAt),
             summons = decodeSummons(envelope.summonsJson),
+            portraitData = decodePortrait(envelope.portraitDataBase64),
         )
     }
 
@@ -116,4 +126,6 @@ internal data class CharacterEnvelope(
     val createdAt: String,
     val updatedAt: String,
     val summonsJson: String = "[]",
+    /** Base64 of the portrait bytes (parity #23); null when there's no portrait. */
+    val portraitDataBase64: String? = null,
 )
