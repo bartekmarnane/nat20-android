@@ -38,6 +38,16 @@ data class DnD5ePayload(
     val selectedSkills: List<String> = emptyList(),
     /** Alignment label, e.g. "Lawful Good"; null until chosen. */
     val alignment: String? = null,
+    /** Manner prose (wizard Manner step / Lore tab): how they carry themselves. */
+    val personality: String = "",
+    /** What drives them. */
+    val ideals: String = "",
+    /** Who or what they hold dear. */
+    val bonds: String = "",
+    /** Where they fall short. */
+    val flaws: String = "",
+    /** Free-form backstory prose. */
+    val backstory: String = "",
     /** Carried items (weapons, armor, gear, potions); equipped ones drive AC (A10). */
     val inventory: List<InventoryItem> = emptyList(),
     /** Purse keyed by denomination; a missing key means zero of that coin. */

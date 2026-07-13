@@ -27,9 +27,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import au.com.evonet.nat20.ui.theme.Cormorant
 import au.com.evonet.nat20.ui.theme.natPalette
 import au.com.evonet.nat20.ui.theme.parchmentTile
 import au.com.evonet.nat20.dnd5e.ArmorClassCalculator
@@ -576,12 +578,48 @@ internal fun LorePage(character: Character, payload: DnD5ePayload) {
             }
         }
         SectionCard("Backstory") {
-            Text(
-                "Alignment and backstory prose arrive with a later content step.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            val manner = listOf(
+                "Personality" to payload.personality,
+                "Ideals" to payload.ideals,
+                "Bonds" to payload.bonds,
+                "Flaws" to payload.flaws,
             )
+            val hasContent = payload.alignment != null || manner.any { it.second.isNotBlank() } || payload.backstory.isNotBlank()
+            if (!hasContent) {
+                Text(
+                    "No alignment or backstory yet — add them from Edit Character.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                payload.alignment?.let { StatLine("Alignment", it) }
+                manner.forEach { (label, text) ->
+                    if (text.isNotBlank()) MannerBlock(label, text)
+                }
+                if (payload.backstory.isNotBlank()) MannerBlock("Backstory", payload.backstory)
+            }
         }
+    }
+}
+
+/** A manner entry: small-caps label over an italic Cormorant quote. */
+@Composable
+private fun MannerBlock(label: String, text: String) {
+    val palette = MaterialTheme.natPalette
+    Column(Modifier.padding(vertical = 2.dp)) {
+        Text(
+            label.uppercase(),
+            style = MaterialTheme.typography.labelMedium,
+            color = palette.accent,
+            letterSpacing = 1.5.sp,
+        )
+        Text(
+            text,
+            fontFamily = Cormorant,
+            fontStyle = FontStyle.Italic,
+            fontSize = 15.sp,
+            color = palette.ink,
+        )
     }
 }
 

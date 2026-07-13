@@ -1,29 +1,41 @@
 package au.com.evonet.nat20.ui.editor
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -32,9 +44,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import au.com.evonet.nat20.dnd5e.Background
 import au.com.evonet.nat20.dnd5e.CharacterClass
 import au.com.evonet.nat20.dnd5e.ClassEntry
@@ -43,33 +60,46 @@ import au.com.evonet.nat20.dnd5e.DnD5ePayload
 import au.com.evonet.nat20.dnd5e.DnD5eRuleset
 import au.com.evonet.nat20.dnd5e.Feats
 import au.com.evonet.nat20.dnd5e.FightingStyles
-import au.com.evonet.nat20.dnd5e.effectiveMaxHp
+import au.com.evonet.nat20.dnd5e.InventoryItem
+import au.com.evonet.nat20.dnd5e.ItemKind
 import au.com.evonet.nat20.dnd5e.Race
+import au.com.evonet.nat20.dnd5e.Spell
+import au.com.evonet.nat20.dnd5e.StartingEquipment
+import au.com.evonet.nat20.dnd5e.effectiveMaxHp
 import au.com.evonet.nat20.dnd5e.withFullSpellSlots
 import au.com.evonet.nat20.dnd5e.core.Ability
 import au.com.evonet.nat20.dnd5e.core.AbilityScores
 import au.com.evonet.nat20.dnd5e.core.CastingProgression
 import au.com.evonet.nat20.dnd5e.core.LevelUpMath
 import au.com.evonet.nat20.domain.Character
+import au.com.evonet.nat20.ui.theme.Cinzel
+import au.com.evonet.nat20.ui.theme.Cormorant
+import au.com.evonet.nat20.ui.theme.Diamond
+import au.com.evonet.nat20.ui.theme.EbGaramond
+import au.com.evonet.nat20.ui.theme.ImFell
+import au.com.evonet.nat20.ui.theme.natPalette
 import java.time.Instant
 import kotlin.math.max
 
 /**
- * The multi-step D&D 5e creation/edit wizard (A8). Replaces the minimal A6
- * form. Steps: Name → Race → Class → Background → Abilities → Skills → Review,
- * reading the SRD catalogues (`DnD5eCatalog`) and materialising a draft into a
- * `Character`. Hosted in the shared [EditorShell] chrome; the unified creation
- * flow prefixes the Ruleset step (`stepOffset = 1`, `onExitFirstStep` returns to
- * it), while the edit route hosts it standalone. (Manner step deferred.)
+ * The multi-step D&D 5e creation/edit wizard (A8, restyled to the iOS parchment
+ * atoms in the parity pass). Steps follow the iOS order: Name → Race → Class →
+ * Background → Abilities → Advancements (above level 1) → Skills →
+ * [Fighting Style — Android-only step, see PARITY.md] → Equipment → Spells
+ * (casters) → Manner → Review, reading the SRD catalogues (`DnD5eCatalog`) and
+ * materialising a draft into a `Character`. Hosted in the shared [EditorShell]
+ * chrome; the unified creation flow prefixes the Ruleset step (`stepOffset = 1`,
+ * `onExitFirstStep` returns to it), while the edit route hosts it standalone.
  */
 private enum class WizStep(val title: String) {
     NAME("Name"), RACE("Race"), CLASS("Class"), BACKGROUND("Background"),
-    ABILITIES("Abilities"), SKILLS("Skills"), FIGHTING_STYLE("Fighting Style"),
-    SPELLS("Spells"), ADVANCEMENTS("Advancements"), REVIEW("Review"),
+    ABILITIES("Abilities"), ADVANCEMENTS("Advancements"), SKILLS("Skills"),
+    FIGHTING_STYLE("Fighting Style"), EQUIPMENT("Equipment"), SPELLS("Spells"),
+    MANNER("Manner"), REVIEW("Review"),
 }
 
 /** The shape of a single advancement-level choice for an above-level-1 build (A11). */
-private enum class AdvKind { ASI_ONE, ASI_TWO, FEAT }
+private enum class AdvKind(val label: String) { ASI_ONE("+2 one"), ASI_TWO("+1 two"), FEAT("Feat") }
 
 private data class AdvState(
     val kind: AdvKind = AdvKind.ASI_ONE,
@@ -97,7 +127,6 @@ private data class AdvState(
 private fun asiLevels(classId: String?, level: Int): List<Int> =
     if (classId == null) emptyList() else (1..level).filter { LevelUpMath.grantsAbilityScoreImprovement(classId, it) }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DnD5eWizardScreen(
     existing: Character?,
@@ -121,6 +150,18 @@ fun DnD5eWizardScreen(
     var chosenSpells by remember { mutableStateOf((source?.spellsKnown.orEmpty().values.flatten() + source?.preparedSpells.orEmpty().values.flatten()).toSet()) }
     var subclass by rememberSaveable { mutableStateOf(source?.classes?.firstOrNull()?.subclass) }
     var advs by remember { mutableStateOf<Map<Int, AdvState>>(emptyMap()) }
+    // Manner + Equipment state (iOS parity steps).
+    var alignment by rememberSaveable { mutableStateOf(source?.alignment) }
+    var personality by rememberSaveable { mutableStateOf(source?.personality.orEmpty()) }
+    var ideals by rememberSaveable { mutableStateOf(source?.ideals.orEmpty()) }
+    var bonds by rememberSaveable { mutableStateOf(source?.bonds.orEmpty()) }
+    var flaws by rememberSaveable { mutableStateOf(source?.flaws.orEmpty()) }
+    var backstory by rememberSaveable { mutableStateOf(source?.backstory.orEmpty()) }
+    var inventory by remember { mutableStateOf(source?.inventory.orEmpty()) }
+    // Edit mode must not re-seed a kit the character already carries.
+    var equipmentSeeded by rememberSaveable { mutableStateOf(source?.inventory?.isNotEmpty() == true) }
+    // Pencil-jump from Review: the footer collapses to a single "Done" back to Review.
+    var editingFromReview by rememberSaveable { mutableStateOf(false) }
 
     val race = raceId?.let(DnD5eCatalog::race)
     val klass = classId?.let(DnD5eCatalog::characterClass)
@@ -145,16 +186,26 @@ fun DnD5eWizardScreen(
     }
     val step = steps[stepIndex.coerceIn(0, steps.lastIndex)]
 
+    // First arrival on the Equipment step seeds the class + background starter kit.
+    LaunchedEffect(step, equipmentSeeded) {
+        if (step == WizStep.EQUIPMENT && !equipmentSeeded && classId != null) {
+            inventory = StartingEquipment.seed(classId!!, backgroundId)
+            equipmentSeeded = true
+        }
+    }
+
     fun canAdvance(): Boolean = when (step) {
         WizStep.NAME -> name.isNotBlank()
         WizStep.RACE -> race != null
         WizStep.CLASS -> klass != null
         WizStep.BACKGROUND -> background != null
         WizStep.ABILITIES -> true
+        WizStep.ADVANCEMENTS -> (!needsSubclass || subclass != null) && advLevels.all { (advs[it] ?: AdvState()).isComplete() }
         WizStep.SKILLS -> klass != null && chosenSkills.size == klass.skillChoiceCount
         WizStep.FIGHTING_STYLE -> fightingStyle != null
+        WizStep.EQUIPMENT -> true
         WizStep.SPELLS -> true
-        WizStep.ADVANCEMENTS -> (!needsSubclass || subclass != null) && advLevels.all { (advs[it] ?: AdvState()).isComplete() }
+        WizStep.MANNER -> !alignment.isNullOrEmpty()
         WizStep.REVIEW -> true
     }
 
@@ -184,6 +235,13 @@ fun DnD5eWizardScreen(
             maxHp = maxHp,
             background = backgroundId.orEmpty(),
             selectedSkills = (backgroundSkills + chosenSkills).distinct(),
+            alignment = alignment,
+            personality = personality.trim(),
+            ideals = ideals.trim(),
+            bonds = bonds.trim(),
+            flaws = flaws.trim(),
+            backstory = backstory.trim(),
+            inventory = inventory,
             fightingStyles = listOfNotNull(fightingStyle.takeIf { grantsStyle }),
             chosenFeats = feats.distinct(),
             cantripsKnown = cantrips,
@@ -198,6 +256,11 @@ fun DnD5eWizardScreen(
         }
     }
 
+    fun jumpToReview() {
+        editingFromReview = false
+        stepIndex = steps.lastIndex
+    }
+
     EditorShell(
         kicker = "Step ${stepOffset + stepIndex + 1} of ${stepOffset + steps.size}",
         title = if (existing == null) "New Character" else "Edit Character",
@@ -205,201 +268,479 @@ fun DnD5eWizardScreen(
         currentIndex = stepOffset + stepIndex,
         onBack = {
             when {
+                editingFromReview -> jumpToReview()
                 stepIndex > 0 -> stepIndex--
                 onExitFirstStep != null -> onExitFirstStep()
                 else -> onCancel()
             }
         },
         onJump = { target ->
+            editingFromReview = false
             if (target < stepOffset) {
                 onExitFirstStep?.invoke()
             } else {
                 stepIndex = (target - stepOffset).coerceIn(0, steps.lastIndex)
             }
         },
-        scrollableContent = false, // several step bodies scroll themselves (LazyColumn / verticalScroll)
+        scrollableContent = false, // step bodies scroll themselves
         footer = {
-            WizardSecondaryButton("Cancel", onCancel)
-            Spacer(Modifier.weight(1f))
-            WizardPrimaryButton(
-                label = when {
-                    step != WizStep.REVIEW -> "Continue"
-                    existing == null -> "Create"
-                    else -> "Save"
-                },
-                enabled = canAdvance(),
-            ) { if (step == WizStep.REVIEW) onSave(build()) else stepIndex++ }
+            if (editingFromReview && step != WizStep.REVIEW) {
+                // Editing a single step from Review: one right-aligned Done back to Review.
+                Spacer(Modifier.weight(1f))
+                WizardPrimaryButton("Done", enabled = canAdvance()) { jumpToReview() }
+            } else {
+                WizardSecondaryButton("Cancel", onCancel)
+                Spacer(Modifier.weight(1f))
+                WizardPrimaryButton(
+                    label = when {
+                        step != WizStep.REVIEW -> "Continue"
+                        existing == null -> "Create"
+                        else -> "Save"
+                    },
+                    enabled = canAdvance(),
+                ) { if (step == WizStep.REVIEW) onSave(build()) else stepIndex++ }
+            }
         },
     ) {
         Column(Modifier.weight(1f).fillMaxWidth()) {
             when (step) {
-                WizStep.NAME -> IdentityStep(name, { name = it }, Modifier.fillMaxSize().padding(16.dp))
-                WizStep.RACE -> PickStep(DnD5eCatalog.races, raceId, { it.id }, { it.name }, { it.description }) { raceId = it }
-                WizStep.CLASS -> ClassStep(classId, level, onPick = { classId = it; chosenSkills = emptySet() }, onLevel = { level = it })
-                WizStep.BACKGROUND -> PickStep(DnD5eCatalog.backgrounds, backgroundId, { it.id }, { it.name }, { it.description }) { backgroundId = it }
+                WizStep.NAME -> StepColumn {
+                    IdentityStep(name, { name = it })
+                    Spacer(Modifier.height(14.dp))
+                    WizardFieldLabel("Starting level", hint = levelHint(level))
+                    WizardLevelStepper("Character level", level) { level = it }
+                }
+                WizStep.RACE -> StepColumn {
+                    WizardStepSection("Choose a Race", "Race grants ability bonuses, speed, vision, and starting traits.")
+                    WizardChipsPicker(DnD5eCatalog.races, { it.id == raceId }, { it.name }, large = true) { raceId = it.id }
+                    race?.let { RaceDetailCard(it) }
+                }
+                WizStep.CLASS -> StepColumn {
+                    Spacer(Modifier.height(18.dp))
+                    CharacterLevelBanner(level)
+                    WizardStepSection("Pick Class")
+                    WizardChipsPicker(DnD5eCatalog.classes, { it.id == classId }, { it.name }, large = true) { picked ->
+                        if (picked.id != classId) {
+                            classId = picked.id
+                            chosenSkills = emptySet()
+                            fightingStyle = null
+                            chosenCantrips = emptySet()
+                            chosenSpells = emptySet()
+                            subclass = null
+                            advs = emptyMap()
+                            // Reseed the starter kit for the new class unless editing a
+                            // character that already carries real inventory.
+                            if (source?.inventory?.isNotEmpty() != true) {
+                                inventory = emptyList()
+                                equipmentSeeded = false
+                            }
+                        }
+                    }
+                    klass?.let { ClassDetailCard(it, level) }
+                }
+                WizStep.BACKGROUND -> StepColumn {
+                    WizardStepSection("Choose a Background", "Backgrounds grant a pair of skill proficiencies, gear, and a flavour feature.")
+                    WizardChipsPicker(DnD5eCatalog.backgrounds, { it.id == backgroundId }, { it.name }, large = true) { backgroundId = it.id }
+                    background?.let { BackgroundDetailCard(it) }
+                }
                 WizStep.ABILITIES -> AbilitiesStep(base, raceBonus, finalScores) { base = it }
-                WizStep.SKILLS -> SkillsStep(klass, backgroundSkills, chosenSkills) { chosenSkills = it }
-                WizStep.FIGHTING_STYLE -> FightingStyleStep(fightingStyle) { fightingStyle = it }
-                WizStep.SPELLS -> SpellsStep(klass, chosenCantrips, chosenSpells, { chosenCantrips = it }, { chosenSpells = it })
                 WizStep.ADVANCEMENTS -> AdvancementsStep(
                     klass, level, needsSubclass, advLevels, finalScores, isSpellcaster, subclass, advs,
                     onSubclass = { subclass = it },
                     onAdv = { lvl, st -> advs = advs + (lvl to st) },
                 )
-                WizStep.REVIEW -> ReviewStep(name, race, klass, level, background, finalScores, backgroundSkills + chosenSkills)
+                WizStep.SKILLS -> SkillsStep(klass, background, backgroundSkills, chosenSkills) { chosenSkills = it }
+                WizStep.FIGHTING_STYLE -> FightingStyleStep(fightingStyle) { fightingStyle = it }
+                WizStep.EQUIPMENT -> EquipmentStep(
+                    klass = klass,
+                    inventory = inventory,
+                    seeded = equipmentSeeded,
+                    onChange = { inventory = it },
+                    onReset = { inventory = StartingEquipment.seed(classId ?: "", backgroundId) },
+                )
+                WizStep.SPELLS -> SpellsStep(klass, chosenCantrips, chosenSpells, { chosenCantrips = it }, { chosenSpells = it })
+                WizStep.MANNER -> MannerStep(
+                    alignment, personality, ideals, bonds, flaws, backstory,
+                    onAlignment = { alignment = it },
+                    onPersonality = { personality = it },
+                    onIdeals = { ideals = it },
+                    onBonds = { bonds = it },
+                    onFlaws = { flaws = it },
+                    onBackstory = { backstory = it },
+                )
+                WizStep.REVIEW -> ReviewStep(
+                    name = name, level = level, race = race, klass = klass, subclass = subclass,
+                    background = background, scores = finalScores,
+                    backgroundSkills = backgroundSkills, chosenSkills = chosenSkills,
+                    inventory = inventory, castsAtCreation = castsAtCreation,
+                    cantrips = chosenCantrips, spells = chosenSpells,
+                    alignment = alignment, personality = personality, ideals = ideals,
+                    bonds = bonds, flaws = flaws, backstory = backstory,
+                    onEdit = { target ->
+                        val index = steps.indexOf(target)
+                        if (index >= 0) {
+                            editingFromReview = true
+                            stepIndex = index
+                        }
+                    },
+                )
             }
         }
     }
 }
 
-// ── Steps ────────────────────────────────────────────────────────────────────
-// The NAME step uses the shared `IdentityStep` (see IdentityStep.kt).
+// ── Shared step scaffolding ──────────────────────────────────────────────────
+
+/** Every step body: a self-scrolling column in the shell's 22dp content well. */
+@Composable
+private fun StepColumn(content: @Composable ColumnScope.() -> Unit) {
+    Column(
+        Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(start = 22.dp, end = 22.dp, bottom = 16.dp),
+        content = content,
+    )
+}
+
+/** The iOS level-tier hint under the Name step's level stepper. */
+private fun levelHint(level: Int): String = when (level) {
+    1 -> "Most campaigns begin here."
+    in 2..4 -> "Local heroes."
+    in 5..10 -> "Heroes of the realm."
+    in 11..16 -> "Masters of the realm."
+    else -> "Masters of the world."
+}
+
+// ── Race ─────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun <T> PickStep(
-    items: List<T>,
-    selectedId: String?,
-    id: (T) -> String,
-    title: (T) -> String,
-    subtitle: (T) -> String,
-    onPick: (String) -> Unit,
-) {
-    LazyColumn(
-        Modifier.fillMaxSize(),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        items(items, key = id) { item ->
-            PickCard(
-                title = title(item),
-                subtitle = subtitle(item),
-                selected = id(item) == selectedId,
-                onClick = { onPick(id(item)) },
+private fun RaceDetailCard(race: Race) {
+    val palette = MaterialTheme.natPalette
+    Spacer(Modifier.height(12.dp))
+    WizardDetailCard {
+        Text(
+            race.name,
+            fontFamily = Cormorant,
+            fontWeight = FontWeight.SemiBold,
+            fontStyle = FontStyle.Italic,
+            fontSize = 22.sp,
+            color = palette.accent,
+        )
+        if (race.description.isNotEmpty()) {
+            Text(
+                race.description,
+                fontFamily = EbGaramond,
+                fontSize = 13.sp,
+                color = palette.inkSoft,
+                modifier = Modifier.padding(top = 2.dp),
             )
         }
+        Spacer(Modifier.height(10.dp))
+        WizardStatCell("Bonus", formatAsi(race.abilityBonuses()), modifier = Modifier.fillMaxWidth())
+        Spacer(Modifier.height(6.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            WizardStatCell("Size", race.size.replaceFirstChar { it.uppercase() }, modifier = Modifier.weight(1f))
+            WizardStatCell("Speed", "${race.speed} ft", modifier = Modifier.weight(1f))
+        }
+        Spacer(Modifier.height(6.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            WizardStatCell("Darkvision", if (race.darkvision > 0) "${race.darkvision} ft" else "None", modifier = Modifier.weight(1f))
+            WizardStatCell("Age", race.typicalAge?.let { "~$it yrs" } ?: "—", modifier = Modifier.weight(1f))
+        }
+        if (race.languages.isNotEmpty()) {
+            Spacer(Modifier.height(6.dp))
+            WizardStatCell("Languages", race.languages.joinToString(" · "), modifier = Modifier.fillMaxWidth())
+        }
+        race.traits.forEach { trait ->
+            Spacer(Modifier.height(6.dp))
+            WizardQuoteBlock(trait.name, trait.body)
+        }
     }
 }
 
+private fun formatAsi(bonuses: Map<Ability, Int>): String =
+    if (bonuses.isEmpty()) {
+        "—"
+    } else {
+        Ability.entries.filter { it in bonuses }.joinToString(" · ") { "+${bonuses[it]} ${it.abbreviation}" }
+    }
+
+// ── Class ────────────────────────────────────────────────────────────────────
+
 @Composable
-private fun PickCard(title: String, subtitle: String, selected: Boolean, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
-        colors = if (selected) {
-            CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary)
-        } else {
-            CardDefaults.cardColors()
-        },
+private fun CharacterLevelBanner(level: Int) {
+    val palette = MaterialTheme.natPalette
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(4.dp))
+            .background(Brush.verticalGradient(listOf(palette.accent.copy(alpha = 0.10f), Color.Transparent)))
+            .border(1.2.dp, palette.accent.copy(alpha = 0.33f), RoundedCornerShape(4.dp))
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium)
-            Text(subtitle, style = MaterialTheme.typography.bodySmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
-        }
+        Text(
+            "CHARACTER LEVEL",
+            fontFamily = Cinzel,
+            fontWeight = FontWeight.Bold,
+            fontSize = 11.sp,
+            letterSpacing = 3.sp,
+            color = palette.accent,
+            modifier = Modifier.weight(1f),
+        )
+        Text(
+            "$level",
+            fontFamily = Cormorant,
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 28.sp,
+            color = palette.accent,
+        )
     }
 }
 
 @Composable
-private fun ClassStep(classId: String?, level: Int, onPick: (String) -> Unit, onLevel: (Int) -> Unit) {
-    Column(Modifier.fillMaxSize()) {
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text("Starting level", Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-            Stepper(level, 1..20, onLevel)
+private fun ClassDetailCard(klass: CharacterClass, level: Int) {
+    val palette = MaterialTheme.natPalette
+    Spacer(Modifier.height(12.dp))
+    WizardDetailCard {
+        Text(
+            klass.name,
+            fontFamily = Cormorant,
+            fontWeight = FontWeight.SemiBold,
+            fontStyle = FontStyle.Italic,
+            fontSize = 22.sp,
+            color = palette.accent,
+        )
+        if (klass.description.isNotEmpty()) {
+            Text(
+                klass.description,
+                fontFamily = EbGaramond,
+                fontSize = 13.sp,
+                color = palette.inkSoft,
+                modifier = Modifier.padding(top = 2.dp),
+            )
         }
-        PickStep(DnD5eCatalog.classes, classId, { it.id }, { it.name }, { "d${it.hitDie} · ${it.savingThrows.joinToString(", ")}" }, onPick)
+        Spacer(Modifier.height(10.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            WizardStatCell("Hit Die", "d${klass.hitDie}", modifier = Modifier.weight(1f))
+            WizardStatCell("Saves", klass.savingThrowAbilities().joinToString(" · ") { it.abbreviation }, modifier = Modifier.weight(1f))
+        }
+        Spacer(Modifier.height(6.dp))
+        WizardStatCell(
+            "Skills",
+            "Pick ${klass.skillChoiceCount} on the Skills step",
+            modifier = Modifier.fillMaxWidth(),
+        )
+        val features = klass.features.filter { it.level <= level }
+        features.forEach { feature ->
+            Spacer(Modifier.height(6.dp))
+            WizardQuoteBlock("L${feature.level} · ${feature.name}", feature.body)
+        }
     }
 }
+
+// ── Background ───────────────────────────────────────────────────────────────
+
+@Composable
+private fun BackgroundDetailCard(background: Background) {
+    val palette = MaterialTheme.natPalette
+    Spacer(Modifier.height(12.dp))
+    WizardDetailCard {
+        Text(
+            background.name,
+            fontFamily = Cormorant,
+            fontWeight = FontWeight.SemiBold,
+            fontStyle = FontStyle.Italic,
+            fontSize = 22.sp,
+            color = palette.accent,
+        )
+        if (background.description.isNotEmpty()) {
+            Text(
+                background.description,
+                fontFamily = EbGaramond,
+                fontSize = 13.sp,
+                color = palette.inkSoft,
+                modifier = Modifier.padding(top = 2.dp),
+            )
+        }
+        Spacer(Modifier.height(10.dp))
+        WizardStatCell(
+            "Skills",
+            background.grantedSkills.joinToString(" · ") { skillName(it) },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(Modifier.height(6.dp))
+        WizardStatCell(
+            "Tools & Languages",
+            toolsAndLanguages(background),
+            modifier = Modifier.fillMaxWidth(),
+        )
+        if (background.equipment.isNotEmpty()) {
+            Spacer(Modifier.height(10.dp))
+            Text(
+                "EQUIPMENT",
+                fontFamily = Cinzel,
+                fontSize = 11.sp,
+                letterSpacing = 2.sp,
+                color = palette.inkMute,
+            )
+            Spacer(Modifier.height(4.dp))
+            background.equipment.chunked(2).forEach { pair ->
+                Row(Modifier.fillMaxWidth()) {
+                    pair.forEach { line ->
+                        Row(
+                            Modifier.weight(1f).padding(vertical = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            Diamond(size = 4.dp, fill = palette.accent)
+                            Text(line, fontFamily = Cormorant, fontSize = 13.sp, color = palette.ink)
+                        }
+                    }
+                    if (pair.size == 1) Spacer(Modifier.weight(1f))
+                }
+            }
+        }
+        background.feature?.let { feature ->
+            Spacer(Modifier.height(6.dp))
+            WizardQuoteBlock(feature.name, feature.body)
+        }
+    }
+}
+
+private fun toolsAndLanguages(background: Background): String {
+    val parts = mutableListOf<String>()
+    if (background.toolProficiencies.isNotEmpty()) parts += background.toolProficiencies.joinToString(" · ")
+    if (background.languageCount > 0) {
+        parts += if (background.languageCount == 1) "1 language of your choice" else "${background.languageCount} languages of your choice"
+    }
+    return parts.joinToString(" · ").ifEmpty { "—" }
+}
+
+// ── Abilities ────────────────────────────────────────────────────────────────
 
 @Composable
 private fun AbilitiesStep(base: AbilityScores, raceBonus: Map<Ability, Int>, finalScores: AbilityScores, onChange: (AbilityScores) -> Unit) {
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Set base scores; racial bonuses are added automatically.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Ability.entries.forEach { ability ->
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(ability.abbreviation, Modifier.width(48.dp), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
-                val bonus = raceBonus[ability] ?: 0
-                val finalScore = finalScores.score(ability)
-                Text(
-                    if (bonus != 0) "→ $finalScore (${if (bonus > 0) "+$bonus" else "$bonus"})" else "→ $finalScore",
-                    Modifier.weight(1f),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Stepper(base.score(ability), 3..20) { onChange(base.with(ability, it)) }
+    val palette = MaterialTheme.natPalette
+    StepColumn {
+        WizardStepSection("Ability Scores", "Set base scores; racial bonuses are added automatically.")
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Ability.entries.forEach { ability ->
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(palette.tile)
+                        .border(1.dp, palette.ink.copy(alpha = 0.13f), RoundedCornerShape(4.dp))
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        ability.abbreviation,
+                        fontFamily = Cinzel,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 11.sp,
+                        color = palette.inkMute,
+                        modifier = Modifier.width(38.dp),
+                    )
+                    Text(
+                        abilityName(ability),
+                        fontFamily = Cormorant,
+                        fontSize = 15.sp,
+                        color = palette.ink,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Text(
+                        "${base.score(ability)}",
+                        fontFamily = Cormorant,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 20.sp,
+                        color = palette.accent,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.width(40.dp),
+                    )
+                    Row(
+                        Modifier
+                            .clip(CircleShape)
+                            .background(palette.tileStrong)
+                            .padding(3.dp),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        StepperButton("−", enabled = base.score(ability) > 3, size = 22) {
+                            onChange(base.with(ability, base.score(ability) - 1))
+                        }
+                        StepperButton("+", enabled = base.score(ability) < 20, size = 22) {
+                            onChange(base.with(ability, base.score(ability) + 1))
+                        }
+                    }
+                }
+            }
+        }
+        WizardStepSection("Final Scores", "With racial bonuses applied.")
+        FinalScoresGrid(finalScores, raceBonus)
+    }
+}
+
+@Composable
+private fun FinalScoresGrid(scores: AbilityScores, raceBonus: Map<Ability, Int>) {
+    val palette = MaterialTheme.natPalette
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Ability.entries.chunked(3).forEach { row ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                row.forEach { ability ->
+                    val bonus = raceBonus[ability] ?: 0
+                    Column(
+                        Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(3.dp))
+                            .background(palette.tile)
+                            .border(1.dp, palette.accent.copy(alpha = 0.2f), RoundedCornerShape(3.dp))
+                            .padding(vertical = 8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(
+                                ability.abbreviation,
+                                fontFamily = Cinzel,
+                                fontSize = 11.sp,
+                                color = palette.inkMute,
+                            )
+                            if (bonus != 0) {
+                                Text(
+                                    if (bonus > 0) "+$bonus" else "$bonus",
+                                    fontFamily = Cinzel,
+                                    fontSize = 10.sp,
+                                    color = palette.accentGold,
+                                )
+                            }
+                        }
+                        Text(
+                            "${scores.score(ability)}",
+                            fontFamily = Cormorant,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 22.sp,
+                            color = palette.ink,
+                        )
+                        val mod = AbilityScores.modifier(scores.score(ability))
+                        Text(
+                            if (mod >= 0) "+$mod" else "$mod",
+                            fontFamily = Cormorant,
+                            fontStyle = FontStyle.Italic,
+                            fontSize = 13.sp,
+                            color = palette.inkSoft,
+                        )
+                    }
+                }
             }
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
-@Composable
-private fun SkillsStep(klass: CharacterClass?, backgroundSkills: List<String>, chosen: Set<String>, onChange: (Set<String>) -> Unit) {
-    val quota = klass?.skillChoiceCount ?: 0
-    val options = (klass?.skillChoiceFrom.orEmpty()).filterNot { it in backgroundSkills }
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Choose $quota class skills (${chosen.size}/$quota).", style = MaterialTheme.typography.bodyLarge)
-        if (backgroundSkills.isNotEmpty()) {
-            Text("From your background: ${backgroundSkills.joinToString { skillName(it) }}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            options.forEach { skillId ->
-                val isChosen = skillId in chosen
-                FilterChip(
-                    selected = isChosen,
-                    onClick = {
-                        onChange(if (isChosen) chosen - skillId else if (chosen.size < quota) chosen + skillId else chosen)
-                    },
-                    label = { Text(skillName(skillId)) },
-                )
-            }
-        }
-    }
-}
+private fun abilityName(ability: Ability): String =
+    ability.name.lowercase().replaceFirstChar { it.uppercase() }
 
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun SpellsStep(
-    klass: CharacterClass?,
-    cantrips: Set<String>,
-    spells: Set<String>,
-    onCantrips: (Set<String>) -> Unit,
-    onSpells: (Set<String>) -> Unit,
-) {
-    val className = klass?.name ?: return
-    // Filter the SRD library to this class's cantrips and 1st-level spells.
-    val cantripPool = remember(className) { DnD5eCatalog.spellLibrary.filter { it.level == 0 && it.classNames.any { c -> c.equals(className, ignoreCase = true) } }.sortedBy { it.name } }
-    val spellPool = remember(className) { DnD5eCatalog.spellLibrary.filter { it.level == 1 && it.classNames.any { c -> c.equals(className, ignoreCase = true) } }.sortedBy { it.name } }
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Choose your starting spells.", style = MaterialTheme.typography.bodyLarge)
-        Text("Cantrips (${cantrips.size})", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            cantripPool.forEach { s ->
-                val on = s.index in cantrips
-                FilterChip(selected = on, onClick = { onCantrips(if (on) cantrips - s.index else cantrips + s.index) }, label = { Text(s.name) })
-            }
-        }
-        Text("1st-level spells (${spells.size})", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            spellPool.forEach { s ->
-                val on = s.index in spells
-                FilterChip(selected = on, onClick = { onSpells(if (on) spells - s.index else spells + s.index) }, label = { Text(s.name) })
-            }
-        }
-        Text("You can add or change spells anytime on the Spells tab.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun FightingStyleStep(selected: String?, onPick: (String) -> Unit) {
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Choose your Fighting Style.", style = MaterialTheme.typography.bodyLarge)
-        FightingStyles.all.forEach { fs ->
-            PickCard(title = fs.name, subtitle = fs.description, selected = selected == fs.id) { onPick(fs.id) }
-        }
-    }
-}
+// ── Advancements ─────────────────────────────────────────────────────────────
 
 /**
  * The above-level-1 creation step (A11): pick the subclass earned by [level] and,
@@ -407,7 +748,6 @@ private fun FightingStyleStep(selected: String?, onPick: (String) -> Unit) {
  * a prereq-filtered feat (half-feats get their +1). Mirrors the 2024 wizard's
  * Advancements step; reuses the same `LevelUp` machinery via the folded payload.
  */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun AdvancementsStep(
     klass: CharacterClass?,
@@ -422,50 +762,64 @@ private fun AdvancementsStep(
     onAdv: (Int, AdvState) -> Unit,
 ) {
     klass ?: return
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Text("Your ${klass.name} is level $level — make the choices earned along the way.", style = MaterialTheme.typography.bodyLarge)
-
-        if (needsSubclass && klass.subclasses.isNotEmpty()) {
-            StepLabel("Subclass (level ${klass.subclassLevel})")
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                klass.subclasses.forEach { s -> FilterChip(subclass == s.id, { onSubclass(s.id) }, label = { Text(s.name) }) }
-            }
-        }
-
-        advLevels.forEach { lvl ->
-            val state = advs[lvl] ?: AdvState()
-            StepLabel("Level $lvl — Ability Score Improvement or Feat")
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(state.kind == AdvKind.ASI_ONE, { onAdv(lvl, AdvState(AdvKind.ASI_ONE)) }, label = { Text("+2 one") })
-                FilterChip(state.kind == AdvKind.ASI_TWO, { onAdv(lvl, AdvState(AdvKind.ASI_TWO)) }, label = { Text("+1 two") })
-                FilterChip(state.kind == AdvKind.FEAT, { onAdv(lvl, AdvState(AdvKind.FEAT)) }, label = { Text("Feat") })
-            }
-            when (state.kind) {
-                AdvKind.ASI_ONE, AdvKind.ASI_TWO -> {
-                    val limit = if (state.kind == AdvKind.ASI_ONE) 1 else 2
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Ability.entries.forEach { a ->
-                            val picked = a in state.abilities
-                            FilterChip(
-                                picked,
-                                enabled = scores.score(a) < 20 && (picked || state.abilities.size < limit),
-                                onClick = { onAdv(lvl, state.copy(abilities = if (picked) state.abilities - a else state.abilities + a)) },
-                                label = { Text("${a.abbreviation} ${scores.score(a)}") },
-                            )
-                        }
-                    }
+    val palette = MaterialTheme.natPalette
+    StepColumn {
+        WizardStepSection(
+            "Advancements",
+            "Your ${klass.name} is level $level — make the choices earned along the way.",
+        )
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            if (needsSubclass && klass.subclasses.isNotEmpty()) {
+                WizardSubSectionCard("Subclass", "level ${klass.subclassLevel}") {
+                    Spacer(Modifier.height(8.dp))
+                    WizardChipsPicker(klass.subclasses, { it.id == subclass }, { it.name }) { onSubclass(it.id) }
                 }
-                AdvKind.FEAT -> {
-                    val available = Feats.available(scores, isSpellcaster)
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        available.forEach { f -> FilterChip(state.featId == f.id, { onAdv(lvl, state.copy(featId = f.id, half = null)) }, label = { Text(f.name) }) }
-                    }
-                    state.featId?.let { Feats.feat(it) }?.let { f ->
-                        Text(f.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        if (f.grantsAbilityIncrease) {
-                            Text("+1 ability score:", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-                            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                f.halfFeatAbilities.forEach { a -> FilterChip(state.half == a, enabled = scores.score(a) < 20, onClick = { onAdv(lvl, state.copy(half = a)) }, label = { Text("${a.abbreviation} ${scores.score(a)}") }) }
+            }
+            advLevels.forEach { lvl ->
+                val state = advs[lvl] ?: AdvState()
+                WizardSubSectionCard("Level $lvl", "improvement or feat") {
+                    Spacer(Modifier.height(8.dp))
+                    WizardSegmented(
+                        AdvKind.entries.map { it.label },
+                        selectedIndex = AdvKind.entries.indexOf(state.kind),
+                    ) { index -> onAdv(lvl, AdvState(AdvKind.entries[index])) }
+                    Spacer(Modifier.height(8.dp))
+                    when (state.kind) {
+                        AdvKind.ASI_ONE, AdvKind.ASI_TWO -> {
+                            val limit = if (state.kind == AdvKind.ASI_ONE) 1 else 2
+                            WizardMultiSelectChips(
+                                Ability.entries.toList(),
+                                isSelected = { it in state.abilities },
+                                label = { "${it.abbreviation} ${scores.score(it)}" },
+                                quotaFull = state.abilities.size >= limit,
+                                enabled = { scores.score(it) < 20 || it in state.abilities },
+                            ) { a ->
+                                onAdv(lvl, state.copy(abilities = if (a in state.abilities) state.abilities - a else state.abilities + a))
+                            }
+                        }
+                        AdvKind.FEAT -> {
+                            val available = Feats.available(scores, isSpellcaster)
+                            WizardChipsPicker(available, { it.id == state.featId }, { it.name }) {
+                                onAdv(lvl, state.copy(featId = it.id, half = null))
+                            }
+                            state.featId?.let { Feats.feat(it) }?.let { f ->
+                                Spacer(Modifier.height(6.dp))
+                                Text(
+                                    f.description,
+                                    fontFamily = Cormorant,
+                                    fontStyle = FontStyle.Italic,
+                                    fontSize = 13.sp,
+                                    color = palette.inkSoft,
+                                )
+                                if (f.grantsAbilityIncrease) {
+                                    Spacer(Modifier.height(6.dp))
+                                    WizardFieldLabel("+1 ability score")
+                                    WizardChipsPicker(
+                                        f.halfFeatAbilities.filter { scores.score(it) < 20 },
+                                        { it == state.half },
+                                        { "${it.abbreviation} ${scores.score(it)}" },
+                                    ) { onAdv(lvl, state.copy(half = it)) }
+                                }
                             }
                         }
                     }
@@ -475,52 +829,715 @@ private fun AdvancementsStep(
     }
 }
 
+// ── Skills ───────────────────────────────────────────────────────────────────
+
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun StepLabel(text: String) =
-    Text(text.uppercase(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+private fun SkillsStep(
+    klass: CharacterClass?,
+    background: Background?,
+    backgroundSkills: List<String>,
+    chosen: Set<String>,
+    onChange: (Set<String>) -> Unit,
+) {
+    val quota = klass?.skillChoiceCount ?: 0
+    val options = klass?.skillChoiceFrom.orEmpty()
+    StepColumn {
+        if (backgroundSkills.isNotEmpty()) {
+            WizardStepSection("From your background", background?.name)
+            FlowRow(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(5.dp),
+                verticalArrangement = Arrangement.spacedBy(5.dp),
+            ) {
+                backgroundSkills.forEach { GrantedSkillChip(skillName(it)) }
+            }
+        }
+        WizardStepSection(
+            "From your class",
+            "${klass?.name ?: "Class"} · pick $quota — ${chosen.size} / $quota chosen",
+        )
+        WizardMultiSelectChips(
+            options,
+            isSelected = { it in chosen },
+            label = { id -> "${skillName(id)} (${DnD5eCatalog.skill(id)?.ability?.abbreviation ?: "?"})" },
+            quotaFull = chosen.size >= quota,
+            enabled = { it !in backgroundSkills },
+        ) { id -> onChange(if (id in chosen) chosen - id else chosen + id) }
+    }
+}
+
+/** A background-granted skill: locked accent-gold capsule, not toggleable. */
+@Composable
+private fun GrantedSkillChip(label: String) {
+    val palette = MaterialTheme.natPalette
+    Row(
+        Modifier
+            .clip(CircleShape)
+            .background(palette.accentGold.copy(alpha = 0.10f))
+            .border(1.dp, palette.accentGold.copy(alpha = 0.4f), CircleShape)
+            .padding(horizontal = 11.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Icon(
+            Icons.Filled.Lock,
+            contentDescription = "Granted by background",
+            tint = palette.accentGold,
+            modifier = Modifier.size(10.dp),
+        )
+        Text(label, fontFamily = Cormorant, fontSize = 13.sp, color = palette.ink)
+    }
+}
+
+// ── Fighting Style (Android-only step; iOS folds this elsewhere — see PARITY) ─
 
 @Composable
-private fun ReviewStep(name: String, race: Race?, klass: CharacterClass?, level: Int, background: Background?, scores: AbilityScores, skills: List<String>) {
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        ReviewLine("Name", name)
-        ReviewLine("Race", race?.name ?: "—")
-        ReviewLine("Class", klass?.let { "${it.name} $level" } ?: "—")
-        ReviewLine("Background", background?.name ?: "—")
-        ReviewLine("Abilities", Ability.entries.joinToString(" ") { "${it.abbreviation} ${scores.score(it)}" })
-        ReviewLine("Skills", skills.joinToString { skillName(it) }.ifEmpty { "—" })
+private fun FightingStyleStep(selected: String?, onPick: (String) -> Unit) {
+    StepColumn {
+        WizardStepSection("Fighting Style", "Choose the style your class grants.")
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            FightingStyles.all.forEach { style ->
+                SelectableRow(selected = selected == style.id, onClick = { onPick(style.id) }) {
+                    NameWithMeta(style.name, style.description)
+                }
+            }
+        }
+    }
+}
+
+// ── Equipment ────────────────────────────────────────────────────────────────
+
+/** ItemKind display order for the grouped list (spec order). */
+private val KIND_ORDER = listOf(
+    ItemKind.WEAPON, ItemKind.ARMOR, ItemKind.SHIELD, ItemKind.AMMUNITION,
+    ItemKind.POTION, ItemKind.SCROLL, ItemKind.WONDROUS, ItemKind.TOOL,
+    ItemKind.GEAR, ItemKind.TREASURE,
+)
+
+@Composable
+private fun EquipmentStep(
+    klass: CharacterClass?,
+    inventory: List<InventoryItem>,
+    seeded: Boolean,
+    onChange: (List<InventoryItem>) -> Unit,
+    onReset: () -> Unit,
+) {
+    val palette = MaterialTheme.natPalette
+    var showAdd by remember { mutableStateOf(false) }
+    StepColumn {
+        WizardStepSection(
+            "Starting Kit",
+            "${klass?.name ?: "Your class"}'s gear, plus anything you add by hand.",
+        )
+        Row(
+            Modifier
+                .clip(CircleShape)
+                .background(palette.tileStrong)
+                .border(1.2.dp, palette.accent.copy(alpha = 0.5f), CircleShape)
+                .clickable { showAdd = true }
+                .padding(horizontal = 14.dp, vertical = 7.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
+        ) {
+            Icon(Icons.Filled.Add, contentDescription = null, tint = palette.accent, modifier = Modifier.size(14.dp))
+            Text(
+                "ADD ITEM",
+                fontFamily = Cinzel,
+                fontWeight = FontWeight.Bold,
+                fontSize = 11.sp,
+                letterSpacing = 2.sp,
+                color = palette.accent,
+            )
+        }
+        Spacer(Modifier.height(10.dp))
+        KIND_ORDER.forEach { kind ->
+            val group = inventory.filter { it.kind == kind }
+            if (group.isEmpty()) return@forEach
+            Text(
+                "${kind.name} (${group.size})",
+                fontFamily = Cinzel,
+                fontWeight = FontWeight.Bold,
+                fontSize = 11.sp,
+                letterSpacing = 2.sp,
+                color = palette.accent,
+                modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
+            )
+            group.forEach { item ->
+                InventoryRow(
+                    item = item,
+                    onToggleEquip = { onChange(toggleEquip(inventory, item)) },
+                )
+            }
+        }
+        if (seeded) {
+            Spacer(Modifier.height(12.dp))
+            Text(
+                "Reset to starter kit",
+                fontFamily = Cormorant,
+                fontStyle = FontStyle.Italic,
+                fontSize = 13.sp,
+                color = palette.accent,
+                modifier = Modifier.clickable(onClick = onReset),
+            )
+        }
+    }
+    if (showAdd) {
+        WizardAddItemDialog(
+            onAdd = { onChange(inventory + it); showAdd = false },
+            onDismiss = { showAdd = false },
+        )
+    }
+}
+
+@Composable
+private fun InventoryRow(item: InventoryItem, onToggleEquip: () -> Unit) {
+    val palette = MaterialTheme.natPalette
+    val equipToggle = item.kind == ItemKind.WEAPON || item.kind == ItemKind.ARMOR || item.kind == ItemKind.SHIELD
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(3.dp))
+            .background(if (item.equipped) palette.accent.copy(alpha = 0.06f) else Color.Transparent)
+            .padding(horizontal = 6.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Diamond(size = 5.dp, fill = palette.accent)
+        Column(Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(item.name, fontFamily = Cormorant, fontSize = 15.sp, color = palette.ink)
+                if (item.quantity > 1) {
+                    Text("× ${item.quantity}", fontFamily = Cormorant, fontSize = 13.sp, color = palette.inkMute)
+                }
+            }
+            item.weapon?.let { weapon ->
+                Text(
+                    "${weapon.damageDice} ${weapon.damageType}",
+                    fontFamily = Cormorant,
+                    fontSize = 12.sp,
+                    color = palette.inkSoft,
+                )
+            }
+        }
+        if (equipToggle) {
+            Box(Modifier.clip(CircleShape).clickable(onClick = onToggleEquip).padding(2.dp)) {
+                WizardSelectionDot(selected = item.equipped)
+            }
+        }
+    }
+}
+
+/** Equipping armor or a shield unequips its rivals; weapons toggle freely. */
+private fun toggleEquip(inventory: List<InventoryItem>, target: InventoryItem): List<InventoryItem> =
+    inventory.map { item ->
+        when {
+            item.id == target.id -> item.copy(equipped = !item.equipped)
+            !target.equipped && item.kind == target.kind &&
+                (target.kind == ItemKind.ARMOR || target.kind == ItemKind.SHIELD) -> item.copy(equipped = false)
+            else -> item
+        }
+    }
+
+private data class WizardCatalogueChoice(val name: String, val category: String, val make: (Int) -> InventoryItem)
+
+/** Simple catalogue search + quantity stepper (full custom-item form is deferred). */
+@Composable
+private fun WizardAddItemDialog(onAdd: (InventoryItem) -> Unit, onDismiss: () -> Unit) {
+    val choices = remember {
+        buildList {
+            DnD5eCatalog.weapons.forEach { w -> add(WizardCatalogueChoice(w.name, "Weapon") { qty -> w.makeItem(quantity = qty) }) }
+            DnD5eCatalog.armor.forEach { a -> add(WizardCatalogueChoice(a.name, "Armor") { a.makeItem() }) }
+            DnD5eCatalog.gear.forEach { g -> add(WizardCatalogueChoice(g.name, "Gear") { qty -> g.makeItem(quantity = qty) }) }
+        }.sortedBy { it.name }
+    }
+    var query by remember { mutableStateOf("") }
+    var quantity by remember { mutableIntStateOf(1) }
+    val filtered = remember(query) {
+        if (query.isBlank()) choices else choices.filter { it.name.contains(query, ignoreCase = true) }
+    }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Add item") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    label = { Text("Search") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Quantity", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                    StepperButton("−", enabled = quantity > 1, size = 28) { quantity-- }
+                    Text("$quantity", style = MaterialTheme.typography.titleMedium)
+                    StepperButton("+", enabled = quantity < 99, size = 28) { quantity++ }
+                }
+                LazyColumn(Modifier.heightIn(max = 300.dp)) {
+                    items(filtered, key = { it.name }) { choice ->
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable { onAdd(choice.make(quantity)) }
+                                .padding(vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(choice.name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                            Text(
+                                choice.category,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+    )
+}
+
+// ── Spells ───────────────────────────────────────────────────────────────────
+
+@Composable
+private fun SpellsStep(
+    klass: CharacterClass?,
+    cantrips: Set<String>,
+    spells: Set<String>,
+    onCantrips: (Set<String>) -> Unit,
+    onSpells: (Set<String>) -> Unit,
+) {
+    val palette = MaterialTheme.natPalette
+    val className = klass?.name ?: return
+    // Filter the SRD library to this class's cantrips and 1st-level spells.
+    val cantripPool = remember(className) { DnD5eCatalog.spellLibrary.filter { it.level == 0 && it.classNames.any { c -> c.equals(className, ignoreCase = true) } }.sortedBy { it.name } }
+    val spellPool = remember(className) { DnD5eCatalog.spellLibrary.filter { it.level == 1 && it.classNames.any { c -> c.equals(className, ignoreCase = true) } }.sortedBy { it.name } }
+    StepColumn {
+        WizardStepSection("Cantrips", "${cantrips.size} chosen")
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            cantripPool.forEach { spell ->
+                SpellRow(spell, selected = spell.index in cantrips) {
+                    onCantrips(if (spell.index in cantrips) cantrips - spell.index else cantrips + spell.index)
+                }
+            }
+        }
+        WizardStepSection("1st-Level Spells", "${spells.size} chosen")
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            spellPool.forEach { spell ->
+                SpellRow(spell, selected = spell.index in spells) {
+                    onSpells(if (spell.index in spells) spells - spell.index else spells + spell.index)
+                }
+            }
+        }
+        Spacer(Modifier.height(10.dp))
+        Text(
+            "You can add or change spells anytime on the Spells tab.",
+            fontFamily = ImFell,
+            fontStyle = FontStyle.Italic,
+            fontSize = 12.sp,
+            color = palette.inkMute,
+        )
+    }
+}
+
+@Composable
+private fun SpellRow(spell: Spell, selected: Boolean, onClick: () -> Unit) {
+    val palette = MaterialTheme.natPalette
+    SelectableRow(selected = selected, onClick = onClick) {
+        Column(Modifier.weight(1f)) {
+            Text(
+                spell.name,
+                fontFamily = Cormorant,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 15.sp,
+                color = palette.ink,
+            )
+            Text(
+                listOf(spell.schoolName, spell.castingTime, spell.range).filter { it.isNotEmpty() }.joinToString(" · "),
+                fontFamily = Cormorant,
+                fontSize = 12.sp,
+                color = palette.inkSoft,
+            )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+            spell.components.forEach { component ->
+                Box(
+                    Modifier
+                        .size(16.dp)
+                        .border(1.dp, palette.ink.copy(alpha = 0.3f), CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(component, fontFamily = Cinzel, fontSize = 8.sp, color = palette.inkSoft)
+                }
+            }
+        }
+    }
+}
+
+/** Shared selectable list row: selection dot + content, accent tint when picked. */
+@Composable
+private fun SelectableRow(selected: Boolean, onClick: () -> Unit, content: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit) {
+    val palette = MaterialTheme.natPalette
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(4.dp))
+            .background(if (selected) palette.accent.copy(alpha = 0.06f) else Color.Transparent)
+            .border(
+                if (selected) 1.4.dp else 1.dp,
+                if (selected) palette.accent else palette.ink.copy(alpha = 0.13f),
+                RoundedCornerShape(4.dp),
+            )
+            .clickable(onClick = onClick)
+            .padding(10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        WizardSelectionDot(selected)
+        content()
+    }
+}
+
+/** Name + smaller meta line, weighted to fill (fighting styles, simple rows). */
+@Composable
+private fun androidx.compose.foundation.layout.RowScope.NameWithMeta(name: String, meta: String) {
+    val palette = MaterialTheme.natPalette
+    Column(Modifier.weight(1f)) {
+        Text(name, fontFamily = Cormorant, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = palette.ink)
+        Text(meta, fontFamily = Cormorant, fontSize = 12.sp, color = palette.inkSoft)
+    }
+}
+
+// ── Manner ───────────────────────────────────────────────────────────────────
+
+private val ALIGNMENT_GRID = listOf(
+    listOf("Lawful Good", "Neutral Good", "Chaotic Good"),
+    listOf("Lawful Neutral", "True Neutral", "Chaotic Neutral"),
+    listOf("Lawful Evil", "Neutral Evil", "Chaotic Evil"),
+)
+
+@Composable
+private fun MannerStep(
+    alignment: String?,
+    personality: String,
+    ideals: String,
+    bonds: String,
+    flaws: String,
+    backstory: String,
+    onAlignment: (String?) -> Unit,
+    onPersonality: (String) -> Unit,
+    onIdeals: (String) -> Unit,
+    onBonds: (String) -> Unit,
+    onFlaws: (String) -> Unit,
+    onBackstory: (String) -> Unit,
+) {
+    StepColumn {
+        WizardStepSection("Alignment")
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            ALIGNMENT_GRID.forEach { row ->
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    row.forEach { label ->
+                        AlignmentTile(
+                            label = label,
+                            selected = alignment == label,
+                            onClick = { onAlignment(if (alignment == label) null else label) },
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
+            }
+        }
+        WizardStepSection("Manner", "Optional, but characters with bonds and flaws are richer to play.")
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column {
+                WizardFieldLabel("Personality")
+                WizardTextField("I face problems head-on…", personality, onPersonality, multiline = true)
+            }
+            Column {
+                WizardFieldLabel("Ideals")
+                WizardTextField("What drives them?", ideals, onIdeals, multiline = true)
+            }
+            Column {
+                WizardFieldLabel("Bonds")
+                WizardTextField("Who or what do they hold dear?", bonds, onBonds, multiline = true)
+            }
+            Column {
+                WizardFieldLabel("Flaws")
+                WizardTextField("Where do they fall short?", flaws, onFlaws, multiline = true)
+            }
+        }
+        WizardStepSection("Backstory", "How did they come to walk this road?")
+        WizardTextField("Born under a blood-red moon…", backstory, onBackstory, multiline = true, lineLimit = 8)
+    }
+}
+
+@Composable
+private fun AlignmentTile(label: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val palette = MaterialTheme.natPalette
+    Column(
+        modifier
+            .clip(RoundedCornerShape(4.dp))
+            .background(if (selected) palette.accent.copy(alpha = 0.1f) else palette.tile)
+            .border(
+                if (selected) 1.4.dp else 1.dp,
+                if (selected) palette.accent else palette.ink.copy(alpha = 0.2f),
+                RoundedCornerShape(4.dp),
+            )
+            .clickable(onClick = onClick)
+            .padding(vertical = 10.dp, horizontal = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        label.split(" ").forEach { word ->
+            Text(
+                word.uppercase(),
+                fontFamily = Cinzel,
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                fontSize = 11.sp,
+                letterSpacing = 1.8.sp,
+                color = if (selected) palette.accent else palette.ink,
+                maxLines = 1,
+            )
+        }
+    }
+}
+
+// ── Review ───────────────────────────────────────────────────────────────────
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ReviewStep(
+    name: String,
+    level: Int,
+    race: Race?,
+    klass: CharacterClass?,
+    subclass: String?,
+    background: Background?,
+    scores: AbilityScores,
+    backgroundSkills: List<String>,
+    chosenSkills: Set<String>,
+    inventory: List<InventoryItem>,
+    castsAtCreation: Boolean,
+    cantrips: Set<String>,
+    spells: Set<String>,
+    alignment: String?,
+    personality: String,
+    ideals: String,
+    bonds: String,
+    flaws: String,
+    backstory: String,
+    onEdit: (WizStep) -> Unit,
+) {
+    val palette = MaterialTheme.natPalette
+    StepColumn {
+        Spacer(Modifier.height(18.dp))
+        // Hero card: drop-cap initial + name + race + level line (roster style).
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            ReviewDropCap(name.trim().firstOrNull()?.uppercaseChar()?.toString() ?: "?")
+            Column(Modifier.weight(1f)) {
+                Text(
+                    name.trim().ifEmpty { "Unnamed" },
+                    fontFamily = Cormorant,
+                    fontWeight = FontWeight.SemiBold,
+                    fontStyle = FontStyle.Italic,
+                    fontSize = 28.sp,
+                    color = palette.accent,
+                    maxLines = 1,
+                )
+                race?.let {
+                    Text(it.name, fontFamily = Cormorant, fontStyle = FontStyle.Italic, fontSize = 15.sp, color = palette.inkSoft, maxLines = 1)
+                }
+                Text(
+                    "Level $level ${klass?.name ?: "—"}",
+                    fontFamily = Cormorant,
+                    fontStyle = FontStyle.Italic,
+                    fontSize = 13.sp,
+                    color = palette.inkSoft,
+                    maxLines = 1,
+                )
+            }
+        }
+
+        ReviewSectionHeader("Identity") { onEdit(WizStep.NAME) }
+        ReviewLine("Name", name.trim())
+        ReviewLine("Level", "$level")
+
+        ReviewSectionHeader("Race") { onEdit(WizStep.RACE) }
+        ReviewLine("Race", race?.name.orEmpty())
+
+        ReviewSectionHeader("Class") { onEdit(WizStep.CLASS) }
+        ReviewLine("Class", klass?.name.orEmpty())
+        subclass?.let { id ->
+            ReviewLine("Subclass", klass?.subclasses?.firstOrNull { it.id == id }?.name ?: id)
+        }
+
+        ReviewSectionHeader("Background") { onEdit(WizStep.BACKGROUND) }
+        ReviewLine("Background", background?.name.orEmpty())
+
+        ReviewSectionHeader("Abilities") { onEdit(WizStep.ABILITIES) }
+        FinalScoresGrid(scores, emptyMap())
+
+        ReviewSectionHeader("Skills") { onEdit(WizStep.SKILLS) }
+        FlowRow(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
+            verticalArrangement = Arrangement.spacedBy(5.dp),
+        ) {
+            backgroundSkills.forEach { GrantedSkillChip(skillName(it)) }
+            chosenSkills.forEach { id ->
+                WizardChip(label = skillName(id), selected = false, strongFill = true) {}
+            }
+        }
+        if (backgroundSkills.isEmpty() && chosenSkills.isEmpty()) ReviewLine("Skills", "")
+
+        ReviewSectionHeader("Equipment") { onEdit(WizStep.EQUIPMENT) }
+        if (inventory.isEmpty()) {
+            ReviewLine("Gear", "")
+        } else {
+            inventory.forEach { item ->
+                Row(
+                    Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Diamond(size = 4.dp, fill = palette.accent)
+                    Text(
+                        if (item.quantity > 1) "${item.name} × ${item.quantity}" else item.name,
+                        fontFamily = Cormorant,
+                        fontSize = 15.sp,
+                        color = palette.ink,
+                        modifier = Modifier.weight(1f),
+                    )
+                    if (item.equipped) {
+                        Text(
+                            "equipped",
+                            fontFamily = ImFell,
+                            fontStyle = FontStyle.Italic,
+                            fontSize = 11.sp,
+                            color = palette.accentGold,
+                        )
+                    }
+                }
+            }
+        }
+
+        if (castsAtCreation) {
+            ReviewSectionHeader("Spells") { onEdit(WizStep.SPELLS) }
+            ReviewLine("Cantrips", cantrips.joinToString(" · ") { spellName(it) })
+            ReviewLine("1st level", spells.joinToString(" · ") { spellName(it) })
+        }
+
+        ReviewSectionHeader("Manner") { onEdit(WizStep.MANNER) }
+        ReviewLine("Alignment", alignment.orEmpty())
+        ReviewLine("Personality", personality)
+        ReviewLine("Ideals", ideals)
+        ReviewLine("Bonds", bonds)
+        ReviewLine("Flaws", flaws)
+        ReviewLine("Backstory", backstory)
+    }
+}
+
+/** Section header: small-caps accent title, fading rule, pencil jump button. */
+@Composable
+private fun ReviewSectionHeader(title: String, onEdit: () -> Unit) {
+    val palette = MaterialTheme.natPalette
+    Row(
+        Modifier.fillMaxWidth().padding(top = 18.dp, bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            title.uppercase(),
+            fontFamily = Cinzel,
+            fontWeight = FontWeight.Bold,
+            fontSize = 11.sp,
+            letterSpacing = 3.sp,
+            color = palette.accent,
+        )
+        Box(
+            Modifier
+                .padding(horizontal = 10.dp)
+                .weight(1f)
+                .height(1.dp)
+                .background(Brush.horizontalGradient(listOf(palette.accent.copy(alpha = 0.33f), Color.Transparent))),
+        )
+        Box(
+            Modifier
+                .size(24.dp)
+                .clip(CircleShape)
+                .background(palette.tileStrong)
+                .border(1.dp, palette.accent.copy(alpha = 0.4f), CircleShape)
+                .clickable(onClick = onEdit),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                Icons.Filled.Edit,
+                contentDescription = "Edit $title",
+                tint = palette.accent,
+                modifier = Modifier.size(12.dp),
+            )
+        }
     }
 }
 
 @Composable
 private fun ReviewLine(label: String, value: String) {
-    Column {
-        Text(label.uppercase(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-        Text(value, style = MaterialTheme.typography.bodyLarge)
+    val palette = MaterialTheme.natPalette
+    Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.Top) {
+        Text(
+            label.uppercase(),
+            fontFamily = Cinzel,
+            fontSize = 11.sp,
+            letterSpacing = 2.sp,
+            color = palette.inkMute,
+            modifier = Modifier.width(110.dp).padding(top = 2.dp),
+        )
+        if (value.isEmpty()) {
+            Text("—", fontFamily = Cormorant, fontStyle = FontStyle.Italic, fontSize = 15.sp, color = palette.inkMute)
+        } else {
+            Text(value, fontFamily = Cormorant, fontSize = 15.sp, color = palette.ink)
+        }
     }
 }
 
-// ── Shared ───────────────────────────────────────────────────────────────────
-
+/** The bordered drop-cap initial from the roster hero, reused on Review. */
 @Composable
-private fun Stepper(value: Int, range: IntRange, onChange: (Int) -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        OutlinedButton(
-            onClick = { if (value > range.first) onChange(value - 1) },
-            enabled = value > range.first,
-            modifier = Modifier.size(40.dp),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
-        ) { Text("−") }
-        Text(value.toString(), Modifier.width(40.dp), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-        OutlinedButton(
-            onClick = { if (value < range.last) onChange(value + 1) },
-            enabled = value < range.last,
-            modifier = Modifier.size(40.dp),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
-        ) { Text("+") }
+private fun ReviewDropCap(letter: String) {
+    val palette = MaterialTheme.natPalette
+    Box(Modifier.size(width = 58.dp, height = 70.dp), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(width = 58.dp, height = 70.dp).border(0.8.dp, palette.accent.copy(alpha = 0.53f)))
+        Box(
+            Modifier
+                .size(width = 52.dp, height = 64.dp)
+                .background(
+                    Brush.linearGradient(listOf(palette.accent.copy(alpha = 0.20f), palette.accent.copy(alpha = 0.067f))),
+                )
+                .border(1.4.dp, palette.accent),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                letter,
+                fontFamily = Cormorant,
+                fontStyle = FontStyle.Italic,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 34.sp,
+                color = palette.accent,
+            )
+            Box(Modifier.matchParentSize().border(2.dp, Color(0xFFFFFADC).copy(alpha = 0.6f)))
+        }
     }
 }
+
+// ── Shared helpers ───────────────────────────────────────────────────────────
 
 private fun skillName(id: String): String = DnD5eCatalog.skill(id)?.name ?: id
+
+private fun spellName(index: String): String =
+    DnD5eCatalog.spellLibrary.firstOrNull { it.index == index }?.name ?: index
 
 /** Base = stored final minus the (current race's) bonuses; defaults to all-10 for a new character. */
 private fun initialBaseScores(source: DnD5ePayload?): AbilityScores {

@@ -214,6 +214,12 @@ class CodecTests {
             maxHp = 28,
             currentHp = 20,
             temporaryHp = 5,
+            alignment = "Lawful Good",
+            personality = "I face problems head-on.",
+            ideals = "The strong protect the weak.",
+            bonds = "My old shield-sister owes me her life, and I her.",
+            flaws = "I never back down from a wager.",
+            backstory = "Born under a blood-red moon in the high passes.",
         )
         val decoded = ruleset.decodePayload(ruleset.encodePayload(payload))
         assertEquals(payload, decoded)
