@@ -11,12 +11,15 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
@@ -31,6 +34,7 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import au.com.evonet.nat20.BuildConfig
 import au.com.evonet.nat20.chronicle.NarrationStyle
 import au.com.evonet.nat20.settings.AppSettings
 import au.com.evonet.nat20.settings.AppearanceMode
@@ -58,7 +62,6 @@ fun SettingsScreen(
     onOpenSpellLibrary: () -> Unit,
     onOpenMonsterCodex: () -> Unit,
     onOpenItemCatalog: () -> Unit,
-    onOpenPfActions: () -> Unit,
     onOpenCredits: () -> Unit,
     onBack: () -> Unit,
 ) {
@@ -72,7 +75,7 @@ fun SettingsScreen(
 
         LazyColumn(
             Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 22.dp, end = 22.dp, top = 6.dp, bottom = 28.dp),
+            contentPadding = PaddingValues(start = 22.dp, end = 22.dp, top = 6.dp, bottom = 24.dp),
         ) {
             // Storied narration needs on-device AI; mirror iOS and hide the whole
             // section when it's unavailable.
@@ -125,15 +128,25 @@ fun SettingsScreen(
                     SettingsTile("Spell Library", "Browse every SRD spell", onOpenSpellLibrary)
                     SettingsTile("Item Catalog", "Browse SRD weapons, armor, and gear", onOpenItemCatalog)
                     SettingsTile("Monster Codex", "Browse the SRD bestiary", onOpenMonsterCodex)
-                    SettingsTile("Actions (PF2e)", "The three-action economy reference", onOpenPfActions)
                 }
             }
 
             item {
                 SectionLabel("About", Modifier.padding(top = 18.dp, bottom = 8.dp))
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    SettingsTile("Credits & Licenses", "SRD 5.1, game data, and typeface attributions", onOpenCredits)
-                    SettingsTile("Replay introduction", "See the first-run welcome again", { appSettings.setOnboardingComplete(false); onBack() }, showChevron = false)
+                SettingsTile("Credits & Licenses", "SRD 5.1, game data, and typeface attributions", onOpenCredits)
+            }
+
+            // Debug-only developer toggles (iOS gates the same section behind #if DEBUG).
+            if (BuildConfig.DEBUG) {
+                item {
+                    val alwaysShow by appSettings.alwaysShowOnboarding.collectAsState()
+                    SectionLabel("Developer", Modifier.padding(top = 18.dp, bottom = 8.dp))
+                    DebugToggle(
+                        title = "Always Show Onboarding",
+                        subtitle = "Replay the first-run flow on every launch",
+                        checked = alwaysShow,
+                        onCheckedChange = { appSettings.setAlwaysShowOnboarding(it) },
+                    )
                 }
             }
         }
@@ -181,7 +194,40 @@ private fun PatronBadge() {
             Text("Nat20 Patron", fontFamily = Cormorant, fontWeight = FontWeight.SemiBold, fontSize = 18.sp, color = palette.ink)
             Text("Unlimited characters unlocked — thank you.", fontFamily = Cormorant, fontStyle = FontStyle.Italic, fontSize = 13.sp, color = palette.inkSoft)
         }
-        Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = palette.accent)
+        Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = palette.accent, modifier = Modifier.size(20.dp))
+    }
+}
+
+/** Parchment-styled on/off row for debug-only preferences (iOS `debugToggle`). */
+@Composable
+private fun DebugToggle(
+    title: String,
+    subtitle: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+) {
+    val palette = MaterialTheme.natPalette
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .background(palette.tile)
+            .border(1.dp, palette.ink.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(title, fontFamily = Cormorant, fontWeight = FontWeight.SemiBold, fontSize = 18.sp, color = palette.ink)
+            Text(subtitle, fontFamily = Cormorant, fontStyle = FontStyle.Italic, fontSize = 13.sp, color = palette.inkSoft)
+        }
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            colors = SwitchDefaults.colors(
+                checkedTrackColor = palette.accent,
+                checkedThumbColor = palette.cream,
+            ),
+        )
     }
 }
 

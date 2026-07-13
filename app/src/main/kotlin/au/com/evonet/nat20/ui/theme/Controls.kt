@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -23,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -36,6 +38,49 @@ import androidx.compose.ui.unit.sp
  * so the settings, picker, and codex screens share one styled vocabulary.
  */
 
+/**
+ * The filled small-caps primary CTA (iOS `PrimaryActionButton`): cream Cinzel
+ * label on an accent gradient with a solid accent outline, full width.
+ */
+@Composable
+fun PrimaryActionButton(
+    label: String,
+    modifier: Modifier = Modifier,
+    isDanger: Boolean = false,
+    isDisabled: Boolean = false,
+    onClick: () -> Unit,
+) {
+    val palette = LocalNatPalette.current
+    val base = if (isDanger) palette.danger else palette.accent
+    Box(
+        modifier
+            .fillMaxWidth()
+            .graphicsLayer(alpha = if (isDisabled) 0.55f else 1f)
+            .clip(RoundedCornerShape(4.dp))
+            .background(
+                if (isDisabled) {
+                    Brush.linearGradient(listOf(base.copy(alpha = 0.2f), base.copy(alpha = 0.2f)))
+                } else {
+                    Brush.linearGradient(listOf(base, base.copy(alpha = 0.87f), base))
+                },
+            )
+            .border(1.5.dp, base.copy(alpha = if (isDisabled) 0.33f else 1f), RoundedCornerShape(4.dp))
+            .clickable(enabled = !isDisabled, onClick = onClick)
+            .padding(vertical = 12.dp, horizontal = 16.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            label.uppercase(),
+            fontFamily = Cinzel,
+            fontWeight = FontWeight.Bold,
+            fontSize = 12.sp,
+            letterSpacing = 3.sp,
+            color = palette.cream,
+            maxLines = 1,
+        )
+    }
+}
+
 /** A section header: small-caps Cinzel accent label + a fading hairline rule (iOS `PickerSection`). */
 @Composable
 fun SectionLabel(label: String, modifier: Modifier = Modifier) {
@@ -44,7 +89,7 @@ fun SectionLabel(label: String, modifier: Modifier = Modifier) {
         Text(
             label.uppercase(),
             fontFamily = Cinzel,
-            fontSize = 12.sp,
+            fontSize = 11.sp,
             letterSpacing = 3.sp,
             color = accent,
         )
@@ -98,14 +143,14 @@ private fun Pill(text: String, active: Boolean, modifier: Modifier = Modifier, o
             .background(if (active) palette.accent else palette.tile)
             .border(1.dp, if (active) palette.accent else palette.ink.copy(alpha = 0.25f), CircleShape)
             .clickable(onClick = onClick)
-            .padding(horizontal = 18.dp, vertical = 8.dp),
+            .padding(horizontal = 18.dp, vertical = 7.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text.uppercase(),
             fontFamily = Cinzel,
             fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
-            fontSize = 12.sp,
+            fontSize = 11.sp,
             letterSpacing = 2.sp,
             color = if (active) palette.cream else palette.ink,
             textAlign = TextAlign.Center,
@@ -144,7 +189,13 @@ fun SettingsTile(
             }
         }
         if (showChevron) {
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = palette.inkMute)
+            // iOS renders a caption2-size chevron; the Material arrow reads the same at 16dp.
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = palette.inkMute,
+                modifier = Modifier.size(16.dp),
+            )
         }
     }
 }

@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import au.com.evonet.nat20.ui.theme.Cinzel
 import au.com.evonet.nat20.ui.theme.Cormorant
 import au.com.evonet.nat20.ui.theme.OrnamentalDivider
+import au.com.evonet.nat20.ui.theme.SectionLabel
 import au.com.evonet.nat20.ui.theme.natPalette
 
 /**
@@ -57,7 +58,12 @@ fun CreditsScreen(onBack: () -> Unit) {
                     .clickable(onClick = onBack),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Back", tint = palette.accent)
+                Icon(
+                    Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                    contentDescription = "Back",
+                    tint = palette.accent,
+                    modifier = Modifier.size(18.dp),
+                )
             }
             Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text("ATTRIBUTION", fontFamily = Cinzel, fontSize = 11.sp, letterSpacing = 3.sp, color = palette.inkMute)
@@ -86,10 +92,10 @@ fun CreditsScreen(onBack: () -> Unit) {
                     "The notices below satisfy their attribution terms.",
             )
 
-            SectionLabel("Game Content")
+            SectionLabel("Game Content", Modifier.padding(top = 18.dp, bottom = 8.dp))
             GAME_CONTENT.forEach { CreditCard(it) }
 
-            SectionLabel("Typefaces")
+            SectionLabel("Typefaces", Modifier.padding(top = 18.dp, bottom = 8.dp))
             IntroLine("All five display faces are licensed under the SIL Open Font License 1.1.")
             TYPEFACES.forEach { CreditCard(it) }
             Box(Modifier.padding(top = 4.dp)) {
@@ -97,20 +103,6 @@ fun CreditsScreen(onBack: () -> Unit) {
             }
         }
     }
-}
-
-@Composable
-private fun SectionLabel(label: String) {
-    val palette = MaterialTheme.natPalette
-    Text(
-        label.uppercase(),
-        fontFamily = Cinzel,
-        fontWeight = FontWeight.Bold,
-        fontSize = 11.sp,
-        letterSpacing = 3.sp,
-        color = palette.accent,
-        modifier = Modifier.padding(top = 20.dp, bottom = 2.dp),
-    )
 }
 
 @Composable
@@ -139,7 +131,7 @@ private fun CreditCard(entry: CreditEntry) {
             .padding(horizontal = 14.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Text(entry.title, fontFamily = Cormorant, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, color = palette.ink)
+        Text(entry.title, fontFamily = Cormorant, fontWeight = FontWeight.SemiBold, fontSize = 18.sp, color = palette.ink)
         entry.attribution?.let {
             Text(it, fontFamily = Cormorant, fontStyle = FontStyle.Italic, fontSize = 13.sp, color = palette.inkSoft)
         }

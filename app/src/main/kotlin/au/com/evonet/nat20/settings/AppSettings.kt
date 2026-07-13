@@ -29,6 +29,10 @@ class AppSettings(context: Context) {
     private val _narrationStyle = MutableStateFlow(readNarrationStyle())
     val narrationStyle: StateFlow<NarrationStyle> = _narrationStyle.asStateFlow()
 
+    /** Debug-only: replay the first-run onboarding flow on every launch (iOS `alwaysShowOnboarding`). */
+    private val _alwaysShowOnboarding = MutableStateFlow(prefs.getBoolean(KEY_ALWAYS_SHOW_ONBOARDING, false))
+    val alwaysShowOnboarding: StateFlow<Boolean> = _alwaysShowOnboarding.asStateFlow()
+
     fun setAppearance(mode: AppearanceMode) {
         prefs.edit().putString(KEY_APPEARANCE, mode.name).apply()
         _appearance.value = mode
@@ -42,6 +46,11 @@ class AppSettings(context: Context) {
     fun setOnboardingComplete(value: Boolean) {
         prefs.edit().putBoolean(KEY_ONBOARDING_COMPLETE, value).apply()
         _onboardingComplete.value = value
+    }
+
+    fun setAlwaysShowOnboarding(value: Boolean) {
+        prefs.edit().putBoolean(KEY_ALWAYS_SHOW_ONBOARDING, value).apply()
+        _alwaysShowOnboarding.value = value
     }
 
     private fun readAppearance(): AppearanceMode =
@@ -58,5 +67,6 @@ class AppSettings(context: Context) {
         const val KEY_APPEARANCE = "appearance"
         const val KEY_ONBOARDING_COMPLETE = "onboarding.completed"
         const val KEY_NARRATION_STYLE = "narration.style"
+        const val KEY_ALWAYS_SHOW_ONBOARDING = "onboarding.alwaysShow"
     }
 }

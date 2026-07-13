@@ -33,7 +33,6 @@ import au.com.evonet.nat20.ui.journal.JournalScreen
 import au.com.evonet.nat20.ui.past.PastAdventuresScreen
 import au.com.evonet.nat20.ui.reference.ItemCatalogShell
 import au.com.evonet.nat20.ui.reference.MonsterCodexShell
-import au.com.evonet.nat20.ui.reference.PathfinderActionsScreen
 import au.com.evonet.nat20.ui.patron.PatronScreen
 import au.com.evonet.nat20.patron.PatronStore
 import au.com.evonet.nat20.ui.reference.SpellLibraryShell
@@ -64,7 +63,6 @@ private object Routes {
     const val SPELL_LIBRARY = "spell-library"
     const val MONSTER_CODEX = "monster-codex"
     const val ITEM_CATALOG = "item-catalog"
-    const val PF_ACTIONS = "actions-pf2e"
     const val PATRON = "patron"
     const val ARG_ID = "id"
     const val ARG_CAMPAIGN_ID = "campaignId"
@@ -124,7 +122,6 @@ fun NatApp() {
                 onOpenSpellLibrary = { nav.navigate(Routes.SPELL_LIBRARY) },
                 onOpenMonsterCodex = { nav.navigate(Routes.MONSTER_CODEX) },
                 onOpenItemCatalog = { nav.navigate(Routes.ITEM_CATALOG) },
-                onOpenPfActions = { nav.navigate(Routes.PF_ACTIONS) },
                 onOpenCredits = { nav.navigate(Routes.CREDITS) },
                 onBack = { nav.popBackStack() },
             )
@@ -148,10 +145,6 @@ fun NatApp() {
 
         composable(Routes.ITEM_CATALOG) {
             ItemCatalogShell(onBack = { nav.popBackStack() })
-        }
-
-        composable(Routes.PF_ACTIONS) {
-            PathfinderActionsScreen(onBack = { nav.popBackStack() })
         }
 
         composable(

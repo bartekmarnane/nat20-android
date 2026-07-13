@@ -44,6 +44,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
@@ -96,15 +97,23 @@ fun RosterScreen(
         bottomBar = {
             // Once the CTA lives inline at the end of the list, drop the pinned bar.
             if (!inlineCta) {
+                val hairline = palette.ink.copy(alpha = 0.13f)
                 Box(
                     Modifier
                         .fillMaxWidth()
                         .background(
                             Brush.verticalGradient(
-                                listOf(palette.cream.copy(alpha = 0.0f), palette.cream.copy(alpha = 0.95f)),
+                                listOf(
+                                    palette.cream.copy(alpha = 0.5f),
+                                    palette.cream.copy(alpha = 0.98f),
+                                    palette.cream.copy(alpha = 0.98f),
+                                ),
                             ),
                         )
-                        .padding(horizontal = 22.dp, vertical = 12.dp),
+                        .drawBehind {
+                            drawRect(color = hairline, size = Size(size.width, 1.dp.toPx()))
+                        }
+                        .padding(start = 22.dp, end = 22.dp, top = 12.dp, bottom = 10.dp),
                 ) {
                     BottomCta(canCreate, onNew, onUpgrade)
                 }
@@ -117,11 +126,11 @@ fun RosterScreen(
 
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(horizontal = 22.dp, vertical = 4.dp),
+                contentPadding = PaddingValues(start = 22.dp, end = 22.dp, bottom = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 if (characters.isEmpty()) {
-                    item { EmptyStateTile() }
+                    item { Box(Modifier.padding(top = 40.dp)) { EmptyStateTile() } }
                 }
                 items(characters, key = { it.id }) { character ->
                     val dismissState = rememberSwipeToDismissBoxState(
@@ -193,7 +202,12 @@ private fun HeroHeader(count: Int, onOpenSettings: () -> Unit) {
             Box(Modifier.padding(top = 14.dp)) { Rosette() }
         }
         IconButton(onClick = onOpenSettings, modifier = Modifier.align(Alignment.TopEnd)) {
-            Icon(Icons.Outlined.Settings, contentDescription = "Settings", tint = palette.inkSoft)
+            Icon(
+                Icons.Outlined.Settings,
+                contentDescription = "Settings",
+                tint = palette.inkSoft,
+                modifier = Modifier.size(20.dp),
+            )
         }
     }
 }
@@ -291,11 +305,12 @@ private fun CharacterIndexCard(character: Character, campaignName: String?, onCl
                 Text("No campaign yet", fontFamily = ImFell, fontStyle = FontStyle.Italic, fontSize = 13.sp, color = palette.inkMute, maxLines = 1)
             }
         }
+        // iOS renders a footnote-weight chevron pinned to the row's top edge.
         Icon(
             Icons.AutoMirrored.Filled.KeyboardArrowRight,
             contentDescription = null,
             tint = palette.accent,
-            modifier = Modifier.align(Alignment.CenterVertically),
+            modifier = Modifier.size(18.dp).padding(top = 2.dp),
         )
     }
 }
@@ -324,8 +339,14 @@ private fun DropCapSquare(letter: String) {
                 fontFamily = Cormorant,
                 fontStyle = FontStyle.Italic,
                 fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
-                fontSize = 30.sp,
+                fontSize = 34.sp,
                 color = palette.accent,
+            )
+            // Inset cream highlight ring inside the accent border (iOS "inner glow").
+            Box(
+                Modifier
+                    .matchParentSize()
+                    .border(2.dp, Color(0xFFFFFADC).copy(alpha = 0.6f)),
             )
         }
     }
@@ -337,6 +358,7 @@ private fun DropCapSquare(letter: String) {
 private fun BottomCta(canCreate: Boolean, onNew: () -> Unit, onUpgrade: () -> Unit) {
     val palette = MaterialTheme.natPalette
     val title = if (canCreate) "New Character" else "Upgrade"
+    val dashColor = palette.accent.copy(alpha = 0.53f)
     Row(
         Modifier
             .fillMaxWidth()
@@ -344,7 +366,17 @@ private fun BottomCta(canCreate: Boolean, onNew: () -> Unit, onUpgrade: () -> Un
             .background(
                 Brush.linearGradient(listOf(palette.accent.copy(alpha = 0.10f), palette.accent.copy(alpha = 0.06f))),
             )
-            .border(1.5.dp, palette.accent.copy(alpha = 0.53f), RoundedCornerShape(4.dp))
+            .drawBehind {
+                // iOS draws the CTA outline dashed (StrokeStyle dash [4,3]).
+                drawRoundRect(
+                    color = dashColor,
+                    cornerRadius = CornerRadius(4.dp.toPx()),
+                    style = Stroke(
+                        width = 1.5.dp.toPx(),
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(4.dp.toPx(), 3.dp.toPx())),
+                    ),
+                )
+            }
             .clickable(onClick = if (canCreate) onNew else onUpgrade)
             .padding(vertical = 14.dp, horizontal = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
