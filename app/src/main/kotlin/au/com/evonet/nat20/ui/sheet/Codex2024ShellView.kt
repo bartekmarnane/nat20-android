@@ -100,6 +100,7 @@ import au.com.evonet.nat20.domain.Campaign
 import au.com.evonet.nat20.domain.Character
 import au.com.evonet.nat20.domain.CharacterIntent
 import au.com.evonet.nat20.domain.CharacterPhase
+import au.com.evonet.nat20.ui.actions.DnD5e2024ActionsLayer
 import au.com.evonet.nat20.ui.codex.AbilityMedallion
 import au.com.evonet.nat20.ui.codex.CodexButton
 import au.com.evonet.nat20.ui.codex.CodexCapsuleButton
@@ -141,9 +142,10 @@ import java.time.Instant
  * Deltas from the 2014 codex: a species hero line, a heroic-inspiration banner, the
  * cumulative 2024 exhaustion line, the weapon-mastery section, an all-casters-prepare
  * Spells tab (via [PrepareSpell2024]/[UnprepareSpell2024]), and `kind.displayName`
- * item rows over the 2024 armor/shield/mastery gear editors. The Act pill / grouped
- * actions layer is a follow-up slice (#31); until then the vitals/rest/condition
- * controls stay on the Combat tab.
+ * item rows over the 2024 armor/shield/mastery gear editors. In-campaign, the Act
+ * pill opens the grouped [DnD5e2024ActionsLayer] (parity #31); the Combat tab's
+ * direct vitals/rest/condition editors are kept as the building-phase edit path
+ * (no Act pill while building).
  */
 private enum class Tab2024(val title: String) {
     STATS("Stats"), SKILLS("Skills"), COMBAT("Combat"),
@@ -171,6 +173,8 @@ fun Codex2024ShellView(
     val pagerState = rememberPagerState(pageCount = { tabs.size })
     var levelingUp by remember { mutableStateOf(false) }
     var editingIdentity by remember { mutableStateOf(false) }
+    // Act pill (in-campaign) opens the grouped 2024 actions layer (parity #31).
+    var showActions by remember { mutableStateOf(false) }
 
     CodexScaffold(
         pagerState = pagerState,
@@ -186,8 +190,7 @@ fun Codex2024ShellView(
         hasPastAdventures = hasPastAdventures,
         onBack = onBack,
         onEdit = onEdit,
-        // The 2024 actions layer is parity #31; no Act pill until then.
-        onAct = null,
+        onAct = { showActions = true },
         onStartCampaign = onStartCampaign,
         onEndCampaign = onEndCampaign,
         onOpenJournal = onOpenJournal,
@@ -207,6 +210,13 @@ fun Codex2024ShellView(
     if (levelingUp) {
         LevelUp2024Wizard(payload, onApplyIntent, onDismiss = { levelingUp = false })
     }
+
+    DnD5e2024ActionsLayer(
+        payload = payload,
+        showSheet = showActions && inCampaign,
+        onDismissSheet = { showActions = false },
+        onApplyIntent = onApplyIntent,
+    )
 
     if (editingIdentity) {
         IdentitySheet(
