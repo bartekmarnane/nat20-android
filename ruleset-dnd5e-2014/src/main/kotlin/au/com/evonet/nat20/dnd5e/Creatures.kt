@@ -135,8 +135,16 @@ object CreatureCatalog {
             listOf(CreatureAttack("Bite", 5, "5 ft.", "2d6+3 piercing", "piercing")), listOf("Keen Hearing and Smell", "Pack Tactics")),
     )
 
+    /** Animate Dead's risen undead (SRD Skeleton / Zombie). */
+    val undead: List<CreatureTemplate> = listOf(
+        CreatureTemplate("skeleton", "Skeleton", CreatureKind.SUMMON, "Medium", "undead", 13, 13, "30 ft.", ab(10, 14, 15, 6, 8, 5),
+            listOf(CreatureAttack("Shortsword", 4, "5 ft.", "1d6+2 piercing", "piercing")), listOf("Vulnerable to bludgeoning", "Immune to poison")),
+        CreatureTemplate("zombie", "Zombie", CreatureKind.SUMMON, "Medium", "undead", 8, 22, "20 ft.", ab(13, 6, 16, 3, 6, 5),
+            listOf(CreatureAttack("Slam", 3, "5 ft.", "1d6+1 bludgeoning", "bludgeoning")), listOf("Undead Fortitude", "Immune to poison")),
+    )
+
     /** Every template, for lookup. */
-    val all: List<CreatureTemplate> = familiars + mounts + companions + summons.distinctBy { it.id }
+    val all: List<CreatureTemplate> = familiars + mounts + companions + (summons + undead).distinctBy { it.id }
     fun template(id: String): CreatureTemplate? = all.firstOrNull { it.id == id }
 
     /**

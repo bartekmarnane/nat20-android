@@ -161,7 +161,6 @@ fun CodexShellView(
                 ActionRoute.LEVEL_UP -> levelingUp = true
                 ActionRoute.SPELLS_TAB -> scope.launch { pagerState.animateScrollToPage(CodexTab.SPELLS.ordinal) }
                 ActionRoute.ITEMS_TAB -> scope.launch { pagerState.animateScrollToPage(CodexTab.ITEMS.ordinal) }
-                ActionRoute.LORE_TAB -> scope.launch { pagerState.animateScrollToPage(CodexTab.LORE.ordinal) }
             }
         },
     )

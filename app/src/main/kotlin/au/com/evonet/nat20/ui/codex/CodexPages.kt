@@ -42,7 +42,6 @@ import au.com.evonet.nat20.dnd5e.AttackMath
 import au.com.evonet.nat20.dnd5e.CancelEffect
 import au.com.evonet.nat20.dnd5e.DnD5eCatalog
 import au.com.evonet.nat20.dnd5e.DnD5ePayload
-import au.com.evonet.nat20.dnd5e.ExpendSpellSlot
 import au.com.evonet.nat20.dnd5e.Feats
 import au.com.evonet.nat20.dnd5e.FightingStyles
 import au.com.evonet.nat20.dnd5e.Invocations
@@ -53,7 +52,6 @@ import au.com.evonet.nat20.dnd5e.RaceTraits
 import au.com.evonet.nat20.dnd5e.RollCheck
 import au.com.evonet.nat20.dnd5e.RollDeathSave
 import au.com.evonet.nat20.dnd5e.SetInitiative
-import au.com.evonet.nat20.dnd5e.SetInspiration
 import au.com.evonet.nat20.dnd5e.SpendHitDie
 import au.com.evonet.nat20.dnd5e.WeaponProperties
 import au.com.evonet.nat20.dnd5e.advantageDescriptors
@@ -172,6 +170,11 @@ internal fun StatsPage(character: Character, payload: DnD5ePayload, onApplyInten
         if (payload.activeEffects.isNotEmpty()) {
             SectionHead("Effects", top = 24.dp, bottom = 12.dp)
             EffectStrip(payload.activeEffects) { effectDetail = it }
+        }
+
+        if (payload.hasVisibleConditions()) {
+            SectionHead("Conditions", top = 24.dp, bottom = 12.dp)
+            ConditionsDisplayStrip(payload)
         }
 
         val pools = payload.availableResourcePools()
@@ -647,13 +650,11 @@ internal fun CombatPage(character: Character, payload: DnD5ePayload, onApplyInte
             onClick = { attacking = true },
         )
 
-        // ── Android extras (pending #19 actions layer) ──
-        SpellSlotsSection(payload, onApplyIntent)
-        InspirationSection(payload, onApplyIntent)
-        EffectsSection(payload, onApplyIntent)
-        ConditionsSection(payload, onApplyIntent)
-        ClassResourcesSection(payload, onApplyIntent)
-        RestSection(onApplyIntent)
+        // The former inline management sections (rest, inspiration setter,
+        // slot-expend, conditions, class resources, effects) now live in the Act
+        // sheet (parity #19 slice C). Combat is display-only past the attacks
+        // table; the "Make an attack" button stays as an on-page convenience
+        // (an Android extra — iOS has no on-page attack button).
         Spacer(Modifier.height(8.dp))
     }
 
@@ -885,54 +886,6 @@ private fun AttackHeaderCell(text: String, modifier: Modifier) {
         color = MaterialTheme.natPalette.inkMute,
         modifier = modifier,
     )
-}
-
-/**
- * Combat-tab slot expend (Android extra, pending #19): tap a slot tile to burn
- * a slot without casting — Divine Smite and slot-cost features mid-combat.
- */
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun SpellSlotsSection(payload: DnD5ePayload, onApplyIntent: (CharacterIntent) -> Unit) {
-    val maxSlots = payload.totalMaxSlots
-    if (maxSlots.isEmpty()) return
-    SectionHead("Spell Slots", top = 22.dp, bottom = 10.dp)
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        maxSlots.keys.sorted().forEach { level ->
-            val max = maxSlots[level] ?: 0
-            val remaining = payload.totalCurrentSlots[level] ?: 0
-            SlotTile(level, remaining, max, onClick = { if (remaining > 0) onApplyIntent(ExpendSpellSlot(level)) })
-        }
-    }
-    Text(
-        "Tap a tile to expend a slot" + (if (payload.maxPactSlots > 0) " (pact slots merged at level ${payload.pactSlotLevel})" else "") + ".",
-        fontFamily = ImFell,
-        fontStyle = FontStyle.Italic,
-        fontSize = 11.sp,
-        color = MaterialTheme.natPalette.inkMute,
-        modifier = Modifier.padding(top = 6.dp),
-    )
-}
-
-/** Inspiration grant/spend (Android extra — iOS sets it from the actions layer). */
-@Composable
-private fun InspirationSection(payload: DnD5ePayload, onApplyIntent: (CharacterIntent) -> Unit) {
-    val palette = MaterialTheme.natPalette
-    SectionHead("Inspiration", top = 22.dp, bottom = 10.dp)
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            if (payload.hasInspiration) "You hold Inspiration" else "No Inspiration",
-            fontFamily = Cormorant,
-            fontStyle = FontStyle.Italic,
-            fontSize = 15.sp,
-            color = if (payload.hasInspiration) palette.accent else palette.inkSoft,
-            modifier = Modifier.weight(1f),
-        )
-        CodexButton(
-            if (payload.hasInspiration) "Use" else "Grant",
-            onClick = { onApplyIntent(SetInspiration(!payload.hasInspiration)) },
-        )
-    }
 }
 
 // ── Lore ─────────────────────────────────────────────────────────────────────

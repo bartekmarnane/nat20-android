@@ -74,11 +74,8 @@ internal data class ActionGroup(val title: String, val items: List<ActionItem>)
  * Remaining gaps (deliberate — tiles omitted until their pickers/intents land):
  * "Learn spell" — Android's inventory has no scroll spell-link and no
  *   LearnSpellFromScroll intent (PARITY #17/#19 deferral).
- * TODO(#19 slice C): Effects group buff/debuff × ability/save/skill tiles,
- *   "Ally's spell", and "Custom effect" (EffectPicker / CustomEffectPicker /
- *   AllyCastPicker).
- * TODO(#19): "Recharge at dawn" — no RechargeAtDawn intent on Android yet
- *   (wondrous-item charge meters are a payload gap, see PARITY #17).
+ * "Recharge at dawn" — no RechargeAtDawn intent on Android yet (wondrous-item
+ *   charge meters are a payload gap, see PARITY #17).
  */
 internal fun actionGroups(payload: DnD5ePayload): List<ActionGroup> {
     val castable = payload.castableSpellIDs
@@ -154,7 +151,15 @@ internal fun actionGroups(payload: DnD5ePayload): List<ActionGroup> {
                 "Effects",
                 listOf(
                     ActionItem("manage-effects", "Manage effects", ActionIcon.MAGIC),
+                    ActionItem("buff-ability", "Buff ability", ActionIcon.BUFF),
+                    ActionItem("debuff-ability", "Penalty to ability", ActionIcon.DEBUFF, danger = true),
+                    ActionItem("buff-save", "Buff save", ActionIcon.BUFF),
+                    ActionItem("debuff-save", "Debuff save", ActionIcon.DEBUFF, danger = true),
+                    ActionItem("buff-skill", "Buff skill", ActionIcon.BUFF),
+                    ActionItem("debuff-skill", "Debuff skill", ActionIcon.DEBUFF, danger = true),
                     ActionItem("concentrate", "Concentration", ActionIcon.CONCENTRATION),
+                    ActionItem("ally-spell", "Ally's spell", ActionIcon.MAGIC),
+                    ActionItem("effect-custom", "Custom effect", ActionIcon.MAGIC),
                 ),
             ),
         )

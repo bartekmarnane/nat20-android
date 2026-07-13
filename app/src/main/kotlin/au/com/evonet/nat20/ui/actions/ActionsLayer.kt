@@ -57,8 +57,6 @@ internal enum class ActionRoute {
     SPELLS_TAB,
     /** Acquire / use / drop item → editable Items tab. */
     ITEMS_TAB,
-    /** Summons (familiar, conjures, steed, companions) → Lore tab Minions. */
-    LORE_TAB,
 }
 
 /** The Slice-A/B pickers this layer can mount full-screen. */
@@ -73,6 +71,10 @@ private enum class PickerKind {
     // Slice B — rolls, combat, cast, effects.
     SKILL_CHECK, ABILITY_CHECK, SAVING_THROW, DEATH_SAVE,
     ATTACK, CONCENTRATION, MANAGE_EFFECTS, CAST_CHOOSE,
+    // Slice C — buff/debuff effects, custom effect, ally's spell, summons.
+    BUFF_ABILITY, DEBUFF_ABILITY, BUFF_SAVE, DEBUFF_SAVE, BUFF_SKILL, DEBUFF_SKILL,
+    CUSTOM_EFFECT, ALLY_CAST,
+    FIND_FAMILIAR, CONJURE_ANIMALS, ANIMATE_DEAD, FIND_STEED, TASHAS_SUMMON, BEAST_COMPANION,
 }
 
 /** A concentration save owed after damage landed on a concentrating caster. */
@@ -137,12 +139,27 @@ internal fun DnD5eActionsLayer(
                     "manage-effects" -> picker = PickerKind.MANAGE_EFFECTS
                     "cast" -> picker = PickerKind.CAST_CHOOSE
 
+                    // Slice-C pickers — buff/debuff effects, custom, ally's spell.
+                    "buff-ability" -> picker = PickerKind.BUFF_ABILITY
+                    "debuff-ability" -> picker = PickerKind.DEBUFF_ABILITY
+                    "buff-save" -> picker = PickerKind.BUFF_SAVE
+                    "debuff-save" -> picker = PickerKind.DEBUFF_SAVE
+                    "buff-skill" -> picker = PickerKind.BUFF_SKILL
+                    "debuff-skill" -> picker = PickerKind.DEBUFF_SKILL
+                    "effect-custom" -> picker = PickerKind.CUSTOM_EFFECT
+                    "ally-spell" -> picker = PickerKind.ALLY_CAST
+
+                    // Slice-C pickers — summons (cast-then-summon combos).
+                    "summon-familiar" -> picker = PickerKind.FIND_FAMILIAR
+                    "conjure-animals" -> picker = PickerKind.CONJURE_ANIMALS
+                    "animate-dead" -> picker = PickerKind.ANIMATE_DEAD
+                    "find-steed" -> picker = PickerKind.FIND_STEED
+                    "tashas-summon" -> picker = PickerKind.TASHAS_SUMMON
+                    "bind-companion" -> picker = PickerKind.BEAST_COMPANION
+
                     // Mechanics with existing surfaces — route, don't duplicate.
                     "level" -> onRoute(ActionRoute.LEVEL_UP)
                     "add-item", "use-item", "drop" -> onRoute(ActionRoute.ITEMS_TAB)
-                    "summon-familiar", "conjure-animals", "tashas-summon",
-                    "animate-dead", "find-steed", "bind-companion",
-                    -> onRoute(ActionRoute.LORE_TAB)
                 }
             },
         )
@@ -471,6 +488,92 @@ internal fun DnD5eActionsLayer(
             },
         )
 
+        // ── Slice C — buff / debuff effects ──
+
+        PickerKind.BUFF_ABILITY -> EffectPicker(
+            kicker = "Effects", title = "Buff ability",
+            targetKind = EffectTargetKind.ABILITY, sign = EffectSign.BUFF,
+            onCancel = { picker = null },
+            onCommit = { onApplyIntent(ApplyEffect(it)); picker = null },
+        )
+
+        PickerKind.DEBUFF_ABILITY -> EffectPicker(
+            kicker = "Effects", title = "Penalty to ability",
+            targetKind = EffectTargetKind.ABILITY, sign = EffectSign.DEBUFF,
+            onCancel = { picker = null },
+            onCommit = { onApplyIntent(ApplyEffect(it)); picker = null },
+        )
+
+        PickerKind.BUFF_SAVE -> EffectPicker(
+            kicker = "Effects", title = "Buff save",
+            targetKind = EffectTargetKind.SAVE, sign = EffectSign.BUFF,
+            onCancel = { picker = null },
+            onCommit = { onApplyIntent(ApplyEffect(it)); picker = null },
+        )
+
+        PickerKind.DEBUFF_SAVE -> EffectPicker(
+            kicker = "Effects", title = "Debuff save",
+            targetKind = EffectTargetKind.SAVE, sign = EffectSign.DEBUFF,
+            onCancel = { picker = null },
+            onCommit = { onApplyIntent(ApplyEffect(it)); picker = null },
+        )
+
+        PickerKind.BUFF_SKILL -> EffectPicker(
+            kicker = "Effects", title = "Buff skill",
+            targetKind = EffectTargetKind.SKILL, sign = EffectSign.BUFF,
+            onCancel = { picker = null },
+            onCommit = { onApplyIntent(ApplyEffect(it)); picker = null },
+        )
+
+        PickerKind.DEBUFF_SKILL -> EffectPicker(
+            kicker = "Effects", title = "Debuff skill",
+            targetKind = EffectTargetKind.SKILL, sign = EffectSign.DEBUFF,
+            onCancel = { picker = null },
+            onCommit = { onApplyIntent(ApplyEffect(it)); picker = null },
+        )
+
+        PickerKind.CUSTOM_EFFECT -> CustomEffectPicker(
+            onCancel = { picker = null },
+            onCommit = { onApplyIntent(ApplyEffect(it)); picker = null },
+        )
+
+        PickerKind.ALLY_CAST -> AllyCastPicker(
+            onCancel = { picker = null },
+            onCommit = { onApplyIntent(ApplyEffect(it)); picker = null },
+        )
+
+        // ── Slice C — summons (cast-then-summon combos) ──
+
+        PickerKind.FIND_FAMILIAR -> FindFamiliarPicker(
+            onCancel = { picker = null },
+            onCommit = { intents -> intents.forEach(onApplyIntent); picker = null },
+        )
+
+        PickerKind.FIND_STEED -> FindSteedPicker(
+            onCancel = { picker = null },
+            onCommit = { intents -> intents.forEach(onApplyIntent); picker = null },
+        )
+
+        PickerKind.BEAST_COMPANION -> BeastCompanionPicker(
+            rangerLevel = payload.classes.firstOrNull { it.classId.equals("ranger", ignoreCase = true) }?.level ?: payload.level,
+            onCancel = { picker = null },
+            onCommit = { intents -> intents.forEach(onApplyIntent); picker = null },
+        )
+
+        PickerKind.CONJURE_ANIMALS -> ConjureAnimalsPicker(
+            availableSlots = availableSlotLevels(payload),
+            onCancel = { picker = null },
+            onCommit = { intents -> intents.forEach(onApplyIntent); picker = null },
+        )
+
+        PickerKind.ANIMATE_DEAD -> AnimateDeadPicker(
+            availableSlots = availableSlotLevels(payload),
+            onCancel = { picker = null },
+            onCommit = { intents -> intents.forEach(onApplyIntent); picker = null },
+        )
+
+        PickerKind.TASHAS_SUMMON -> TashasSummonRouter(onCancel = { picker = null })
+
         null -> Unit
     }
 
@@ -502,6 +605,10 @@ internal fun DnD5eActionsLayer(
         )
     }
 }
+
+/** Slot levels the character currently has an unspent slot at (for the summon-spell pickers). */
+private fun availableSlotLevels(payload: DnD5ePayload): List<Int> =
+    payload.totalCurrentSlots.filter { it.value > 0 }.keys.sorted()
 
 // ── Rest bullet copy ───────────────────────────────────────────────────────────
 

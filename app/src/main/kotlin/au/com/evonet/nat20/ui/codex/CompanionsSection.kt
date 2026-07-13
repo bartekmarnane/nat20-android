@@ -5,26 +5,18 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -35,12 +27,9 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import au.com.evonet.nat20.dnd5e.CreatureCatalog
-import au.com.evonet.nat20.dnd5e.CreatureKind
 import au.com.evonet.nat20.dnd5e.DismissSummon
 import au.com.evonet.nat20.dnd5e.DnD5eCreaturePayload
 import au.com.evonet.nat20.dnd5e.SetCreatureHp
-import au.com.evonet.nat20.dnd5e.SummonCreature
 import au.com.evonet.nat20.domain.Character
 import au.com.evonet.nat20.domain.CharacterIntent
 import au.com.evonet.nat20.domain.Creature
@@ -52,28 +41,25 @@ import au.com.evonet.nat20.ui.theme.Cormorant
 import au.com.evonet.nat20.ui.theme.EbGaramond
 import au.com.evonet.nat20.ui.theme.ImFell
 import au.com.evonet.nat20.ui.theme.natPalette
-import java.time.Instant
 
 /**
  * The Lore-tab **Minions** section (A18, moved from Combat per iOS parity #18):
  * familiars / mounts / beast companions / summons as expandable cards — header
  * name + summary + chevron, expanded statblock with a per-creature HP stepper
- * and a confirmed Dismiss. The summon picker is an Android extra (iOS summons
- * from the actions layer — pending #19). Reads the cross-ruleset `Character.summons`.
+ * and a confirmed Dismiss. View + dismiss only (parity #19 slice C): summoning
+ * happens through the Act sheet's summon pickers, matching iOS where the Lore
+ * page never summons. Reads the cross-ruleset `Character.summons`.
  */
 @Composable
 internal fun MinionsSection(character: Character, onApplyIntent: (CharacterIntent) -> Unit) {
-    var picking by remember { mutableStateOf(false) }
     SectionHead("Minions", top = 22.dp, bottom = 10.dp)
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         if (character.summons.isEmpty()) {
-            DashedNotice("No familiars, mounts, or summons.")
+            DashedNotice("No familiars, mounts, or summons. Summon one from the Act menu while adventuring.")
         } else {
             character.summons.forEach { summon -> MinionCard(summon, onApplyIntent) }
         }
-        CodexButton("Summon a creature", onClick = { picking = true })
     }
-    if (picking) SummonPickerDialog(onSummon = { onApplyIntent(it); picking = false }, onDismiss = { picking = false })
 }
 
 /** Expandable minion card: tile r8 hairline; expanded = statblock + dismiss. */
@@ -195,76 +181,6 @@ private fun CreatureBlock(summon: Summon, creature: Creature, onApplyIntent: (Ch
             }
         }
     }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun SummonPickerDialog(onSummon: (SummonCreature) -> Unit, onDismiss: () -> Unit) {
-    var kind by remember { mutableStateOf(CreatureKind.FAMILIAR) }
-    var templateId by remember { mutableStateOf<String?>(null) }
-    var customName by remember { mutableStateOf("") }
-    var count by remember { mutableIntStateOf(1) }
-    val pool = remember(kind) { CreatureCatalog.all.filter { it.kind == kind } }
-    val template = templateId?.let(CreatureCatalog::template)
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Summon a creature") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    CreatureKind.entries.forEach { k ->
-                        FilterChip(kind == k, { kind = k; templateId = null }, label = { Text(kindLabel(k)) })
-                    }
-                }
-                LazyColumn(Modifier.heightIn(max = 240.dp)) {
-                    items(pool, key = { it.id }) { t ->
-                        Row(Modifier.fillMaxWidth().clickable { templateId = t.id }.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text(if (templateId == t.id) "●" else "○", color = if (templateId == t.id) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline)
-                            Column(Modifier.weight(1f).padding(start = 8.dp)) {
-                                Text(t.name, style = MaterialTheme.typography.bodyLarge)
-                                Text("${t.size} ${t.type} · AC ${t.armorClass} · ${t.maxHp} HP", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                        }
-                    }
-                }
-                OutlinedTextField(customName, { customName = it }, label = { Text("Name (optional)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                if (kind == CreatureKind.SUMMON) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text("Count", Modifier.weight(1f))
-                        TextButton(enabled = count > 1, onClick = { count-- }) { Text("−") }
-                        Text("$count", fontWeight = FontWeight.Bold)
-                        TextButton(enabled = count < 8, onClick = { count++ }) { Text("+") }
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(enabled = template != null, onClick = {
-                val t = template!!
-                val origin = when (t.kind) {
-                    CreatureKind.FAMILIAR -> SummonOrigin.Spell("Find Familiar", 1)
-                    CreatureKind.MOUNT -> SummonOrigin.Spell("Find Steed", 2)
-                    CreatureKind.COMPANION -> SummonOrigin.ClassFeature("Ranger", "Animal Companion")
-                    CreatureKind.SUMMON -> SummonOrigin.Spell("Conjure Animals", 3)
-                }
-                val lifecycle = when (t.kind) {
-                    CreatureKind.FAMILIAR, CreatureKind.MOUNT, CreatureKind.COMPANION -> SummonLifecycle.Persistent
-                    CreatureKind.SUMMON -> SummonLifecycle.Concentration(au.com.evonet.nat20.domain.GameDuration.Hours(1))
-                }
-                val summon = CreatureCatalog.buildSummon(t, origin, lifecycle, Instant.now(), count = if (t.kind == CreatureKind.SUMMON) count else 1, customName = customName)
-                onSummon(SummonCreature(summon))
-            }) { Text("Summon") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
-    )
-}
-
-private fun kindLabel(k: CreatureKind): String = when (k) {
-    CreatureKind.FAMILIAR -> "Familiars"
-    CreatureKind.MOUNT -> "Mounts"
-    CreatureKind.COMPANION -> "Companions"
-    CreatureKind.SUMMON -> "Summons"
 }
 
 private fun lifecycleLabel(l: SummonLifecycle): String = when (l) {
