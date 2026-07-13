@@ -184,7 +184,11 @@ fun NatApp() {
                     characterName = character.name,
                     chronicleAvailable = store.isChronicleAvailable,
                     chronicling = campaignId in generating,
+                    readOnly = campaign?.isActive == false,
                     onBack = { nav.popBackStack() },
+                    onRename = { name -> campaign?.let { store.renameCampaign(it, name) } },
+                    onUpdateParty = { party -> campaign?.let { store.updateParty(it, party) } },
+                    onLeave = { campaign?.let { store.endCampaign(character, it) }; nav.popBackStack() },
                 )
             }
         }
