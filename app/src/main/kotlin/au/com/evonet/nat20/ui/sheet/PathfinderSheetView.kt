@@ -97,6 +97,7 @@ fun PathfinderSheetView(
     onEndCampaign: () -> Unit,
     onOpenJournal: () -> Unit,
     onOpenPastAdventures: () -> Unit,
+    onOpenCharacterSettings: () -> Unit,
     onApplyIntent: (CharacterIntent) -> Unit,
     onSave: (Character) -> Unit,
     modifier: Modifier = Modifier,
@@ -126,6 +127,7 @@ fun PathfinderSheetView(
         onEndCampaign = onEndCampaign,
         onOpenJournal = onOpenJournal,
         onOpenPastAdventures = onOpenPastAdventures,
+        onOpenSettings = onOpenCharacterSettings,
         showTabBar = false,
         modifier = modifier,
     ) {

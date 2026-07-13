@@ -163,6 +163,7 @@ fun Codex2024ShellView(
     onEndCampaign: () -> Unit,
     onOpenJournal: () -> Unit,
     onOpenPastAdventures: () -> Unit,
+    onOpenCharacterSettings: () -> Unit,
     onApplyIntent: (CharacterIntent) -> Unit,
     onSave: (Character) -> Unit,
     modifier: Modifier = Modifier,
@@ -195,6 +196,7 @@ fun Codex2024ShellView(
         onEndCampaign = onEndCampaign,
         onOpenJournal = onOpenJournal,
         onOpenPastAdventures = onOpenPastAdventures,
+        onOpenSettings = onOpenCharacterSettings,
         modifier = modifier,
     ) { page ->
         when (tabs[page]) {

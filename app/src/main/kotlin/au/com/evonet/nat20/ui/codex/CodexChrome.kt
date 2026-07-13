@@ -22,6 +22,7 @@ import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -86,6 +87,8 @@ fun CodexScaffold(
     modifier: Modifier = Modifier,
     /** In-campaign Act pill target; null ⇒ no pill (edition without an actions layer yet). */
     onAct: (() -> Unit)? = null,
+    /** Gear → character settings (export / delete); null ⇒ no gear. */
+    onOpenSettings: (() -> Unit)? = null,
     /**
      * When false the diamond tab bar is hidden and the body is a single page
      * ([pageContent] called with page 0) — the PF2e single-scroll sheet (#34).
@@ -102,6 +105,7 @@ fun CodexScaffold(
             onAct = onAct,
             onBack = onBack,
             onEdit = onEdit,
+            onOpenSettings = onOpenSettings,
         )
         HeroRow(
             name = heroName,
@@ -149,6 +153,7 @@ private fun TopNavRow(
     onAct: (() -> Unit)?,
     onBack: () -> Unit,
     onEdit: () -> Unit,
+    onOpenSettings: (() -> Unit)?,
 ) {
     val palette = MaterialTheme.natPalette
     Row(
@@ -193,13 +198,23 @@ private fun TopNavRow(
             Diamond(size = 5.dp, fill = palette.accent)
         }
 
-        // Trailing: Act pill in a campaign (when the edition has an actions layer),
-        // Edit pill while building. (iOS also shows a gear → character settings here;
-        // omitted until the #40 Character Settings screen exists.)
-        when {
-            inCampaign && onAct != null -> ActPill(palette, onAct)
-            !inCampaign -> EditPill(palette, onEdit)
-            else -> Spacer(Modifier.size(0.dp))
+        // Trailing: the gear (→ character settings) beside the phase pill —
+        // Act in a campaign (when the edition has an actions layer), Edit while building.
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (onOpenSettings != null) {
+                Box(
+                    Modifier.size(32.dp).clip(CircleShape).background(palette.tileStrong)
+                        .border(1.dp, palette.accent.copy(alpha = 0.33f), CircleShape).clickable(onClick = onOpenSettings),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Outlined.Settings, contentDescription = "Character settings", tint = palette.accent, modifier = Modifier.size(17.dp))
+                }
+            }
+            when {
+                inCampaign && onAct != null -> ActPill(palette, onAct)
+                !inCampaign -> EditPill(palette, onEdit)
+                else -> Spacer(Modifier.size(0.dp))
+            }
         }
     }
 }

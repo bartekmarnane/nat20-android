@@ -28,6 +28,7 @@ import au.com.evonet.nat20.ui.patron.PatronScreen
 import au.com.evonet.nat20.patron.PatronStore
 import au.com.evonet.nat20.ui.reference.SpellLibraryShell
 import au.com.evonet.nat20.ui.roster.RosterScreen
+import au.com.evonet.nat20.ui.settings.CharacterSettingsScreen
 import au.com.evonet.nat20.ui.settings.CreditsScreen
 import au.com.evonet.nat20.ui.settings.SettingsScreen
 import au.com.evonet.nat20.ui.sheet.CharacterSheetScreen
@@ -47,6 +48,7 @@ private object Routes {
     const val EDIT = "editor/{id}"
     const val JOURNAL = "journal/{id}/{campaignId}"
     const val PAST = "past/{id}"
+    const val CHARACTER_SETTINGS = "character-settings/{id}"
     const val SETTINGS = "settings"
     const val CREDITS = "credits"
     const val SPELL_LIBRARY = "spell-library"
@@ -59,6 +61,7 @@ private object Routes {
     fun edit(id: UUID) = "editor/$id"
     fun journal(characterId: UUID, campaignId: UUID) = "journal/$characterId/$campaignId"
     fun past(id: UUID) = "past/$id"
+    fun characterSettings(id: UUID) = "character-settings/$id"
 }
 
 @Composable
@@ -90,7 +93,6 @@ fun NatApp() {
                 onSelect = { nav.navigate(Routes.sheet(it.id)) },
                 onNew = { nav.navigate(Routes.CREATE) },
                 onUpgrade = { nav.navigate(Routes.PATRON) },
-                onDelete = { store.delete(it.id) },
                 onOpenSettings = { nav.navigate(Routes.SETTINGS) },
             )
         }
@@ -152,6 +154,7 @@ fun NatApp() {
                     onLeaveCampaign = { active?.let { c -> store.endCampaign(character, c) } },
                     onOpenJournal = { active?.let { c -> nav.navigate(Routes.journal(character.id, c.id)) } },
                     onOpenPastAdventures = { nav.navigate(Routes.past(character.id)) },
+                    onOpenCharacterSettings = { nav.navigate(Routes.characterSettings(character.id)) },
                     onBrowseSpells = { nav.navigate(Routes.SPELL_LIBRARY) },
                     // Phase-aware: journaled in-campaign, a direct edit while building.
                     onApplyIntent = { intent -> store.applyIntent(intent, character, active) },
@@ -207,6 +210,26 @@ fun NatApp() {
                     endedCampaigns = campaigns.filter { !it.isActive },
                     onOpen = { nav.navigate(Routes.journal(character.id, it.id)) },
                     onBack = { nav.popBackStack() },
+                )
+            }
+        }
+
+        composable(
+            Routes.CHARACTER_SETTINGS,
+            arguments = listOf(navArgument(Routes.ARG_ID) { type = NavType.StringType }),
+        ) { entry ->
+            val character = find(entry.uuidArg(Routes.ARG_ID))
+            if (character == null) {
+                nav.popBackStack()
+            } else {
+                CharacterSettingsScreen(
+                    character = character,
+                    onBack = { nav.popBackStack() },
+                    // Delete removes the character and pops all the way back to the roster.
+                    onDelete = {
+                        store.delete(character.id)
+                        nav.popBackStack(Routes.ROSTER, inclusive = false)
+                    },
                 )
             }
         }

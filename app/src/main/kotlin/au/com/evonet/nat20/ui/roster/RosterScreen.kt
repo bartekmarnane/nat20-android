@@ -85,10 +85,8 @@ fun RosterScreen(
     onSelect: (Character) -> Unit,
     onNew: () -> Unit,
     onUpgrade: () -> Unit,
-    onDelete: (Character) -> Unit,
     onOpenSettings: () -> Unit,
 ) {
-    var pendingDelete by remember { mutableStateOf<Character?>(null) }
     val palette = MaterialTheme.natPalette
     val inlineCta = characters.size > 3
 
@@ -133,20 +131,10 @@ fun RosterScreen(
                 if (characters.isEmpty()) {
                     item { Box(Modifier.padding(top = 40.dp)) { EmptyStateTile() } }
                 }
+                // Deletion lives on the character-settings screen (gear on the sheet),
+                // matching iOS — the roster has no swipe-to-delete.
                 items(characters, key = { it.id }) { character ->
-                    val dismissState = rememberSwipeToDismissBoxState(
-                        confirmValueChange = { target ->
-                            if (target == SwipeToDismissBoxValue.EndToStart) pendingDelete = character
-                            false
-                        },
-                    )
-                    SwipeToDismissBox(
-                        state = dismissState,
-                        enableDismissFromStartToEnd = false,
-                        backgroundContent = { DeleteSwipeBackground(dismissState) },
-                    ) {
-                        CharacterIndexCard(character, campaignNames[character.id], onClick = { onSelect(character) })
-                    }
+                    CharacterIndexCard(character, campaignNames[character.id], onClick = { onSelect(character) })
                 }
                 if (inlineCta) {
                     item {
@@ -159,22 +147,6 @@ fun RosterScreen(
         }
     }
 
-    pendingDelete?.let { target ->
-        AlertDialog(
-            onDismissRequest = { pendingDelete = null },
-            title = { Text("Delete ${target.name}?") },
-            text = { Text("This can't be undone.") },
-            confirmButton = {
-                TextButton(onClick = {
-                    onDelete(target)
-                    pendingDelete = null
-                }) { Text("Delete") }
-            },
-            dismissButton = {
-                TextButton(onClick = { pendingDelete = null }) { Text("Cancel") }
-            },
-        )
-    }
 }
 
 // ── Hero ────────────────────────────────────────────────────────────────────
@@ -367,23 +339,6 @@ private fun BottomCta(canCreate: Boolean, onNew: () -> Unit, onUpgrade: () -> Un
             letterSpacing = 3.sp,
             color = palette.accent,
         )
-    }
-}
-
-@Composable
-private fun DeleteSwipeBackground(state: androidx.compose.material3.SwipeToDismissBoxState) {
-    // Only paint while the card is actually being swiped left — otherwise the
-    // label bleeds through the translucent parchment card at rest.
-    if (state.dismissDirection != SwipeToDismissBoxValue.EndToStart) return
-    Box(
-        Modifier
-            .fillMaxSize()
-            .clip(RoundedCornerShape(4.dp))
-            .background(MaterialTheme.colorScheme.error.copy(alpha = 0.14f))
-            .padding(horizontal = 24.dp),
-        contentAlignment = Alignment.CenterEnd,
-    ) {
-        Text("Delete", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelLarge)
     }
 }
 

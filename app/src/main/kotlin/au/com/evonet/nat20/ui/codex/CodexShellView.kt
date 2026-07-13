@@ -44,6 +44,7 @@ fun CodexShellView(
     onEndCampaign: () -> Unit,
     onOpenJournal: () -> Unit,
     onOpenPastAdventures: () -> Unit,
+    onOpenCharacterSettings: () -> Unit,
     onBrowseSpells: () -> Unit,
     onApplyIntent: (CharacterIntent) -> Unit,
     onSave: (Character) -> Unit,
@@ -81,6 +82,7 @@ fun CodexShellView(
         onEndCampaign = onEndCampaign,
         onOpenJournal = onOpenJournal,
         onOpenPastAdventures = onOpenPastAdventures,
+        onOpenSettings = onOpenCharacterSettings,
         modifier = modifier,
     ) { page ->
         when (tabs[page]) {
