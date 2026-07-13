@@ -1,13 +1,12 @@
 package au.com.evonet.nat20.ui.codex
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -19,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import au.com.evonet.nat20.dnd5e.DnD5ePayload
 import au.com.evonet.nat20.dnd5e.LongRest
 import au.com.evonet.nat20.dnd5e.ResolvedResourcePool
@@ -29,21 +29,22 @@ import au.com.evonet.nat20.dnd5e.availableClassFeatures
 import au.com.evonet.nat20.dnd5e.availableResourcePools
 import au.com.evonet.nat20.dnd5e.hasClassResources
 import au.com.evonet.nat20.domain.CharacterIntent
+import au.com.evonet.nat20.ui.theme.Cormorant
+import au.com.evonet.nat20.ui.theme.natPalette
 
 /**
- * The Combat-tab **Rest** and **Class Resources** sections (A10). Rest is
- * universal (a barbarian needs it as much as a wizard); resources show point
+ * The Combat-tab **Rest** and **Class Resources** extras (A10, Android
+ * interaction layer — pending #19). Rest is universal; resources show point
  * pools (Ki/Sorcery Points/Lay on Hands) and use-counter features (Rage/Action
- * Surge/…), each spendable in place. All edits reuse the tested intents.
+ * Surge/…), each spendable in place. Chrome restyled to SectionHead (parity #15).
  */
 
 @Composable
 internal fun RestSection(onApplyIntent: (CharacterIntent) -> Unit) {
-    SectionCard("Rest") {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(onClick = { onApplyIntent(ShortRest()) }) { Text("Short rest") }
-            OutlinedButton(onClick = { onApplyIntent(LongRest()) }) { Text("Long rest") }
-        }
+    SectionHead("Rest", top = 22.dp, bottom = 10.dp)
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        CodexButton("Short rest", Modifier.weight(1f), onClick = { onApplyIntent(ShortRest()) })
+        CodexButton("Long rest", Modifier.weight(1f), onClick = { onApplyIntent(LongRest()) })
     }
 }
 
@@ -52,13 +53,12 @@ internal fun ClassResourcesSection(payload: DnD5ePayload, onApplyIntent: (Charac
     if (!payload.hasClassResources()) return
     var spendPool by remember { mutableStateOf<ResolvedResourcePool?>(null) }
 
-    fun apply(intent: CharacterIntent) = onApplyIntent(intent)
-
-    SectionCard("Class Resources") {
+    SectionHead("Class Resources", top = 22.dp, bottom = 10.dp)
+    Column {
         val pools = payload.availableResourcePools()
         val features = payload.availableClassFeatures()
         pools.forEachIndexed { i, pool ->
-            if (i > 0) ResourceDivider()
+            if (i > 0) DashedRule()
             ResourceRow(
                 name = pool.displayName,
                 value = "${pool.current}/${pool.max}",
@@ -68,14 +68,14 @@ internal fun ClassResourcesSection(payload: DnD5ePayload, onApplyIntent: (Charac
             )
         }
         features.forEachIndexed { i, feature ->
-            if (i > 0 || pools.isNotEmpty()) ResourceDivider()
+            if (i > 0 || pools.isNotEmpty()) DashedRule()
             ResourceRow(
                 name = feature.displayName,
                 value = if (feature.max == null) "∞" else "${feature.current}/${feature.max}",
                 actionLabel = "Use",
                 enabled = feature.max == null || (feature.current ?: 0) > 0,
                 onAction = {
-                    apply(UseClassFeature(feature.id, feature.displayName, feature.recovery, usesRemaining = feature.current))
+                    onApplyIntent(UseClassFeature(feature.id, feature.displayName, feature.recovery, usesRemaining = feature.current))
                 },
             )
         }
@@ -84,7 +84,7 @@ internal fun ClassResourcesSection(payload: DnD5ePayload, onApplyIntent: (Charac
     spendPool?.let { pool ->
         SpendResourceDialog(
             pool = pool,
-            onSpend = { amount -> apply(SpendResource(pool.id, amount)); spendPool = null },
+            onSpend = { amount -> onApplyIntent(SpendResource(pool.id, amount)); spendPool = null },
             onDismiss = { spendPool = null },
         )
     }
@@ -92,21 +92,26 @@ internal fun ClassResourcesSection(payload: DnD5ePayload, onApplyIntent: (Charac
 
 @Composable
 private fun ResourceRow(name: String, value: String, actionLabel: String, enabled: Boolean, onAction: () -> Unit) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text(name, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+    val palette = MaterialTheme.natPalette
+    Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            name,
+            fontFamily = Cormorant,
+            fontWeight = FontWeight.Medium,
+            fontSize = 15.sp,
+            color = palette.ink,
+            modifier = Modifier.weight(1f),
+        )
         Text(
             value,
-            style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.Medium,
-            modifier = Modifier.padding(end = 8.dp),
+            fontFamily = Cormorant,
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 17.sp,
+            color = palette.accent,
+            modifier = Modifier.padding(end = 10.dp),
         )
-        TextButton(enabled = enabled, onClick = onAction) { Text(actionLabel) }
+        CodexButton(actionLabel, enabled = enabled, onClick = onAction)
     }
-}
-
-@Composable
-private fun ResourceDivider() {
-    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
 }
 
 @Composable

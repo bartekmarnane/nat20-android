@@ -1,22 +1,24 @@
 package au.com.evonet.nat20.ui.codex
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -28,8 +30,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import au.com.evonet.nat20.dnd5e.CreatureCatalog
 import au.com.evonet.nat20.dnd5e.CreatureKind
 import au.com.evonet.nat20.dnd5e.DismissSummon
@@ -42,60 +47,151 @@ import au.com.evonet.nat20.domain.Creature
 import au.com.evonet.nat20.domain.Summon
 import au.com.evonet.nat20.domain.SummonLifecycle
 import au.com.evonet.nat20.domain.SummonOrigin
+import au.com.evonet.nat20.ui.editor.StepperButton
+import au.com.evonet.nat20.ui.theme.Cormorant
+import au.com.evonet.nat20.ui.theme.EbGaramond
+import au.com.evonet.nat20.ui.theme.ImFell
+import au.com.evonet.nat20.ui.theme.natPalette
 import java.time.Instant
 
 /**
- * Companions & summons (A18): the character's familiars / mounts / beast
- * companions / summoned creatures, each a statblock card with a per-creature HP
- * stepper + dismiss. A summon picker mints new ones from [CreatureCatalog] (or a
- * homebrew creature). Reads the cross-ruleset `Character.summons`.
+ * The Lore-tab **Minions** section (A18, moved from Combat per iOS parity #18):
+ * familiars / mounts / beast companions / summons as expandable cards — header
+ * name + summary + chevron, expanded statblock with a per-creature HP stepper
+ * and a confirmed Dismiss. The summon picker is an Android extra (iOS summons
+ * from the actions layer — pending #19). Reads the cross-ruleset `Character.summons`.
  */
 @Composable
-internal fun CompanionsSection(character: Character, onApplyIntent: (CharacterIntent) -> Unit) {
+internal fun MinionsSection(character: Character, onApplyIntent: (CharacterIntent) -> Unit) {
     var picking by remember { mutableStateOf(false) }
-    SectionCard("Companions & Summons") {
+    SectionHead("Minions", top = 22.dp, bottom = 10.dp)
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         if (character.summons.isEmpty()) {
-            Text("No familiars, mounts, or summons.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            DashedNotice("No familiars, mounts, or summons.")
         } else {
-            character.summons.forEachIndexed { i, summon ->
-                if (i > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
-                SummonCard(summon, onApplyIntent)
-            }
+            character.summons.forEach { summon -> MinionCard(summon, onApplyIntent) }
         }
-        OutlinedButton(onClick = { picking = true }) { Text("Summon a creature") }
+        CodexButton("Summon a creature", onClick = { picking = true })
     }
     if (picking) SummonPickerDialog(onSummon = { onApplyIntent(it); picking = false }, onDismiss = { picking = false })
 }
 
+/** Expandable minion card: tile r8 hairline; expanded = statblock + dismiss. */
 @Composable
-private fun SummonCard(summon: Summon, onApplyIntent: (CharacterIntent) -> Unit) {
-    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+private fun MinionCard(summon: Summon, onApplyIntent: (CharacterIntent) -> Unit) {
+    val palette = MaterialTheme.natPalette
+    var expanded by remember { mutableStateOf(false) }
+    var confirmingDismiss by remember { mutableStateOf(false) }
+    val shape = RoundedCornerShape(8.dp)
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(palette.tile)
+            .border(1.dp, palette.ink.copy(alpha = 0.15f), shape)
+            .clickable { expanded = !expanded }
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text(summon.label, fontWeight = FontWeight.Medium)
-                Text(lifecycleLabel(summon.lifecycle) + originLabel(summon.origin), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    summon.label,
+                    fontFamily = Cormorant,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 15.sp,
+                    color = palette.ink,
+                )
+                Text(
+                    lifecycleLabel(summon.lifecycle) + originLabel(summon.origin),
+                    fontFamily = Cormorant,
+                    fontStyle = FontStyle.Italic,
+                    fontSize = 13.sp,
+                    color = palette.inkSoft,
+                )
             }
-            TextButton(onClick = { onApplyIntent(DismissSummon(summon.id)) }) { Text("Dismiss") }
+            Text(
+                if (expanded) "▾" else "▸",
+                fontSize = 13.sp,
+                color = palette.inkMute,
+            )
         }
-        summon.creatures.forEach { creature -> CreatureRow(summon.id, creature, onApplyIntent) }
+        if (expanded) {
+            summon.creatures.forEach { creature -> CreatureBlock(summon, creature, onApplyIntent) }
+            CodexButton("Dismiss", danger = true, onClick = { confirmingDismiss = true })
+        }
+    }
+    if (confirmingDismiss) {
+        AlertDialog(
+            onDismissRequest = { confirmingDismiss = false },
+            title = { Text("Dismiss ${summon.label}?") },
+            text = { Text("The creature departs; this is recorded in the journal while adventuring.") },
+            confirmButton = {
+                TextButton(onClick = { onApplyIntent(DismissSummon(summon.id)); confirmingDismiss = false }) {
+                    Text("Dismiss", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = { TextButton(onClick = { confirmingDismiss = false }) { Text("Cancel") } },
+        )
     }
 }
 
+/** One creature inside an expanded minion card: HP stepper + statblock lines. */
 @Composable
-private fun CreatureRow(summonId: java.util.UUID, creature: Creature, onApplyIntent: (CharacterIntent) -> Unit) {
+private fun CreatureBlock(summon: Summon, creature: Creature, onApplyIntent: (CharacterIntent) -> Unit) {
+    val palette = MaterialTheme.natPalette
     val stat = remember(creature.rulesetPayload) { runCatching { DnD5eCreaturePayload.decode(creature.rulesetPayload) }.getOrNull() }
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(creature.name, Modifier.weight(1f), fontWeight = FontWeight.Medium)
-                TextButton(onClick = { onApplyIntent(SetCreatureHp(summonId, creature.id, creature.currentHp - 1)) }, enabled = creature.currentHp > 0) { Text("−") }
-                Text("${creature.currentHp}/${creature.maxHp}", style = MaterialTheme.typography.bodyMedium)
-                TextButton(onClick = { onApplyIntent(SetCreatureHp(summonId, creature.id, creature.currentHp + 1)) }, enabled = creature.currentHp < creature.maxHp) { Text("+") }
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+        DashedRule()
+        Spacer(Modifier.height(3.dp))
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                creature.name,
+                fontFamily = Cormorant,
+                fontWeight = FontWeight.Medium,
+                fontSize = 15.sp,
+                color = palette.ink,
+                modifier = Modifier.weight(1f),
+            )
+            StepperButton("−", enabled = creature.currentHp > 0, size = 26) {
+                onApplyIntent(SetCreatureHp(summon.id, creature.id, creature.currentHp - 1))
             }
-            stat?.let { s ->
-                Text("${s.size} ${s.type}  ·  AC ${s.armorClass}  ·  ${s.speed}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                if (s.attacks.isNotEmpty()) Text(s.attacks.joinToString("\n") { it.display }, style = MaterialTheme.typography.labelSmall)
-                if (s.traits.isNotEmpty()) Text(s.traits.joinToString(", "), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+            Text(
+                "${creature.currentHp}/${creature.maxHp}",
+                fontFamily = Cormorant,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 15.sp,
+                color = palette.accent,
+                modifier = Modifier.padding(horizontal = 8.dp),
+            )
+            StepperButton("+", enabled = creature.currentHp < creature.maxHp, size = 26) {
+                onApplyIntent(SetCreatureHp(summon.id, creature.id, creature.currentHp + 1))
+            }
+        }
+        stat?.let { s ->
+            Text(
+                "${s.size} ${s.type}  ·  AC ${s.armorClass}  ·  ${s.speed}",
+                fontFamily = ImFell,
+                fontStyle = FontStyle.Italic,
+                fontSize = 11.sp,
+                color = palette.inkMute,
+            )
+            if (s.attacks.isNotEmpty()) {
+                Text(
+                    s.attacks.joinToString("\n") { it.display },
+                    fontFamily = EbGaramond,
+                    fontSize = 12.sp,
+                    color = palette.inkSoft,
+                )
+            }
+            if (s.traits.isNotEmpty()) {
+                Text(
+                    s.traits.joinToString(", "),
+                    fontFamily = ImFell,
+                    fontStyle = FontStyle.Italic,
+                    fontSize = 11.sp,
+                    color = palette.accent,
+                )
             }
         }
     }

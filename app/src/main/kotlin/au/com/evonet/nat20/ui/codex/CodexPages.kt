@@ -1,20 +1,25 @@
 package au.com.evonet.nat20.ui.codex
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -29,99 +34,131 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import au.com.evonet.nat20.ui.theme.Cormorant
-import au.com.evonet.nat20.ui.theme.natPalette
-import au.com.evonet.nat20.ui.theme.parchmentTile
 import au.com.evonet.nat20.dnd5e.ArmorClassCalculator
+import au.com.evonet.nat20.dnd5e.AttackMath
+import au.com.evonet.nat20.dnd5e.CancelEffect
 import au.com.evonet.nat20.dnd5e.DnD5eCatalog
-import au.com.evonet.nat20.dnd5e.MarkDeathSave
-import au.com.evonet.nat20.dnd5e.RaceTraits
-import au.com.evonet.nat20.dnd5e.RollDeathSave
-import au.com.evonet.nat20.dnd5e.Feats
-import au.com.evonet.nat20.dnd5e.effectiveMaxHp
-import au.com.evonet.nat20.dnd5e.effectiveSkillProficiencies
-import au.com.evonet.nat20.dnd5e.effectiveSpeed
+import au.com.evonet.nat20.dnd5e.DnD5ePayload
 import au.com.evonet.nat20.dnd5e.ExpendSpellSlot
+import au.com.evonet.nat20.dnd5e.Feats
+import au.com.evonet.nat20.dnd5e.FightingStyles
 import au.com.evonet.nat20.dnd5e.Invocations
+import au.com.evonet.nat20.dnd5e.MarkDeathSave
 import au.com.evonet.nat20.dnd5e.Metamagics
 import au.com.evonet.nat20.dnd5e.PactBoons
+import au.com.evonet.nat20.dnd5e.RaceTraits
 import au.com.evonet.nat20.dnd5e.RollCheck
-import au.com.evonet.nat20.dnd5e.expertiseEligibleSkills
-import au.com.evonet.nat20.dnd5e.expertiseSlots
-import au.com.evonet.nat20.dnd5e.hasExpertise
-import au.com.evonet.nat20.dnd5e.invocationsKnownCount
-import au.com.evonet.nat20.dnd5e.metamagicKnownCount
-import au.com.evonet.nat20.dnd5e.pactBoonAvailable
-import au.com.evonet.nat20.dnd5e.skillProficiencyMultiplier
-import au.com.evonet.nat20.dnd5e.warlockLevel
+import au.com.evonet.nat20.dnd5e.RollDeathSave
 import au.com.evonet.nat20.dnd5e.SetInitiative
 import au.com.evonet.nat20.dnd5e.SetInspiration
 import au.com.evonet.nat20.dnd5e.SpendHitDie
-import au.com.evonet.nat20.dnd5e.equippedWeapons
-import au.com.evonet.nat20.dnd5e.initiativeBonus
-import au.com.evonet.nat20.dnd5e.maxPactSlots
-import au.com.evonet.nat20.dnd5e.pactSlotLevel
-import au.com.evonet.nat20.dnd5e.totalCurrentSlots
-import au.com.evonet.nat20.dnd5e.totalMaxSlots
-import au.com.evonet.nat20.dnd5e.core.DeathSaveOutcome
-import au.com.evonet.nat20.dnd5e.DnD5ePayload
-import au.com.evonet.nat20.dnd5e.effectiveAbilityScores
-import au.com.evonet.nat20.dnd5e.temporarySaveBonus
-import au.com.evonet.nat20.dnd5e.temporarySkillBonus
+import au.com.evonet.nat20.dnd5e.WeaponProperties
+import au.com.evonet.nat20.dnd5e.advantageDescriptors
+import au.com.evonet.nat20.dnd5e.availableResourcePools
 import au.com.evonet.nat20.dnd5e.core.Ability
-import au.com.evonet.nat20.dnd5e.core.AbilityScores
+import au.com.evonet.nat20.dnd5e.core.DeathSaveOutcome
+import au.com.evonet.nat20.dnd5e.core.DeathSaves
 import au.com.evonet.nat20.dnd5e.core.DnD5eClasses
 import au.com.evonet.nat20.dnd5e.core.Proficiency
 import au.com.evonet.nat20.dnd5e.core.RollBonus
 import au.com.evonet.nat20.dnd5e.core.RollResult
 import au.com.evonet.nat20.dnd5e.core.RollSpec
+import au.com.evonet.nat20.dnd5e.effectiveAbilityScores
+import au.com.evonet.nat20.dnd5e.effectiveDamageResistances
+import au.com.evonet.nat20.dnd5e.effectiveMaxHp
+import au.com.evonet.nat20.dnd5e.effectiveSkillProficiencies
+import au.com.evonet.nat20.dnd5e.effectiveSpeed
+import au.com.evonet.nat20.dnd5e.equippedWeapons
+import au.com.evonet.nat20.dnd5e.expertiseEligibleSkills
+import au.com.evonet.nat20.dnd5e.expertiseSlots
+import au.com.evonet.nat20.dnd5e.hasExpertise
+import au.com.evonet.nat20.dnd5e.initiativeBonus
+import au.com.evonet.nat20.dnd5e.invocationsKnownCount
+import au.com.evonet.nat20.dnd5e.maxPactSlots
+import au.com.evonet.nat20.dnd5e.metamagicKnownCount
+import au.com.evonet.nat20.dnd5e.pactBoonAvailable
+import au.com.evonet.nat20.dnd5e.pactSlotLevel
+import au.com.evonet.nat20.dnd5e.skillProficiencyMultiplier
+import au.com.evonet.nat20.dnd5e.temporarySaveBonus
+import au.com.evonet.nat20.dnd5e.temporarySkillBonus
+import au.com.evonet.nat20.dnd5e.totalCurrentSlots
+import au.com.evonet.nat20.dnd5e.totalMaxSlots
+import au.com.evonet.nat20.dnd5e.warlockLevel
 import au.com.evonet.nat20.domain.Character
 import au.com.evonet.nat20.domain.CharacterIntent
 import au.com.evonet.nat20.ui.roll.RollDialog
 import au.com.evonet.nat20.ui.roll.RollResultView
 import au.com.evonet.nat20.ui.slugToTitle
+import au.com.evonet.nat20.ui.theme.Cinzel
+import au.com.evonet.nat20.ui.theme.Cormorant
+import au.com.evonet.nat20.ui.theme.DiamondShape
+import au.com.evonet.nat20.ui.theme.EbGaramond
+import au.com.evonet.nat20.ui.theme.ImFell
+import au.com.evonet.nat20.ui.theme.natPalette
 
-// ── Pages ────────────────────────────────────────────────────────────────────
+// ── Stats ────────────────────────────────────────────────────────────────────
 
+/**
+ * iOS Stats order: chip row · HP compact · Abilities medallions · Saving Throws
+ * strip · Effects · Resources · Defenses · Languages · Inspiration banner.
+ * Android keeps tap-to-roll on medallions/saves (iOS is display-only; pending
+ * #19) and its Class Choices + Level Up extras at the end.
+ */
 @Composable
 internal fun StatsPage(character: Character, payload: DnD5ePayload, onApplyIntent: (CharacterIntent) -> Unit, onSave: (Character) -> Unit, onLevelUp: () -> Unit) {
+    val palette = MaterialTheme.natPalette
     val prof = Proficiency.bonus(payload.level)
     val proficientSaves = payload.primaryClass()?.savingThrowAbilities()?.toSet().orEmpty()
-    val perceptionProficient = "perception" in payload.effectiveSkillProficiencies
     var check by remember { mutableStateOf<CheckRoll?>(null) }
+    var acBreakdown by remember { mutableStateOf(false) }
+    var effectDetail by remember { mutableStateOf<au.com.evonet.nat20.dnd5e.core.ActiveEffect?>(null) }
     val effectiveScores = payload.effectiveAbilityScores
     val isHalfling = payload.race.contains("halfling", ignoreCase = true)
+
     CodexPage {
-        SectionCard("Abilities") {
-            Ability.entries.chunked(3).forEach { row ->
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    row.forEach { ability ->
-                        val mod = effectiveScores.modifier(ability)
+        // Chip row: Init / AC / Prof / Speed.
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            StatChip("Init", payload.initiative?.toString() ?: payload.initiativeBonus.signed(), Modifier.weight(1f))
+            StatChip("AC", payload.armorClass.toString(), Modifier.weight(1f), onClick = { acBreakdown = true })
+            StatChip("Prof", prof.signed(), Modifier.weight(1f))
+            StatChip("Speed", "${payload.effectiveSpeed} ft", Modifier.weight(1f))
+        }
+        Spacer(Modifier.height(8.dp))
+        HPBlock(payload.currentHp, payload.effectiveMaxHp, payload.temporaryHp, compact = true)
+
+        SectionHead("Abilities", top = 28.dp, bottom = 16.dp)
+        Ability.entries.chunked(3).forEachIndexed { rowIndex, row ->
+            if (rowIndex > 0) Spacer(Modifier.height(10.dp))
+            Row(Modifier.fillMaxWidth()) {
+                row.forEach { ability ->
+                    val mod = effectiveScores.modifier(ability)
+                    Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                         AbilityMedallion(
-                            ability, effectiveScores,
-                            Modifier
-                                .weight(1f)
-                                .clickable { check = CheckRoll("${ability.abbreviation} check", listOf(RollBonus(ability.abbreviation, mod)), lucky = isHalfling) },
+                            abbrev = ability.abbreviation,
+                            score = effectiveScores.score(ability),
+                            modifierValue = mod,
+                            onClick = { check = CheckRoll("${ability.abbreviation} check", listOf(RollBonus(ability.abbreviation, mod)), lucky = isHalfling) },
                         )
                     }
                 }
             }
         }
-        SectionCard("Proficiency & Senses") {
-            StatLine("Proficiency Bonus", prof.signed())
-            val passive = 10 + payload.abilityScores.modifier(Ability.WISDOM) + if (perceptionProficient) prof else 0
-            StatLine("Passive Perception", passive.toString())
-        }
-        SectionCard("Saving Throws") {
+
+        SectionHead("Saving Throws", top = 24.dp, bottom = 16.dp)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
             Ability.entries.forEach { ability ->
                 val proficient = ability in proficientSaves
                 val abilityMod = effectiveScores.modifier(ability)
                 val effectBonus = payload.temporarySaveBonus(ability)
                 val mod = abilityMod + (if (proficient) prof else 0) + effectBonus
-                ProficiencyLine(
-                    ability.abbreviation, mod.signed(), proficient,
+                SaveCell(
+                    abbrev = ability.abbreviation,
+                    bonus = mod,
+                    proficient = proficient,
+                    modifier = Modifier.weight(1f),
                     onClick = {
                         val bonuses = checkBonuses(ability.abbreviation, abilityMod, proficient, prof) +
                             (if (effectBonus != 0) listOf(RollBonus("Effects", effectBonus)) else emptyList())
@@ -130,32 +167,155 @@ internal fun StatsPage(character: Character, payload: DnD5ePayload, onApplyInten
                 )
             }
         }
-        if (payload.chosenFeats.isNotEmpty()) {
-            SectionCard("Feats") {
-                payload.chosenFeats.forEach { id ->
-                    val feat = Feats.feat(id)
-                    Text(feat?.name ?: id.slugToTitle(), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-                    feat?.description?.let { Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                }
+
+        if (payload.activeEffects.isNotEmpty()) {
+            SectionHead("Effects", top = 24.dp, bottom = 12.dp)
+            EffectStrip(payload.activeEffects) { effectDetail = it }
+        }
+
+        val pools = payload.availableResourcePools()
+        if (pools.isNotEmpty()) {
+            SectionHead("Resources", top = 24.dp, bottom = 12.dp)
+            ResourcePoolStrip(pools.map { Triple(it.abbreviation, it.current, it.max) })
+        }
+
+        val resistances = payload.effectiveDamageResistances.sorted()
+        val advantages = payload.advantageDescriptors
+        if (resistances.isNotEmpty() || advantages.isNotEmpty()) {
+            SectionHead("Defenses", top = 24.dp, bottom = 12.dp)
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                if (resistances.isNotEmpty()) DefenseCategory("Resistance", resistances, palette.accent)
+                if (advantages.isNotEmpty()) DefenseCategory("Advantage", advantages, palette.accentGold)
             }
         }
-        ClassChoicesCard(character, payload, onSave)
+
+        SectionHead("Languages", top = 24.dp, bottom = 12.dp)
+        val languages = DnD5eCatalog.race(payload.race)?.languages.orEmpty()
+        Text(
+            languages.takeIf { it.isNotEmpty() }?.joinToString(", ") ?: "—",
+            fontFamily = Cormorant,
+            fontStyle = FontStyle.Italic,
+            fontSize = 13.sp,
+            color = palette.ink,
+        )
+
+        if (payload.hasInspiration) {
+            InspirationBanner(Modifier.padding(top = 14.dp))
+        }
+
+        // ── Android extras (no iOS Stats equivalent; pending #19 actions layer) ──
+        ClassChoicesSection(character, payload, onSave)
         if (payload.level < DnD5ePayload.MAX_LEVEL) {
-            Button(onClick = onLevelUp, modifier = Modifier.fillMaxWidth()) { Text("Level Up") }
+            Spacer(Modifier.height(20.dp))
+            CodexButton("Level Up", Modifier.fillMaxWidth(), onClick = onLevelUp)
+        }
+        Spacer(Modifier.height(8.dp))
+    }
+
+    check?.let { CheckRollDialog(it, onApplyIntent) { check = null } }
+    if (acBreakdown) AcBreakdownDialog(payload) { acBreakdown = false }
+    effectDetail?.let { e ->
+        EffectDetailDialog(
+            effect = e,
+            onCancelEffect = { onApplyIntent(CancelEffect(e.id)); effectDetail = null },
+            onDismiss = { effectDetail = null },
+        )
+    }
+}
+
+/** Tappable strip of active-effect chips (detail dialog on tap, as on Combat). */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+internal fun EffectStrip(effects: List<au.com.evonet.nat20.dnd5e.core.ActiveEffect>, onSelect: (au.com.evonet.nat20.dnd5e.core.ActiveEffect) -> Unit) {
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        effects.forEach { e -> CodexEffectChip(e) { onSelect(e) } }
+    }
+}
+
+/** Display tiles for point-pool resources (spend lives on Combat, pending #19). */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ResourcePoolStrip(pools: List<Triple<String, Int, Int>>) {
+    val palette = MaterialTheme.natPalette
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        pools.forEach { (label, current, max) ->
+            val shape = RoundedCornerShape(3.dp)
+            Column(
+                Modifier
+                    .clip(shape)
+                    .background(palette.tile)
+                    .border(1.dp, palette.accent.copy(alpha = 0.2f), shape)
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(1.dp),
+            ) {
+                Text(label.uppercase(), fontFamily = Cinzel, fontSize = 11.sp, letterSpacing = 2.sp, color = palette.inkMute)
+                Text("$current / $max", fontFamily = Cormorant, fontWeight = FontWeight.SemiBold, fontSize = 17.sp, color = palette.accent)
+            }
         }
     }
-    check?.let { CheckRollDialog(it, onApplyIntent) { check = null } }
+}
+
+/** A defense category row: small-caps label + tinted entry chips. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun DefenseCategory(label: String, entries: List<String>, tone: androidx.compose.ui.graphics.Color) {
+    val palette = MaterialTheme.natPalette
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            label.uppercase(),
+            fontFamily = Cinzel,
+            fontSize = 11.sp,
+            letterSpacing = 2.sp,
+            color = palette.inkMute,
+            modifier = Modifier.width(96.dp),
+        )
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            entries.forEach { entry ->
+                val shape = RoundedCornerShape(3.dp)
+                Text(
+                    entry.replaceFirstChar { it.uppercase() },
+                    fontFamily = Cormorant,
+                    fontSize = 13.sp,
+                    color = tone,
+                    modifier = Modifier
+                        .clip(shape)
+                        .border(1.dp, tone.copy(alpha = 0.4f), shape)
+                        .padding(horizontal = 8.dp, vertical = 3.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AcBreakdownDialog(payload: DnD5ePayload, onDismiss: () -> Unit) {
+    val breakdown = ArmorClassCalculator.compute(payload)
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Armor Class ${breakdown.total}") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                breakdown.rows.forEach { row ->
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text(row.label, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                        Text(row.value.signed(), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Done") } },
+    )
 }
 
 /**
  * The deep-class build choices (A11): Sorcerer Metamagic, Warlock Invocations +
  * Pact Boon, Rogue/Bard Expertise. Each is a character-building edit (like
  * spells-known), so it persists via a direct [onSave] payload copy rather than a
- * journaled intent. Only the sections the character has earned slots for appear.
+ * journaled intent. Android extra — iOS makes these picks in Level Up (#20).
  */
-@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
-private fun ClassChoicesCard(character: Character, payload: DnD5ePayload, onSave: (Character) -> Unit) {
+private fun ClassChoicesSection(character: Character, payload: DnD5ePayload, onSave: (Character) -> Unit) {
     val metamagicSlots = payload.metamagicKnownCount
     val invocationSlots = payload.invocationsKnownCount
     val expertiseSlots = payload.expertiseSlots
@@ -164,7 +324,8 @@ private fun ClassChoicesCard(character: Character, payload: DnD5ePayload, onSave
 
     fun save(updated: DnD5ePayload) = onSave(character.copy(payload = updated))
 
-    SectionCard("Class Choices") {
+    SectionHead("Class Choices", top = 24.dp, bottom = 12.dp)
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         if (metamagicSlots > 0) {
             ChoiceGroup("Metamagic (${payload.metamagicKnown.size}/$metamagicSlots)", Metamagics.all, { it.id }, { it.name },
                 selected = payload.metamagicKnown.toSet(),
@@ -204,7 +365,7 @@ private fun ClassChoicesCard(character: Character, payload: DnD5ePayload, onSave
 private fun toggle(list: List<String>, id: String, on: Boolean): List<String> =
     if (on) (list + id).distinct() else list - id
 
-@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun <T> ChoiceGroup(
     title: String,
@@ -216,8 +377,14 @@ private fun <T> ChoiceGroup(
     single: Boolean = false,
     onToggle: (String, Boolean) -> Unit,
 ) {
-    Text(title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
-    androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Text(
+        title.uppercase(),
+        fontFamily = Cinzel,
+        fontSize = 11.sp,
+        letterSpacing = 2.sp,
+        color = MaterialTheme.natPalette.accent,
+    )
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         options.forEach { opt ->
             val key = id(opt)
             val on = key in selected
@@ -231,49 +398,122 @@ private fun <T> ChoiceGroup(
     }
 }
 
+// ── Skills ───────────────────────────────────────────────────────────────────
+
+/**
+ * iOS Skills: passive-perception callout, then 18 dash-separated rows with
+ * proficiency pips. Android keeps tap-to-roll on each row (pending #19).
+ */
 @Composable
 internal fun SkillsPage(payload: DnD5ePayload, onApplyIntent: (CharacterIntent) -> Unit) {
+    val palette = MaterialTheme.natPalette
     val prof = Proficiency.bonus(payload.level)
     var check by remember { mutableStateOf<CheckRoll?>(null) }
     val effectiveScores = payload.effectiveAbilityScores
     val isHalfling = payload.race.contains("halfling", ignoreCase = true)
     val anySkillBonus = payload.temporarySkillBonus("__any__")
+
     CodexPage {
-        SectionCard("Skills") {
-            DnD5eCatalog.skills.forEachIndexed { index, skill ->
-                if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
-                val proficient = skill.id in payload.effectiveSkillProficiencies
-                val expertise = payload.hasExpertise(skill.id) && proficient
-                val profMult = payload.skillProficiencyMultiplier(skill.id)
-                val abilityMod = effectiveScores.modifier(skill.ability)
-                val effectBonus = payload.temporarySkillBonus(skill.id) + anySkillBonus
-                val mod = abilityMod + prof * profMult + effectBonus
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            val bonuses = buildList {
-                                add(RollBonus(skill.ability.abbreviation, abilityMod))
-                                if (profMult > 0) add(RollBonus(if (expertise) "Expertise" else "Proficiency", prof * profMult))
-                                if (effectBonus != 0) add(RollBonus("Effects", effectBonus))
-                            }
-                            check = CheckRoll("${skill.name} check", bonuses, lucky = isHalfling)
+        // Passive perception callout.
+        val perceptionMult = payload.skillProficiencyMultiplier("perception")
+        val passive = 10 + effectiveScores.modifier(Ability.WISDOM) + prof * perceptionMult +
+            payload.temporarySkillBonus("perception") + anySkillBonus
+        val shape = RoundedCornerShape(3.dp)
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .clip(shape)
+                .background(palette.tileStrong)
+                .border(1.dp, palette.accent.copy(alpha = 0.33f), shape)
+                .padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                "PASSIVE PERCEPTION",
+                fontFamily = Cinzel,
+                fontSize = 11.sp,
+                letterSpacing = 2.5.sp,
+                color = palette.inkMute,
+            )
+            Spacer(Modifier.weight(1f))
+            Text(
+                passive.toString(),
+                fontFamily = Cormorant,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 34.sp,
+                color = palette.accent,
+            )
+        }
+
+        SectionHead("All Skills", top = 24.dp, bottom = 12.dp)
+        DnD5eCatalog.skills.forEachIndexed { index, skill ->
+            if (index > 0) DashedRule()
+            val proficient = skill.id in payload.effectiveSkillProficiencies
+            val expertise = payload.hasExpertise(skill.id) && proficient
+            val profMult = payload.skillProficiencyMultiplier(skill.id)
+            val abilityMod = effectiveScores.modifier(skill.ability)
+            val effectBonus = payload.temporarySkillBonus(skill.id) + anySkillBonus
+            val mod = abilityMod + prof * profMult + effectBonus
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        val bonuses = buildList {
+                            add(RollBonus(skill.ability.abbreviation, abilityMod))
+                            if (profMult > 0) add(RollBonus(if (expertise) "Expertise" else "Proficiency", prof * profMult))
+                            if (effectBonus != 0) add(RollBonus("Effects", effectBonus))
                         }
-                        .padding(vertical = 2.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    ProficiencyDot(proficient, expertise)
-                    Text(skill.name, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f).padding(start = 8.dp))
+                        check = CheckRoll("${skill.name} check", bonuses, lucky = isHalfling)
+                    }
+                    .padding(vertical = 8.dp, horizontal = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                SkillPip(proficient, expertise)
+                Text(
+                    skill.name,
+                    fontFamily = Cormorant,
+                    fontWeight = if (proficient) FontWeight.Medium else FontWeight.Normal,
+                    fontSize = 15.sp,
+                    color = if (proficient) palette.ink else palette.inkSoft,
+                    modifier = Modifier.padding(start = 10.dp),
+                )
+                if (effectBonus != 0) {
                     Text(
-                        skill.ability.abbreviation,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(end = 12.dp),
+                        " ${effectBonus.signed()} effect",
+                        fontFamily = ImFell,
+                        fontStyle = FontStyle.Italic,
+                        fontSize = 11.sp,
+                        color = palette.accentGold,
                     )
-                    Text(mod.signed(), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
                 }
+                Spacer(Modifier.weight(1f))
+                Text(
+                    skill.ability.abbreviation.uppercase(),
+                    fontFamily = Cinzel,
+                    fontSize = 11.sp,
+                    letterSpacing = 1.5.sp,
+                    color = palette.inkMute,
+                    modifier = Modifier.width(32.dp),
+                )
+                Text(
+                    mod.signed(),
+                    fontFamily = Cormorant,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 17.sp,
+                    color = if (proficient) palette.accent else palette.ink,
+                    textAlign = TextAlign.End,
+                    modifier = Modifier.width(36.dp),
+                )
             }
         }
+        Text(
+            "○ untrained · ● proficient · ◆ expertise — tap a skill to roll",
+            fontFamily = ImFell,
+            fontStyle = FontStyle.Italic,
+            fontSize = 11.sp,
+            color = palette.inkMute,
+            modifier = Modifier.padding(top = 12.dp),
+        )
     }
     check?.let { CheckRollDialog(it, onApplyIntent) { check = null } }
 }
@@ -350,97 +590,79 @@ private fun CheckRollDialog(check: CheckRoll, onApplyIntent: (CharacterIntent) -
     )
 }
 
+// ── Combat ───────────────────────────────────────────────────────────────────
+
+/**
+ * iOS Combat order: HP large · Armor/Init/Speed chips · Hit Dice + Death Saves
+ * tiles · Combat Features · Attacks table. Android's interactive extras (attack
+ * flow, slot expend, inspiration setter, effects, conditions, class resources,
+ * rest) follow after Attacks, restyled — all pending #19's actions layer.
+ */
 @Composable
 internal fun CombatPage(character: Character, payload: DnD5ePayload, onApplyIntent: (CharacterIntent) -> Unit) {
-    val dexMod = payload.abilityScores.modifier(Ability.DEXTERITY)
-    val acBreakdown = ArmorClassCalculator.compute(payload)
+    val palette = MaterialTheme.natPalette
     var spendHitDie by remember { mutableStateOf(false) }
     var attacking by remember { mutableStateOf(false) }
     var rollingInit by remember { mutableStateOf(false) }
+    var initDialog by remember { mutableStateOf(false) }
+    var acBreakdown by remember { mutableStateOf(false) }
+    var deathDialog by remember { mutableStateOf(false) }
+
     CodexPage {
-        SectionCard("Hit Points") {
-            StatLine("Current / Max", "${payload.currentHp} / ${payload.effectiveMaxHp}")
-            if (payload.temporaryHp > 0) StatLine("Temporary", "+${payload.temporaryHp}")
-        }
-        if (payload.currentHp == 0 || !payload.deathSaves.isCleared) {
-            DeathSavesCard(payload, onApplyIntent)
-        }
-        SectionCard("Defense & Movement") {
-            StatLine("Armor Class", acBreakdown.total.toString())
-            // Spell-out the AC sources so the number is legible.
-            Text(
-                acBreakdown.rows.joinToString(" + ") { "${it.label} ${it.value.signed()}" },
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+        HPBlock(payload.currentHp, payload.effectiveMaxHp, payload.temporaryHp, compact = false)
+
+        Spacer(Modifier.height(10.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            StatChip("Armor", payload.armorClass.toString(), Modifier.weight(1f), onClick = { acBreakdown = true })
+            StatChip(
+                "Init",
+                payload.initiative?.toString() ?: payload.initiativeBonus.signed(),
+                Modifier.weight(1f),
+                highlight = payload.initiative != null,
+                onClick = { if (payload.initiative == null) rollingInit = true else initDialog = true },
             )
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    "Initiative",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.weight(1f),
-                )
-                Text(
-                    payload.initiative?.toString() ?: dexMod.signed(),
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium,
-                    color = if (payload.initiative != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(end = 8.dp),
-                )
-                TextButton(onClick = { rollingInit = true }) { Text(if (payload.initiative != null) "Reroll" else "Roll") }
-                if (payload.initiative != null) {
-                    TextButton(onClick = { onApplyIntent(SetInitiative(null)) }) { Text("Clear") }
-                }
-            }
-            StatLine("Speed", "${payload.effectiveSpeed} ft")
+            StatChip("Speed", "${payload.effectiveSpeed} ft", Modifier.weight(1f))
         }
-        SectionCard("Attack") {
-            Button(onClick = { attacking = true }, enabled = payload.equippedWeapons.isNotEmpty(), modifier = Modifier.fillMaxWidth()) {
-                Text(if (payload.equippedWeapons.isEmpty()) "Equip a weapon to attack" else "Make an attack")
-            }
+
+        Spacer(Modifier.height(10.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            HitDiceTile(payload, Modifier.width(130.dp), onClick = { if (payload.currentHitDice > 0 && payload.classes.isNotEmpty()) spendHitDie = true })
+            DeathSavesTile(payload.deathSaves, Modifier.weight(1f), onClick = { deathDialog = true })
         }
-        SpellSlotsTile(payload, onApplyIntent)
-        SectionCard("Hit Dice") {
-            StatLine("Available", "${payload.currentHitDice} / ${payload.maxHitDice}")
-            payload.classes.forEach { entry ->
-                StatLine(entry.classId.slugToTitle(), "${entry.level}d${DnD5eClasses.hitDie(entry.classId)}")
-            }
-            if (payload.classes.isEmpty()) {
-                Text("—", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            } else {
-                OutlinedButton(enabled = payload.currentHitDice > 0, onClick = { spendHitDie = true }) {
-                    Text("Spend a hit die")
-                }
-            }
+
+        val styles = payload.fightingStyles.mapNotNull(FightingStyles::style)
+        if (styles.isNotEmpty()) {
+            SectionHead("Combat Features", top = 22.dp, bottom = 10.dp)
+            styles.forEach { FeatureBlock(it.name, it.description) }
         }
-        SectionCard("Inspiration") {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    if (payload.hasInspiration) "You hold Inspiration" else "No Inspiration",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (payload.hasInspiration) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.weight(1f),
-                )
-                if (payload.hasInspiration) {
-                    OutlinedButton(onClick = { onApplyIntent(SetInspiration(false)) }) { Text("Use") }
-                } else {
-                    OutlinedButton(onClick = { onApplyIntent(SetInspiration(true)) }) { Text("Grant") }
-                }
-            }
-        }
+
+        SectionHead("Attacks", top = 22.dp, bottom = 8.dp)
+        AttacksTable(payload)
+        Spacer(Modifier.height(10.dp))
+        CodexButton(
+            if (payload.equippedWeapons.isEmpty()) "Equip a weapon to attack" else "Make an attack",
+            Modifier.fillMaxWidth(),
+            enabled = payload.equippedWeapons.isNotEmpty(),
+            onClick = { attacking = true },
+        )
+
+        // ── Android extras (pending #19 actions layer) ──
+        SpellSlotsSection(payload, onApplyIntent)
+        InspirationSection(payload, onApplyIntent)
         EffectsSection(payload, onApplyIntent)
         ConditionsSection(payload, onApplyIntent)
         ClassResourcesSection(payload, onApplyIntent)
-        CompanionsSection(character, onApplyIntent)
         RestSection(onApplyIntent)
+        Spacer(Modifier.height(8.dp))
     }
+
     if (spendHitDie) {
         val hitDie = DnD5eClasses.hitDie(payload.classes.first().classId)
         val conMod = payload.abilityScores.modifier(Ability.CONSTITUTION)
         RollDialog(
             title = "Spend a hit die",
             spec = RollSpec.d(1, hitDie),
-            bonuses = if (conMod != 0) listOf(au.com.evonet.nat20.dnd5e.core.RollBonus("CON", conMod)) else emptyList(),
+            bonuses = if (conMod != 0) listOf(RollBonus("CON", conMod)) else emptyList(),
             allowAdvantageToggle = false,
             onSettled = { result -> onApplyIntent(SpendHitDie(maxOf(1, result.total))) },
             onDismiss = { spendHitDie = false },
@@ -458,87 +680,163 @@ internal fun CombatPage(character: Character, payload: DnD5ePayload, onApplyInte
             onDismiss = { rollingInit = false },
         )
     }
+    if (initDialog) {
+        AlertDialog(
+            onDismissRequest = { initDialog = false },
+            title = { Text("Initiative") },
+            text = { Text("Rolled initiative: ${payload.initiative}", style = MaterialTheme.typography.bodyMedium) },
+            confirmButton = {
+                TextButton(onClick = { initDialog = false; rollingInit = true }) { Text("Reroll") }
+            },
+            dismissButton = {
+                Row {
+                    TextButton(onClick = { onApplyIntent(SetInitiative(null)); initDialog = false }) { Text("Clear") }
+                    TextButton(onClick = { initDialog = false }) { Text("Close") }
+                }
+            },
+        )
+    }
+    if (acBreakdown) AcBreakdownDialog(payload) { acBreakdown = false }
+    if (deathDialog) DeathSavesDialog(payload, onApplyIntent) { deathDialog = false }
 }
 
-/**
- * A compact Combat-tab tile to expend a spell slot without casting a specific
- * spell (A15) — e.g. fuelling Divine Smite or a slot-cost feature mid-combat,
- * reachable from Combat rather than only the Spells tab. Each tap on "−" drains
- * one slot of that level via [ExpendSpellSlot] (pact slots merged in by level).
- */
+/** Hit-dice tile: remaining over total with the class die (tap to spend). */
 @Composable
-private fun SpellSlotsTile(payload: DnD5ePayload, onApplyIntent: (CharacterIntent) -> Unit) {
-    val maxSlots = payload.totalMaxSlots
-    if (maxSlots.isEmpty()) return
-    SectionCard("Spell Slots") {
-        maxSlots.keys.sorted().forEach { level ->
-            val max = maxSlots[level] ?: 0
-            val remaining = payload.totalCurrentSlots[level] ?: 0
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                val isPact = payload.pactSlotLevel == level && payload.maxPactSlots > 0
-                Text(
-                    "Level $level" + if (isPact) " (incl. pact)" else "",
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.weight(1f),
+private fun HitDiceTile(payload: DnD5ePayload, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    val palette = MaterialTheme.natPalette
+    val shape = RoundedCornerShape(3.dp)
+    val dieLabel = payload.classes.singleOrNull()
+        ?.let { "/${payload.maxHitDice}d${DnD5eClasses.hitDie(it.classId)}" }
+        ?: "/${payload.maxHitDice}"
+    Column(
+        modifier
+            .clip(shape)
+            .background(palette.tile)
+            .border(1.dp, palette.accent.copy(alpha = 0.2f), shape)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(3.dp),
+    ) {
+        Text("HIT DICE", fontFamily = Cinzel, fontSize = 11.sp, letterSpacing = 2.5.sp, color = palette.inkMute)
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text(
+                payload.currentHitDice.toString(),
+                fontFamily = Cormorant,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 17.sp,
+                color = palette.accent,
+                modifier = Modifier.alignByBaseline(),
+            )
+            Text(
+                dieLabel,
+                fontFamily = Cormorant,
+                fontSize = 12.sp,
+                color = palette.inkSoft.copy(alpha = 0.6f),
+                modifier = Modifier.alignByBaseline(),
+            )
+        }
+    }
+}
+
+/** Death-saves tile: three success circles + three failure diamonds (tap to manage). */
+@Composable
+private fun DeathSavesTile(ds: DeathSaves, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    val palette = MaterialTheme.natPalette
+    val shape = RoundedCornerShape(3.dp)
+    Column(
+        modifier
+            .clip(shape)
+            .background(palette.tile)
+            .border(1.dp, palette.accent.copy(alpha = 0.2f), shape)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Text("DEATH SAVES", fontFamily = Cinzel, fontSize = 11.sp, letterSpacing = 2.5.sp, color = palette.inkMute)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+            repeat(3) { i ->
+                Box(
+                    Modifier
+                        .size(9.dp)
+                        .clip(androidx.compose.foundation.shape.CircleShape)
+                        .then(
+                            if (i < ds.successes) Modifier.background(palette.accent)
+                            else Modifier.border(1.dp, palette.accent.copy(alpha = 0.53f), androidx.compose.foundation.shape.CircleShape),
+                        ),
                 )
-                Text(
-                    "●".repeat(remaining) + "○".repeat((max - remaining).coerceAtLeast(0)),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(end = 8.dp),
+            }
+            Spacer(Modifier.width(8.dp))
+            repeat(3) { i ->
+                Box(
+                    Modifier
+                        .size(9.dp)
+                        .clip(DiamondShape)
+                        .then(
+                            if (i < ds.failures) Modifier.background(palette.danger)
+                            else Modifier.border(1.dp, palette.danger.copy(alpha = 0.5f), DiamondShape),
+                        ),
                 )
-                OutlinedButton(enabled = remaining > 0, onClick = { onApplyIntent(ExpendSpellSlot(level)) }) { Text("Expend") }
             }
         }
     }
 }
 
+/** The full death-save management flow (roll + manual marks), kept from A7f-2. */
 @Composable
-private fun DeathSavesCard(payload: DnD5ePayload, onApplyIntent: (CharacterIntent) -> Unit) {
+private fun DeathSavesDialog(payload: DnD5ePayload, onApplyIntent: (CharacterIntent) -> Unit, onDismiss: () -> Unit) {
     val ds = payload.deathSaves
     var rolling by remember { mutableStateOf(false) }
-    SectionCard("Death Saves") {
-        val status = when {
-            ds.isDead -> "Dead — three failures"
-            ds.isStable -> "Stable — three successes"
-            else -> "Dying — roll a death save each turn"
-        }
-        Text(
-            status,
-            style = MaterialTheme.typography.bodyMedium,
-            color = if (ds.isDead) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("Successes", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-            Text(
-                "●".repeat(ds.successes) + "○".repeat(3 - ds.successes),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.primary,
-            )
-        }
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("Failures", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-            Text(
-                "✕".repeat(ds.failures) + "·".repeat(3 - ds.failures),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.error,
-            )
-        }
-        val resolved = ds.isStable || ds.isDead
-        if (!resolved) {
-            Button(onClick = { rolling = true }, modifier = Modifier.fillMaxWidth()) { Text("Roll a death save") }
-        }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(enabled = !resolved, onClick = { onApplyIntent(MarkDeathSave(DeathSaveOutcome.SUCCESS)) }) { Text("Success") }
-            OutlinedButton(enabled = !resolved, onClick = { onApplyIntent(MarkDeathSave(DeathSaveOutcome.FAILURE)) }) { Text("Failure") }
-            OutlinedButton(enabled = !ds.isCleared, onClick = { onApplyIntent(MarkDeathSave(DeathSaveOutcome.CLEAR)) }) { Text("Clear") }
-        }
-        Text(
-            "Roll auto-applies the result; the manual buttons are for physical dice.",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Death saves") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                val status = when {
+                    ds.isDead -> "Dead — three failures"
+                    ds.isStable -> "Stable — three successes"
+                    payload.currentHp == 0 -> "Dying — roll a death save each turn"
+                    else -> "Not dying"
+                }
+                Text(
+                    status,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (ds.isDead) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text("Successes", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                    Text(
+                        "●".repeat(ds.successes) + "○".repeat(3 - ds.successes),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text("Failures", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                    Text(
+                        "✕".repeat(ds.failures) + "·".repeat(3 - ds.failures),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+                val resolved = ds.isStable || ds.isDead
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(enabled = !resolved, onClick = { onApplyIntent(MarkDeathSave(DeathSaveOutcome.SUCCESS)) }) { Text("Success") }
+                    OutlinedButton(enabled = !resolved, onClick = { onApplyIntent(MarkDeathSave(DeathSaveOutcome.FAILURE)) }) { Text("Failure") }
+                    OutlinedButton(enabled = !ds.isCleared, onClick = { onApplyIntent(MarkDeathSave(DeathSaveOutcome.CLEAR)) }) { Text("Clear") }
+                }
+                Text(
+                    "Roll auto-applies the result; the manual buttons are for physical dice.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        },
+        confirmButton = {
+            val resolved = ds.isStable || ds.isDead
+            TextButton(enabled = !resolved, onClick = { rolling = true }) { Text("Roll a death save") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Close") } },
+    )
     if (rolling) {
         RollDialog(
             title = "Death save",
@@ -550,159 +848,220 @@ private fun DeathSavesCard(payload: DnD5ePayload, onApplyIntent: (CharacterInten
     }
 }
 
+/** iOS attacks table: Weapon / Atk / Damage / Range columns over hairline rules. */
 @Composable
-internal fun LorePage(character: Character, payload: DnD5ePayload) {
-    CodexPage {
-        SectionCard("Identity") {
-            StatLine("Name", character.name)
-            StatLine("Race", payload.race.takeIf { it.isNotEmpty() }?.slugToTitle() ?: "—")
-            StatLine(
-                "Class",
-                payload.classes.takeIf { it.isNotEmpty() }
-                    ?.joinToString(" / ") { "${it.classId.slugToTitle()} ${it.level}" }
-                    ?: "—",
-            )
-            StatLine("Background", payload.background.takeIf { it.isNotEmpty() }?.let { DnD5eCatalog.background(it)?.name ?: it.slugToTitle() } ?: "—")
-            StatLine("Level", payload.level.toString())
+private fun AttacksTable(payload: DnD5ePayload) {
+    val palette = MaterialTheme.natPalette
+    val attacks = payload.equippedWeapons.mapNotNull { item ->
+        AttackMath.forWeapon(item, payload)?.let { item.weapon!! to it }
+    }
+    if (attacks.isEmpty()) {
+        DashedNotice("No weapons equipped — ready one on the Items tab.")
+        return
+    }
+    Column(Modifier.fillMaxWidth()) {
+        Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            AttackHeaderCell("WEAPON", Modifier.weight(1f))
+            AttackHeaderCell("ATK", Modifier.width(44.dp))
+            AttackHeaderCell("DAMAGE", Modifier.width(80.dp))
+            AttackHeaderCell("RANGE", Modifier.width(70.dp))
         }
-        val traits = RaceTraits.reminders(payload.race)
-        if (traits.isNotEmpty()) {
-            SectionCard("Race Traits") {
-                traits.forEachIndexed { i, t ->
-                    if (i > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
-                    Column(Modifier.padding(vertical = 2.dp)) {
-                        Text(t.title, fontWeight = FontWeight.Medium)
-                        Text(t.detail, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
+        attacks.forEach { (weapon, attack) ->
+            HairlineRule()
+            Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        attack.name,
+                        fontFamily = Cormorant,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 15.sp,
+                        color = palette.ink,
+                        maxLines = 1,
+                    )
+                    Text(
+                        if (weapon.kind == WeaponProperties.Kind.RANGED) "ranged · ${attack.damageType}" else "melee · ${attack.damageType}",
+                        fontFamily = ImFell,
+                        fontStyle = FontStyle.Italic,
+                        fontSize = 11.sp,
+                        color = palette.inkMute,
+                        maxLines = 1,
+                    )
                 }
-            }
-        }
-        SectionCard("Backstory") {
-            val manner = listOf(
-                "Personality" to payload.personality,
-                "Ideals" to payload.ideals,
-                "Bonds" to payload.bonds,
-                "Flaws" to payload.flaws,
-            )
-            val hasContent = payload.alignment != null || manner.any { it.second.isNotBlank() } || payload.backstory.isNotBlank()
-            if (!hasContent) {
                 Text(
-                    "No alignment or backstory yet — add them from Edit Character.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    attack.attackBonuses.sumOf { it.value }.signed(),
+                    fontFamily = Cormorant,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 17.sp,
+                    color = palette.accent,
+                    modifier = Modifier.width(44.dp),
                 )
-            } else {
-                payload.alignment?.let { StatLine("Alignment", it) }
-                manner.forEach { (label, text) ->
-                    if (text.isNotBlank()) MannerBlock(label, text)
-                }
-                if (payload.backstory.isNotBlank()) MannerBlock("Backstory", payload.backstory)
+                val damageBonus = attack.damageBonuses.sumOf { it.value }
+                Text(
+                    weapon.damageDice + (if (damageBonus != 0) damageBonus.signed() else ""),
+                    fontFamily = Cormorant,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 13.sp,
+                    color = palette.ink,
+                    modifier = Modifier.width(80.dp),
+                )
+                Text(
+                    weapon.normalRange?.let { n -> "$n${weapon.longRange?.let { "/$it" } ?: ""} ft" } ?: "Melee",
+                    fontFamily = EbGaramond,
+                    fontSize = 12.sp,
+                    color = palette.inkSoft,
+                    modifier = Modifier.width(70.dp),
+                )
             }
         }
+        HairlineRule()
     }
 }
 
-/** A manner entry: small-caps label over an italic Cormorant quote. */
 @Composable
-private fun MannerBlock(label: String, text: String) {
+private fun AttackHeaderCell(text: String, modifier: Modifier) {
+    Text(
+        text,
+        fontFamily = Cinzel,
+        fontSize = 11.sp,
+        letterSpacing = 1.8.sp,
+        color = MaterialTheme.natPalette.inkMute,
+        modifier = modifier,
+    )
+}
+
+/**
+ * Combat-tab slot expend (Android extra, pending #19): tap a slot tile to burn
+ * a slot without casting — Divine Smite and slot-cost features mid-combat.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun SpellSlotsSection(payload: DnD5ePayload, onApplyIntent: (CharacterIntent) -> Unit) {
+    val maxSlots = payload.totalMaxSlots
+    if (maxSlots.isEmpty()) return
+    SectionHead("Spell Slots", top = 22.dp, bottom = 10.dp)
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        maxSlots.keys.sorted().forEach { level ->
+            val max = maxSlots[level] ?: 0
+            val remaining = payload.totalCurrentSlots[level] ?: 0
+            SlotTile(level, remaining, max, onClick = { if (remaining > 0) onApplyIntent(ExpendSpellSlot(level)) })
+        }
+    }
+    Text(
+        "Tap a tile to expend a slot" + (if (payload.maxPactSlots > 0) " (pact slots merged at level ${payload.pactSlotLevel})" else "") + ".",
+        fontFamily = ImFell,
+        fontStyle = FontStyle.Italic,
+        fontSize = 11.sp,
+        color = MaterialTheme.natPalette.inkMute,
+        modifier = Modifier.padding(top = 6.dp),
+    )
+}
+
+/** Inspiration grant/spend (Android extra — iOS sets it from the actions layer). */
+@Composable
+private fun InspirationSection(payload: DnD5ePayload, onApplyIntent: (CharacterIntent) -> Unit) {
     val palette = MaterialTheme.natPalette
-    Column(Modifier.padding(vertical = 2.dp)) {
+    SectionHead("Inspiration", top = 22.dp, bottom = 10.dp)
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text(
-            label.uppercase(),
-            style = MaterialTheme.typography.labelMedium,
-            color = palette.accent,
-            letterSpacing = 1.5.sp,
-        )
-        Text(
-            text,
+            if (payload.hasInspiration) "You hold Inspiration" else "No Inspiration",
             fontFamily = Cormorant,
             fontStyle = FontStyle.Italic,
             fontSize = 15.sp,
-            color = palette.ink,
+            color = if (payload.hasInspiration) palette.accent else palette.inkSoft,
+            modifier = Modifier.weight(1f),
+        )
+        CodexButton(
+            if (payload.hasInspiration) "Use" else "Grant",
+            onClick = { onApplyIntent(SetInspiration(!payload.hasInspiration)) },
         )
     }
 }
 
-// ── Shared atoms ─────────────────────────────────────────────────────────────
+// ── Lore ─────────────────────────────────────────────────────────────────────
 
+/**
+ * iOS Lore order: identity grid · Bearing · Manner quote blocks · Backstory ·
+ * Allies · Minions · Features & Traits. Android's payload has no Player/XP,
+ * bearing, or allies fields yet — those sections are omitted (payload gap).
+ * Minions hosts the companions/summons cards moved from Combat.
+ */
+@Composable
+internal fun LorePage(character: Character, payload: DnD5ePayload, onApplyIntent: (CharacterIntent) -> Unit) {
+    val palette = MaterialTheme.natPalette
+    CodexPage {
+        // Identity grid (2-col). Player / XP are an iOS payload feature — omitted.
+        Row(Modifier.fillMaxWidth()) {
+            IdentityCell(
+                "Background",
+                payload.background.takeIf { it.isNotEmpty() }?.let { DnD5eCatalog.background(it)?.name ?: it.slugToTitle() },
+                Modifier.weight(1f),
+            )
+            IdentityCell("Alignment", payload.alignment, Modifier.weight(1f))
+        }
+
+        val manner = listOf(
+            "Personality" to payload.personality,
+            "Ideals" to payload.ideals,
+            "Bonds" to payload.bonds,
+            "Flaws" to payload.flaws,
+        ).filter { it.second.isNotBlank() }
+        if (manner.isNotEmpty()) {
+            SectionHead("Manner", top = 22.dp, bottom = 10.dp)
+            manner.forEach { (label, text) -> QuoteBlock(label, text) }
+        }
+
+        if (payload.backstory.isNotBlank()) {
+            SectionHead("Backstory", top = 22.dp, bottom = 10.dp)
+            Text(
+                payload.backstory,
+                fontFamily = EbGaramond,
+                fontSize = 13.sp,
+                color = palette.inkSoft,
+            )
+        }
+        if (manner.isEmpty() && payload.backstory.isBlank() && payload.alignment == null) {
+            Spacer(Modifier.height(14.dp))
+            DashedNotice("No alignment or backstory yet — add them from Edit Character.")
+        }
+
+        // Minions — companions & summons (moved from Combat per iOS).
+        MinionsSection(character, onApplyIntent)
+
+        // Features & traits: racial traits + feats + background feature.
+        val features = buildList<Pair<String, String>> {
+            val race = DnD5eCatalog.race(payload.race)
+            race?.traits?.forEach { add(it.name to it.body) }
+            RaceTraits.reminders(payload.race).forEach { r ->
+                if (none { it.first.equals(r.title, ignoreCase = true) }) add(r.title to r.detail)
+            }
+            payload.chosenFeats.forEach { id ->
+                val feat = Feats.feat(id)
+                add((feat?.name ?: id.slugToTitle()) to (feat?.description ?: ""))
+            }
+            payload.background.takeIf { it.isNotEmpty() }?.let { bg ->
+                DnD5eCatalog.background(bg)?.feature?.let { add(it.name to it.body) }
+            }
+        }
+        if (features.isNotEmpty()) {
+            SectionHead("Features & Traits", top = 22.dp, bottom = 10.dp)
+            features.forEach { (title, body) -> FeatureBlock(title, body) }
+        }
+        Spacer(Modifier.height(8.dp))
+    }
+}
+
+// ── Shared page scaffold & helpers ───────────────────────────────────────────
+
+/** Scrollable page body: h22 gutters, no implicit spacing (SectionHeads own rhythm). */
 @Composable
 internal fun CodexPage(content: @Composable () -> Unit) {
     Column(
         Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+            .padding(start = 22.dp, end = 22.dp, bottom = 16.dp),
     ) {
         content()
-    }
-}
-
-@Composable
-internal fun SectionCard(title: String, content: @Composable () -> Unit) {
-    val palette = MaterialTheme.natPalette
-    androidx.compose.foundation.layout.Box(
-        Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .parchmentTile(strong = true)
-            .border(1.dp, palette.accentGold.copy(alpha = 0.55f), RoundedCornerShape(12.dp)),
-    ) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(
-                title.uppercase(),
-                style = MaterialTheme.typography.labelLarge,
-                color = palette.accent,
-                letterSpacing = 1.5.sp,
-            )
-            HorizontalDivider(color = palette.accentGold.copy(alpha = 0.45f), thickness = 1.dp)
-            content()
-        }
-    }
-}
-
-@Composable
-private fun AbilityMedallion(ability: Ability, scores: AbilityScores, modifier: Modifier = Modifier) {
-    val score = scores.score(ability)
-    val palette = MaterialTheme.natPalette
-    androidx.compose.foundation.layout.Box(
-        modifier
-            .clip(RoundedCornerShape(10.dp))
-            .parchmentTile(strong = true)
-            .border(1.dp, palette.accentGold.copy(alpha = 0.5f), RoundedCornerShape(10.dp)),
-    ) {
-        Column(
-            Modifier.fillMaxWidth().padding(vertical = 12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(2.dp),
-        ) {
-            Text(
-                ability.abbreviation.uppercase(),
-                style = MaterialTheme.typography.labelMedium,
-                color = palette.accent,
-                letterSpacing = 1.sp,
-            )
-            Text(
-                AbilityScores.modifier(score).signed(),
-                style = MaterialTheme.typography.displaySmall,
-                fontSize = 26.sp,
-                color = palette.ink,
-            )
-            Text(score.toString(), style = MaterialTheme.typography.bodyMedium, color = palette.inkSoft)
-        }
-    }
-}
-
-@Composable
-internal fun StatLine(label: String, value: String) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.weight(1f),
-        )
-        Text(value, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
     }
 }
 
@@ -712,32 +1071,3 @@ internal fun Int.signed(): String = if (this >= 0) "+$this" else "$this"
 /** The character's primary (first) class, resolved through the catalogue. */
 private fun DnD5ePayload.primaryClass() =
     classes.firstOrNull()?.classId?.let(DnD5eCatalog::characterClass)
-
-@Composable
-private fun ProficiencyLine(label: String, value: String, proficient: Boolean, onClick: (() -> Unit)? = null) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
-            .padding(vertical = 2.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        ProficiencyDot(proficient)
-        Text(
-            label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.weight(1f).padding(start = 8.dp),
-        )
-        Text(value, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
-    }
-}
-
-@Composable
-private fun ProficiencyDot(proficient: Boolean, expertise: Boolean = false) {
-    Text(
-        if (expertise) "◉" else if (proficient) "●" else "○",
-        style = MaterialTheme.typography.bodySmall,
-        color = if (proficient) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
-    )
-}

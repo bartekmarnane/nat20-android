@@ -1,15 +1,13 @@
 package au.com.evonet.nat20.ui.codex
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -23,19 +21,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import au.com.evonet.nat20.dnd5e.AdvanceRound
 import au.com.evonet.nat20.dnd5e.ApplyEffect
+import au.com.evonet.nat20.dnd5e.CancelEffect
 import au.com.evonet.nat20.dnd5e.DnD5ePayload
 import au.com.evonet.nat20.dnd5e.EndConcentration
-import au.com.evonet.nat20.dnd5e.CancelEffect
 import au.com.evonet.nat20.dnd5e.RollConcentrationSave
 import au.com.evonet.nat20.dnd5e.SpellEffectCatalog
 import au.com.evonet.nat20.dnd5e.savingThrowBonus
-import au.com.evonet.nat20.dnd5e.core.ACOverrideFormula
 import au.com.evonet.nat20.dnd5e.core.Ability
 import au.com.evonet.nat20.dnd5e.core.ActiveEffect
 import au.com.evonet.nat20.dnd5e.core.EffectDuration
@@ -46,51 +43,62 @@ import au.com.evonet.nat20.dnd5e.core.RollBonus
 import au.com.evonet.nat20.dnd5e.core.RollSpec
 import au.com.evonet.nat20.domain.CharacterIntent
 import au.com.evonet.nat20.ui.roll.RollResultView
-
-private val BuffGreen = Color(0xFF246B29)
-private val DebuffRed = Color(0xFF8C1A1A)
+import au.com.evonet.nat20.ui.theme.Cormorant
+import au.com.evonet.nat20.ui.theme.ImFell
+import au.com.evonet.nat20.ui.theme.natPalette
 
 /**
- * The Combat-tab **Active Effects** section (A17): a concentration banner with
- * an End button, plus chips for every live effect (green buff / red debuff /
- * gold mixed). Tapping a chip opens its detail — source, duration, full modifier
- * list — with a Cancel affordance. All edits journal in-campaign.
+ * The Combat-tab **Active Effects** extra (A17, Android interaction layer —
+ * pending #19): a concentration banner with Save/End, chips for every live
+ * effect (tap → detail + cancel), free-text riders, round advance and ally-cast
+ * receive. Chrome restyled to SectionHead + codex chips (parity #15).
  */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun EffectsSection(payload: DnD5ePayload, onApplyIntent: (CharacterIntent) -> Unit) {
+    val palette = MaterialTheme.natPalette
     var detail by remember { mutableStateOf<ActiveEffect?>(null) }
     var savingFocus by remember { mutableStateOf<String?>(null) }
     var receivingAlly by remember { mutableStateOf(false) }
     val hasRoundBound = payload.activeEffects.any { it.duration is EffectDuration.Rounds }
 
-    SectionCard("Active Effects") {
+    SectionHead("Active Effects", top = 22.dp, bottom = 10.dp)
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         payload.concentratingOn?.let { focus ->
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text("Concentrating on $focus", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary, modifier = Modifier.weight(1f))
+                Text(
+                    "Concentrating on $focus",
+                    fontFamily = Cormorant,
+                    fontStyle = FontStyle.Italic,
+                    fontSize = 15.sp,
+                    color = palette.accent,
+                    modifier = Modifier.weight(1f),
+                )
                 TextButton(onClick = { savingFocus = focus }) { Text("Save") }
                 TextButton(onClick = { onApplyIntent(EndConcentration()) }) { Text("End") }
             }
         }
         if (payload.activeEffects.isEmpty()) {
-            Text("No lasting effects.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            DashedNotice("No lasting effects.")
         } else {
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                payload.activeEffects.forEach { e -> EffectChip(e) { detail = e } }
-            }
+            EffectStrip(payload.activeEffects) { detail = it }
         }
         // Free-text rules the engine doesn't model mechanically (e.g. "Double speed, extra action").
         val freeText = payload.activeEffects.flatMap { e -> e.modifiers.filterIsInstance<EffectModifier.FreeText>().map { e.name to it.text } }
-        if (freeText.isNotEmpty()) {
-            freeText.forEach { (name, text) ->
-                Text("• $name: $text", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
+        freeText.forEach { (name, text) ->
+            Text(
+                "• $name: $text",
+                fontFamily = ImFell,
+                fontStyle = FontStyle.Italic,
+                fontSize = 11.sp,
+                color = palette.inkMute,
+            )
         }
+        Spacer(Modifier.height(2.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             if (hasRoundBound) {
-                OutlinedButton(onClick = { onApplyIntent(AdvanceRound()) }) { Text("Advance round") }
+                CodexButton("Advance round", Modifier.weight(1f), onClick = { onApplyIntent(AdvanceRound()) })
             }
-            OutlinedButton(onClick = { receivingAlly = true }) { Text("Receive ally's spell") }
+            CodexButton("Receive ally's spell", Modifier.weight(1f), onClick = { receivingAlly = true })
         }
     }
 
@@ -132,6 +140,7 @@ private fun ConcentrationSaveDialog(
     onApplyIntent: (CharacterIntent) -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val palette = MaterialTheme.natPalette
     var dc by remember { mutableIntStateOf(10) }
     var maintained by remember { mutableStateOf<Boolean?>(null) }
     val conBonus = payload.savingThrowBonus(Ability.CONSTITUTION)
@@ -167,35 +176,13 @@ private fun ConcentrationSaveDialog(
                         if (ok) "Concentration holds." else "Concentration broken.",
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
-                        color = if (ok) BuffGreen else DebuffRed,
+                        color = if (ok) palette.accent else palette.danger,
                     )
                 }
             }
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text("Done") } },
     )
-}
-
-@Composable
-private fun EffectChip(effect: ActiveEffect, onClick: () -> Unit) {
-    val tone = effect.tone()
-    Row(
-        Modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(tone.copy(alpha = 0.16f))
-            .clickable { onClick() }
-            .padding(horizontal = 10.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(effect.name, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, color = tone)
-        val summary = effect.modifiers.joinToString(" · ") { it.shortLabel() }.takeIf { it.isNotBlank() }
-        if (summary != null) {
-            Text("  $summary", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        (effect.duration as? EffectDuration.Rounds)?.let { r ->
-            Text("  ${r.count} rd", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = tone)
-        }
-    }
 }
 
 /**
@@ -237,8 +224,9 @@ private fun AllySpellDialog(onApply: (String, String) -> Unit, onDismiss: () -> 
     )
 }
 
+/** Effect detail: source, duration, modifiers, and a cancel affordance. */
 @Composable
-private fun EffectDetailDialog(effect: ActiveEffect, onCancelEffect: () -> Unit, onDismiss: () -> Unit) {
+internal fun EffectDetailDialog(effect: ActiveEffect, onCancelEffect: () -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(effect.name) },
@@ -246,7 +234,7 @@ private fun EffectDetailDialog(effect: ActiveEffect, onCancelEffect: () -> Unit,
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text("Source: ${effect.source.label()}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text("Duration: ${effect.duration.label()}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                effect.modifiers.forEach { Text("• ${it.shortLabel()}", style = MaterialTheme.typography.bodyMedium) }
+                effect.modifiers.forEach { Text("• ${it.impactLabel()}", style = MaterialTheme.typography.bodyMedium) }
             }
         },
         confirmButton = { TextButton(onClick = onCancelEffect) { Text("Cancel effect", color = MaterialTheme.colorScheme.error) } },
@@ -255,45 +243,6 @@ private fun EffectDetailDialog(effect: ActiveEffect, onCancelEffect: () -> Unit,
 }
 
 // ── Display helpers ───────────────────────────────────────────────────────────
-
-@Composable
-private fun ActiveEffect.tone(): Color {
-    val negative = modifiers.any {
-        (it is EffectModifier.AcBonus && it.value < 0) || (it is EffectModifier.AttackBonus && it.value < 0) ||
-            (it is EffectModifier.DamageBonus && it.value < 0) || (it is EffectModifier.SaveBonus && it.value < 0) ||
-            (it is EffectModifier.AbilityDelta && it.value < 0) || it is EffectModifier.Condition
-    }
-    val positive = modifiers.any {
-        (it is EffectModifier.AcBonus && it.value > 0) || it is EffectModifier.AcOverride ||
-            (it is EffectModifier.AttackBonus && it.value > 0) || (it is EffectModifier.DamageBonus && it.value > 0) ||
-            (it is EffectModifier.SaveBonus && it.value > 0) || it is EffectModifier.DamageResistance || it is EffectModifier.AdvantageOn
-    }
-    return when {
-        negative && positive -> MaterialTheme.colorScheme.primary // mixed → gold
-        negative -> DebuffRed
-        else -> BuffGreen
-    }
-}
-
-private fun EffectModifier.shortLabel(): String = when (this) {
-    is EffectModifier.AcBonus -> "${value.signs()} AC"
-    is EffectModifier.AcOverride -> when (val f = formula) {
-        is ACOverrideFormula.BaseDex -> "AC = ${f.base} + DEX"
-        is ACOverrideFormula.BaseDexAbility -> "AC = ${f.base} + DEX + ${f.ability.abbreviation}"
-    }
-    is EffectModifier.AbilityDelta -> "${value.signs()} ${ability.abbreviation}"
-    is EffectModifier.AbilitySet -> "${ability.abbreviation} = $value"
-    is EffectModifier.SaveBonus -> "${value.signs()} ${ability?.abbreviation ?: "all"} save"
-    is EffectModifier.AttackBonus -> "${value.signs()} attack"
-    is EffectModifier.DamageBonus -> "${value.signs()} damage"
-    is EffectModifier.SkillBonus -> "${value.signs()} ${if (skillId == "__any__") "one" else skillId} skill"
-    is EffectModifier.DamageResistance -> "resist $type"
-    is EffectModifier.AdvantageOn -> "adv: $descriptor"
-    is EffectModifier.Condition -> name
-    is EffectModifier.FreeText -> text
-}
-
-private fun Int.signs(): String = if (this >= 0) "+$this" else "$this"
 
 private fun EffectSource.label(): String = when (this) {
     is EffectSource.Spell -> "Spell"

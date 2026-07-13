@@ -1,21 +1,25 @@
 package au.com.evonet.nat20.ui.codex
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -26,8 +30,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import au.com.evonet.nat20.dnd5e.AcquireItem
 import au.com.evonet.nat20.dnd5e.AdjustCoin
 import au.com.evonet.nat20.dnd5e.DnD5eCatalog
@@ -39,13 +46,19 @@ import au.com.evonet.nat20.dnd5e.UseItem
 import au.com.evonet.nat20.dnd5e.core.Coin
 import au.com.evonet.nat20.domain.Character
 import au.com.evonet.nat20.domain.CharacterIntent
+import au.com.evonet.nat20.ui.theme.Cinzel
+import au.com.evonet.nat20.ui.theme.Cormorant
+import au.com.evonet.nat20.ui.theme.Diamond
+import au.com.evonet.nat20.ui.theme.EbGaramond
+import au.com.evonet.nat20.ui.theme.ImFell
+import au.com.evonet.nat20.ui.theme.natPalette
 
 /**
- * The codex **Items** tab (A10): coins, equipped gear, and the full inventory
- * grouped by kind. Editable in place — add from the SRD catalogues, equip /
- * unequip, drop, use a consumable, and adjust the purse. Add / drop / use / coin
- * reuse the tested 5e intents; equip is a direct payload toggle (mirrors the iOS
- * build-phase Items view, which never journals an equip change).
+ * The codex **Items** tab, iOS order: coin tiles · INVENTORY head · Add Item
+ * capsule · per-kind groups (canonical order) with diamond rows + seal equip
+ * toggles · Other Proficiencies. Android keeps its adjust-coins, add/drop/use
+ * and equip intents — row tap opens the detail/action dialog (iOS edits via a
+ * sheet; pending #22).
  */
 @Composable
 internal fun ItemsPage(
@@ -54,10 +67,10 @@ internal fun ItemsPage(
     onApplyIntent: (CharacterIntent) -> Unit,
     onSave: (Character) -> Unit,
 ) {
+    val palette = MaterialTheme.natPalette
     var showAdd by remember { mutableStateOf(false) }
     var coinDialog by remember { mutableStateOf(false) }
-
-    fun applyIntent(intent: CharacterIntent) = onApplyIntent(intent)
+    var detail by remember { mutableStateOf<InventoryItem?>(null) }
 
     // Equip is a direct (unlogged) payload toggle in both phases — iOS never journals it.
     fun toggleEquip(item: InventoryItem) {
@@ -65,71 +78,106 @@ internal fun ItemsPage(
     }
 
     CodexPage {
-        SectionCard("Coins") {
-            val present = Coin.entries.filter { (payload.coins[it] ?: 0) > 0 }
-            if (present.isEmpty()) {
-                Text(
-                    "No coins yet.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            } else {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    present.forEach { coin ->
-                        AssistChip(onClick = { coinDialog = true }, label = {
-                            Text("${payload.coins[coin]} ${coin.abbreviation}")
-                        })
-                    }
-                }
-            }
-            OutlinedButton(onClick = { coinDialog = true }) { Text("Adjust coins") }
-        }
-
-        val equipped = payload.inventory.filter { it.equipped }
-        if (equipped.isNotEmpty()) {
-            SectionCard("Equipped") {
-                equipped.forEachIndexed { index, item ->
-                    if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
-                    ItemRow(item, onToggleEquip = { toggleEquip(item) }, onDrop = { applyIntent(DropItem(item.id, item.quantity)) }, onUse = useAction(item) { applyIntent(it) })
-                }
+        // Purse: five coin tiles, tap to adjust.
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Coin.entries.forEach { coin ->
+                CoinTile(coin.abbreviation, payload.coins[coin] ?: 0, Modifier.weight(1f)) { coinDialog = true }
             }
         }
 
-        ItemGroup("Weapons", payload.inventory.filter { it.kind == ItemKind.WEAPON }, ::toggleEquip) { applyIntent(it) }
-        ItemGroup("Armor & Shields", payload.inventory.filter { it.kind == ItemKind.ARMOR || it.kind == ItemKind.SHIELD }, ::toggleEquip) { applyIntent(it) }
-        ItemGroup("Consumables", payload.inventory.filter { it.kind == ItemKind.POTION || it.kind == ItemKind.SCROLL }, ::toggleEquip) { applyIntent(it) }
-        ItemGroup("Gear", payload.inventory.filter { it.kind in GEAR_KINDS }, ::toggleEquip) { applyIntent(it) }
+        SectionHead("Inventory", top = 22.dp, bottom = 12.dp)
+        CodexCapsuleButton("Add Item", onClick = { showAdd = true })
 
         if (payload.inventory.isEmpty()) {
-            Text(
-                "Your pack is empty. Add gear from the SRD catalogue.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Spacer(Modifier.height(12.dp))
+            DashedNotice("Your pack is empty. Add gear from the SRD catalogue.")
+        } else {
+            KIND_ORDER.forEach { kind ->
+                val items = payload.inventory.filter { it.kind == kind }
+                if (items.isEmpty()) return@forEach
+                KindHeader(kindLabel(kind), items.size)
+                items.forEach { item ->
+                    ItemRow(
+                        item = item,
+                        onTap = { detail = item },
+                        onToggleEquip = { toggleEquip(item) },
+                    )
+                }
+            }
         }
 
-        OutlinedButton(onClick = { showAdd = true }, modifier = Modifier.fillMaxWidth()) {
-            Text("Add item")
+        val tools = payload.background.takeIf { it.isNotEmpty() }
+            ?.let { DnD5eCatalog.background(it)?.toolProficiencies }
+            .orEmpty()
+        if (tools.isNotEmpty()) {
+            SectionHead("Other Proficiencies", top = 22.dp, bottom = 12.dp)
+            Text(
+                tools.joinToString(" · "),
+                fontFamily = EbGaramond,
+                fontSize = 13.sp,
+                color = palette.inkSoft,
+            )
         }
+        Spacer(Modifier.height(8.dp))
     }
 
     if (showAdd) {
         AddItemDialog(
-            onPick = { applyIntent(AcquireItem(it)); showAdd = false },
+            onPick = { onApplyIntent(AcquireItem(it)); showAdd = false },
             onDismiss = { showAdd = false },
         )
     }
     if (coinDialog) {
         CoinDialog(
-            onAdjust = { coin, delta -> applyIntent(AdjustCoin(coin, delta)); coinDialog = false },
+            onAdjust = { coin, delta -> onApplyIntent(AdjustCoin(coin, delta)); coinDialog = false },
             onDismiss = { coinDialog = false },
+        )
+    }
+    detail?.let { item ->
+        ItemDetailDialog(
+            item = item,
+            onUse = useAction(item) { onApplyIntent(it); detail = null },
+            onDrop = { onApplyIntent(DropItem(item.id, item.quantity)); detail = null },
+            onToggleEquip = { toggleEquip(item); detail = null },
+            onDismiss = { detail = null },
         )
     }
 }
 
-private val GEAR_KINDS = setOf(ItemKind.GEAR, ItemKind.TOOL, ItemKind.AMMUNITION, ItemKind.WONDROUS, ItemKind.TREASURE)
+/** iOS canonical inventory-group order. */
+private val KIND_ORDER = listOf(
+    ItemKind.WEAPON, ItemKind.ARMOR, ItemKind.SHIELD, ItemKind.AMMUNITION,
+    ItemKind.POTION, ItemKind.SCROLL, ItemKind.WONDROUS, ItemKind.TOOL,
+    ItemKind.GEAR, ItemKind.TREASURE,
+)
 
-/** Drop callback if the item is a consumable that should offer "Use"; null otherwise. */
+private fun kindLabel(kind: ItemKind): String = when (kind) {
+    ItemKind.WEAPON -> "Weapons"
+    ItemKind.ARMOR -> "Armor"
+    ItemKind.SHIELD -> "Shields"
+    ItemKind.AMMUNITION -> "Ammunition"
+    ItemKind.POTION -> "Potions"
+    ItemKind.SCROLL -> "Scrolls"
+    ItemKind.WONDROUS -> "Wondrous Items"
+    ItemKind.TOOL -> "Tools"
+    ItemKind.GEAR -> "Gear"
+    ItemKind.TREASURE -> "Treasure"
+}
+
+@Composable
+private fun KindHeader(name: String, count: Int) {
+    Text(
+        name.uppercase() + if (count > 1) " ($count)" else "",
+        fontFamily = Cinzel,
+        fontWeight = FontWeight.Bold,
+        fontSize = 11.sp,
+        letterSpacing = 2.5.sp,
+        color = MaterialTheme.natPalette.accent,
+        modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
+    )
+}
+
+/** Use callback if the item is a consumable that should offer "Use"; null otherwise. */
 private fun useAction(item: InventoryItem, apply: (CharacterIntent) -> Unit): (() -> Unit)? =
     if (item.kind == ItemKind.POTION || item.kind == ItemKind.SCROLL) {
         { apply(UseItem(item.id, healingRolled = healingFor(item))) }
@@ -141,50 +189,75 @@ private fun useAction(item: InventoryItem, apply: (CharacterIntent) -> Unit): ((
 private fun healingFor(item: InventoryItem): Int? =
     if (item.catalogueID == "potion-of-healing") 7 else null
 
+/** Inventory row: diamond · name ×qty · detail line · seal equip toggle. */
 @Composable
-private fun ItemGroup(
-    title: String,
-    items: List<InventoryItem>,
-    onToggleEquip: (InventoryItem) -> Unit,
-    onApply: (CharacterIntent) -> Unit,
-) {
-    if (items.isEmpty()) return
-    SectionCard(title) {
-        items.forEachIndexed { index, item ->
-            if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
-            ItemRow(
-                item = item,
-                onToggleEquip = { onToggleEquip(item) },
-                onDrop = { onApply(DropItem(item.id, item.quantity)) },
-                onUse = useAction(item, onApply),
-            )
+private fun ItemRow(item: InventoryItem, onTap: () -> Unit, onToggleEquip: () -> Unit) {
+    val palette = MaterialTheme.natPalette
+    val shape = RoundedCornerShape(3.dp)
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .then(if (item.equipped) Modifier.background(palette.accent.copy(alpha = 0.06f)) else Modifier)
+            .clickable(onClick = onTap)
+            .padding(horizontal = 6.dp, vertical = 7.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Diamond(size = 5.dp, fill = palette.accent)
+        Column(Modifier.weight(1f).padding(start = 10.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    item.name,
+                    fontFamily = Cormorant,
+                    fontSize = 15.sp,
+                    color = palette.ink,
+                    maxLines = 1,
+                )
+                if (item.quantity > 1) {
+                    Text(
+                        " × ${item.quantity}",
+                        fontFamily = ImFell,
+                        fontStyle = FontStyle.Italic,
+                        fontSize = 11.sp,
+                        color = palette.inkMute,
+                    )
+                }
+            }
+            itemDetail(item)?.let {
+                Text(
+                    it,
+                    fontFamily = ImFell,
+                    fontStyle = FontStyle.Italic,
+                    fontSize = 11.sp,
+                    color = palette.inkMute,
+                    maxLines = 1,
+                )
+            }
+        }
+        if (item.kind.isEquippable) {
+            SealToggle(item.equipped, onToggleEquip)
         }
     }
 }
 
+/** Seal-check equip toggle: accent seal when worn, hairline circle when stowed. */
 @Composable
-private fun ItemRow(
-    item: InventoryItem,
-    onToggleEquip: () -> Unit,
-    onDrop: () -> Unit,
-    onUse: (() -> Unit)?,
-) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        if (item.kind.isEquippable) {
-            Checkbox(checked = item.equipped, onCheckedChange = { onToggleEquip() })
-        }
-        Column(Modifier.weight(1f)) {
-            Text(
-                if (item.quantity > 1) "${item.name} ×${item.quantity}" else item.name,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium,
+private fun SealToggle(equipped: Boolean, onClick: () -> Unit) {
+    val palette = MaterialTheme.natPalette
+    Box(
+        Modifier
+            .size(22.dp)
+            .clip(CircleShape)
+            .then(
+                if (equipped) Modifier.background(palette.accent)
+                else Modifier.border(1.dp, palette.inkMute, CircleShape),
             )
-            itemDetail(item)?.let {
-                Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (equipped) {
+            Text("✓", fontSize = 12.sp, color = palette.cream)
         }
-        onUse?.let { TextButton(onClick = it) { Text("Use") } }
-        TextButton(onClick = onDrop) { Text("Drop") }
     }
 }
 
@@ -197,6 +270,43 @@ private fun itemDetail(item: InventoryItem): String? = when {
 }
 
 // ── Dialogs ───────────────────────────────────────────────────────────────────
+
+/** Row-tap detail + actions: equip/unequip, use (consumables), drop. */
+@Composable
+private fun ItemDetailDialog(
+    item: InventoryItem,
+    onUse: (() -> Unit)?,
+    onDrop: () -> Unit,
+    onToggleEquip: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(item.name) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(kindLabel(item.kind), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                itemDetail(item)?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
+                if (item.quantity > 1) Text("Quantity: ${item.quantity}", style = MaterialTheme.typography.bodyMedium)
+                if (item.notes.isNotBlank()) Text(item.notes, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        },
+        confirmButton = {
+            Row {
+                if (item.kind.isEquippable) {
+                    TextButton(onClick = onToggleEquip) { Text(if (item.equipped) "Unequip" else "Equip") }
+                }
+                onUse?.let { TextButton(onClick = it) { Text("Use") } }
+            }
+        },
+        dismissButton = {
+            Row {
+                TextButton(onClick = onDrop) { Text("Drop", color = MaterialTheme.colorScheme.error) }
+                TextButton(onClick = onDismiss) { Text("Close") }
+            }
+        },
+    )
+}
 
 private data class CatalogueChoice(val name: String, val category: String, val make: () -> InventoryItem)
 

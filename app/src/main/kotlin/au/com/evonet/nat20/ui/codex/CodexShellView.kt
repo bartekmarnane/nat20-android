@@ -131,7 +131,7 @@ fun CodexShellView(
                 CodexTab.COMBAT -> CombatPage(character, payload, onApplyIntent)
                 CodexTab.SPELLS -> SpellsPage(character, payload, onBrowseSpells, onApplyIntent, onSave)
                 CodexTab.ITEMS -> ItemsPage(character, payload, onApplyIntent, onSave)
-                CodexTab.LORE -> LorePage(character, payload)
+                CodexTab.LORE -> LorePage(character, payload, onApplyIntent)
             }
         }
 
