@@ -48,7 +48,9 @@ Legend: `[ ]` not audited · `[~]` audited, fixes in progress · `[x]` fixed + v
 
 ## Character sheet — 5e 2014 codex
 
-- [ ] 12. Codex shell/chrome (hero row, campaign region, tab bar) — `CodexShellView.swift` ↔ `ui/codex/CodexShellView.kt`
+- [~] 12. Codex shell/chrome (hero row, campaign region, tab bar) — `CodexShellView.swift` ↔ `ui/codex/CodexShellView.kt`
+  - Built 2026-07-13: **shell owns all 2014 chrome.** `CharacterSheetScreen` no longer draws Scaffold/TopAppBar/ActiveCampaignBanner for the 2014 body (2024/PF2e keep the Material Scaffold pending #24/#34); it passes callbacks and keeps hosting the dialogs (StartCampaignDialog, End confirm, DnD5eActionsSheet). Shell = TopNavRow (38dp tileStrong back circle + chevron; Diamond(5)-flanked CURRENT-TAB title Cinzel 12/tracking-5 synced with the pager; phase pill — ACT capsule w/ drawn circle-plus glyph in campaign, EDIT tileStrong capsule while building) → HeroRow (shared 58×70 rect `DropCapSquare`, promoted from RosterScreen into `ui/theme/Ornaments.kt`; name Cormorant 28 semibold italic accent; race + "Level N Class" 13 italic inkSoft) → CampaignRegion (◆ START ADVENTURING ◆ gradient r4 button + PAST ADVENTURES hairline row w/ drawn book glyph when past campaigns exist; in campaign: CampaignJournalBar w/ name 17 italic + stroked JOURNAL button) → OrnamentalDivider → pager → iOS tab bar (Diamond(8) active / 3dp dot inactive, Cinzel 11/tracking-2 labels, cream .6→.96 vertical gradient, 1dp accent@.2 top hairline, nav-bar inset). LevelUpWizard gate unchanged; pages untouched (#13–18).
+  - Divergences: **End affordance** — iOS ends campaigns from campaign settings (#37); Android keeps a small italic "End" text in the journal bar (smallest divergence; move into #37 when built). **Gear omitted** — iOS's gear opens Character Settings; no Android destination yet (gear → #40 Character Settings). Awaiting visual confirm.
 - [ ] 13. Stats tab — `Pages/StatsPage.swift` ↔ `CodexPages.kt`
 - [ ] 14. Skills tab — `Pages/SkillsPage.swift` ↔ `CodexPages.kt`
 - [ ] 15. Combat tab — `Pages/CombatPage.swift` ↔ `CodexPages.kt`

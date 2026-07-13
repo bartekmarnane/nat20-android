@@ -62,6 +62,7 @@ import au.com.evonet.nat20.ui.slugToTitle
 import au.com.evonet.nat20.ui.theme.Cinzel
 import au.com.evonet.nat20.ui.theme.Cormorant
 import au.com.evonet.nat20.ui.theme.Diamond
+import au.com.evonet.nat20.ui.theme.DropCapSquare
 import au.com.evonet.nat20.ui.theme.ImFell
 import au.com.evonet.nat20.ui.theme.OrnamentalDivider
 import au.com.evonet.nat20.ui.theme.Rosette
@@ -312,43 +313,6 @@ private fun CharacterIndexCard(character: Character, campaignName: String?, onCl
             tint = palette.accent,
             modifier = Modifier.size(18.dp).padding(top = 2.dp),
         )
-    }
-}
-
-/** The bordered drop-cap initial: a hairline-ringed square with an accent gradient fill. */
-@Composable
-private fun DropCapSquare(letter: String) {
-    val palette = MaterialTheme.natPalette
-    Box(Modifier.size(width = 58.dp, height = 70.dp), contentAlignment = Alignment.Center) {
-        Box(
-            Modifier
-                .size(width = 58.dp, height = 70.dp)
-                .border(0.8.dp, palette.accent.copy(alpha = 0.53f)),
-        )
-        Box(
-            Modifier
-                .size(width = 52.dp, height = 64.dp)
-                .background(
-                    Brush.linearGradient(listOf(palette.accent.copy(alpha = 0.20f), palette.accent.copy(alpha = 0.067f))),
-                )
-                .border(1.4.dp, palette.accent),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                letter,
-                fontFamily = Cormorant,
-                fontStyle = FontStyle.Italic,
-                fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
-                fontSize = 34.sp,
-                color = palette.accent,
-            )
-            // Inset cream highlight ring inside the accent border (iOS "inner glow").
-            Box(
-                Modifier
-                    .matchParentSize()
-                    .border(2.dp, Color(0xFFFFFADC).copy(alpha = 0.6f)),
-            )
-        }
     }
 }
 

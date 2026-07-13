@@ -34,9 +34,12 @@ import au.com.evonet.nat20.ui.actions.DnD5eActionsSheet
 import au.com.evonet.nat20.ui.codex.CodexShellView
 
 /**
- * The character sheet host: universal chrome + per-ruleset body dispatch (the
- * iOS `CharacterSheetView` pattern). A7b makes the chrome **phase-aware**:
- * building → Edit + Start Campaign; in a campaign → Actions + Journal, with an
+ * The character sheet host: per-ruleset body dispatch (the iOS
+ * `CharacterSheetView` pattern). The 2014 codex owns its own chrome (parity
+ * #12) — nav row, hero, campaign region, tab bar all live in `CodexShellView`,
+ * so the host renders it bare and only keeps the dialogs. The 2024 / PF2e
+ * bodies (later audit items) keep the phase-aware Material Scaffold: building
+ * → Edit + Start Campaign; in a campaign → Actions + Journal, with an
  * active-campaign banner and End in context.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -60,38 +63,57 @@ fun CharacterSheetScreen(
     var showEnd by remember { mutableStateOf(false) }
     var showActions by remember { mutableStateOf(false) }
 
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        containerColor = androidx.compose.ui.graphics.Color.Transparent,
-        topBar = {
-            TopAppBar(
-                title = { Text(character.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                navigationIcon = { TextButton(onClick = onBack) { Text("Back") } },
-                colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(containerColor = androidx.compose.ui.graphics.Color.Transparent),
-                actions = {
-                    if (inCampaign) {
-                        TextButton(onClick = { showActions = true }) { Text("Actions") }
-                        TextButton(onClick = onOpenJournal) { Text("Journal") }
-                    } else {
-                        if (hasPastAdventures) {
-                            TextButton(onClick = onOpenPastAdventures) { Text("Past") }
+    if (character.rulesetId == DnD5eRuleset.RULESET_ID) {
+        // 2014: the shell IS the chrome; dialogs stay hosted here below.
+        CodexShellView(
+            character = character,
+            activeCampaign = activeCampaign,
+            hasPastAdventures = hasPastAdventures,
+            onBack = onBack,
+            onEdit = onEdit,
+            onAct = { showActions = true },
+            onStartCampaign = { showStart = true },
+            onEndCampaign = { showEnd = true },
+            onOpenJournal = onOpenJournal,
+            onOpenPastAdventures = onOpenPastAdventures,
+            onBrowseSpells = onBrowseSpells,
+            onApplyIntent = onApplyIntent,
+            onSave = onSave,
+            modifier = Modifier.fillMaxSize(),
+        )
+    } else {
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            containerColor = androidx.compose.ui.graphics.Color.Transparent,
+            topBar = {
+                TopAppBar(
+                    title = { Text(character.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    navigationIcon = { TextButton(onClick = onBack) { Text("Back") } },
+                    colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(containerColor = androidx.compose.ui.graphics.Color.Transparent),
+                    actions = {
+                        if (inCampaign) {
+                            TextButton(onClick = { showActions = true }) { Text("Actions") }
+                            TextButton(onClick = onOpenJournal) { Text("Journal") }
+                        } else {
+                            if (hasPastAdventures) {
+                                TextButton(onClick = onOpenPastAdventures) { Text("Past") }
+                            }
+                            TextButton(onClick = onEdit) { Text("Edit") }
+                            TextButton(onClick = { showStart = true }) { Text("Start") }
                         }
-                        TextButton(onClick = onEdit) { Text("Edit") }
-                        TextButton(onClick = { showStart = true }) { Text("Start") }
-                    }
-                },
-            )
-        },
-    ) { inner ->
-        Column(Modifier.padding(inner).fillMaxSize()) {
-            if (inCampaign && activeCampaign != null) {
-                ActiveCampaignBanner(activeCampaign.name, onEnd = { showEnd = true })
-            }
-            when (character.rulesetId) {
-                DnD5eRuleset.RULESET_ID -> CodexShellView(character, onBrowseSpells, onApplyIntent, onSave, Modifier.fillMaxSize())
-                DnD5e2024Ruleset.RULESET_ID -> Codex2024ShellView(character, onApplyIntent, onSave, Modifier.fillMaxSize())
-                PathfinderRuleset.RULESET_ID -> PathfinderSheetView(character, onApplyIntent, Modifier.fillMaxSize())
-                else -> UnsupportedRuleset(character.rulesetId)
+                    },
+                )
+            },
+        ) { inner ->
+            Column(Modifier.padding(inner).fillMaxSize()) {
+                if (inCampaign && activeCampaign != null) {
+                    ActiveCampaignBanner(activeCampaign.name, onEnd = { showEnd = true })
+                }
+                when (character.rulesetId) {
+                    DnD5e2024Ruleset.RULESET_ID -> Codex2024ShellView(character, onApplyIntent, onSave, Modifier.fillMaxSize())
+                    PathfinderRuleset.RULESET_ID -> PathfinderSheetView(character, onApplyIntent, Modifier.fillMaxSize())
+                    else -> UnsupportedRuleset(character.rulesetId)
+                }
             }
         }
     }
