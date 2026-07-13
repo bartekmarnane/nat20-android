@@ -120,9 +120,33 @@ Legend: `[ ]` not audited · `[~]` audited, fixes in progress · `[x]` fixed + v
 
 ## Character sheet — PF2e
 
-- [ ] 34. PF2e sheet — iOS single-scroll read-only `CodexPathfinderShellView.swift` · Android 6-tab pager `ui/sheet/PathfinderSheetView.kt` — **structural rebuild**
-- [ ] 35. PF2e actions sheet — `PathfinderActionsView.swift` · Android: none — **missing**
-- [ ] 36. PF2e Level Up — `PathfinderLevelUpView.swift` ↔ `PfLevelUpDialog` (in `PathfinderSheetView.kt`)
+- [~] 34. PF2e sheet — iOS single-scroll read-only `CodexPathfinderShellView.swift` · Android 6-tab pager `ui/sheet/PathfinderSheetView.kt` — **structural rebuild**
+  - Built 2026-07-14 (with #35 — landed together so nothing reachable today became unreachable). `PathfinderSheetView` rebuilt from the 684-line stock-Material 6-tab interactive pager into a **single read-only scroll** on the shared parchment `CodexScaffold` (new `showTabBar = false` flag → no `CodexTabBar`, single `pageContent(0)`; non-breaking, 2014/2024 keep the default `true` and are unchanged). PF2e now gets the same chrome as 2014/2024: TopNavRow (back / centre "CHARACTER" title / Act-bolt pill in campaign, Edit pill while building; gear omitted like 2014 → #40) → HeroRow (portrait + name + "{Ancestry} {Subclass} {Class} · Level N") → CampaignRegion (Start Adventuring / Journal bar) → OrnamentalDivider → the scroll. Dispatch: `CharacterSheetScreen` routes PF2e to the chrome-owning `PathfinderSheetView` (new shell signature mirroring 2014/2024 — campaign/back/edit/journal/past + onApplyIntent/onSave); only the final else stays a Material Scaffold for genuinely unsupported rulesets. Sections in iOS order, all DISPLAY-only: VITALS (WrappingHStack of PF stat cells incl. PF2e-only Class DC / Hero Pts / Bulk cur-max / Dying / Wounded + ENCUMBERED danger chip) · WEARING line (armor+potency · shield, + property-rune reminder lines) · STRIKES (name+runes / first-attack mod / damage) · ABILITIES (six 54dp tiles) · SAVING THROWS (Fort/Reflex/Will cells) · SKILLS (trained+ only, alphabetical, U-T-E-M-L rank letter + modifier; then Lore subtypes) · SPELLCASTING (Tradition/Spell Atk/Spell DC cells + slots line + cantrip/rank spell-name lines) · FOCUS (Focus Points + each focus spell w/ three-action glyph ◆/◆◆/◆◆◆/↺/◇ + summary) · FEATS · INVENTORY (accentGold purse + item rows) · CONDITIONS (display-only capsule chips; removal in the actions sheet). Deleted every private `Pf*` Material atom (`PfCard`/`PfMedallion`/`PfProfRow`/all the inline dialogs); added PF atoms (`PfStatCell`, `EncumberedChip`, `PfAbilityTile`, rank-letter `PfSkillRow`, `PfConditionCapsule`, `threeActionGlyph`). **Divergences:** iOS's CLASS FEATURES section is skipped — the Android `:ruleset-pf2e` module never ported a class-features catalogue (data gap, not a UI cut). Strike shows the 1st-attack modifier only (the MAP row is on the reference-only side); iOS shows the same headline number. Awaiting visual confirm.
+- [~] 35. PF2e actions sheet — `PathfinderActionsView.swift` · Android: none — **missing**
+  - Built 2026-07-14. New `ui/actions/PathfinderActionsSheet.kt` (grouped 2-col parchment `ModalBottomSheet`, mirrors `Actions2024Sheet`) + `PathfinderActionsLayer.kt` (dispatch + relocated `PfLevelUpDialog`) + `PathfinderActionsPickers.kt` (the PF2e-specific pickers on `ActionPickerShell`). The bolt Act pill (in-campaign) opens it. Groups: **Vitals · Hero & Resources · Combat · Conditions · Inventory · Manage · Progress**. Simple counter tiles fire directly (dying/wounded ±1, hero spend/gain, refocus, daily prep, raise/lower shield); everything else opens a picker. **`PfStrike` is now wired** (was dead code): Strike tile → weapon + attack-number (1st/2nd/3rd, showing the MAP mods) + optional target → `RollResultView` d20 (advantage toggle off) → `PfStrike(weaponId, attackNumber, total, target)` on settle. Relocation table — every mutation the old interactive tabs fired inline now has an actions-sheet home:
+    | Old inline (tab) | Intent | New home |
+    |---|---|---|
+    | Combat → Damage/Heal/Temp HP | PfTakeDamage / PfHeal / PfGainTempHp | Vitals → AmountPicker |
+    | Combat → Dying Recover/+1 | PfSetDying | Vitals → Dying ±1 tiles (direct) |
+    | (new) Wounded ±1 | PfSetWounded | Vitals → Wounded ±1 tiles (direct) |
+    | Combat → Hero Spend/Gain | PfAdjustHeroPoints | Hero & Resources tiles (direct) |
+    | Spells → Cast focus / Refocus | PfCastFocusSpell / PfRefocus | Hero & Resources → focus picker / direct |
+    | Spells → Daily preparations (the "rest") | PfDailyPreparations | Hero & Resources → Daily Preparations (direct) |
+    | Spells → Cast (cantrip/leveled) | PfCastSpell | Combat → Cast Spell picker |
+    | (dead code) | PfStrike | Combat → Strike picker → RollResultView d20 |
+    | Combat → Add/Clear condition | PfApplyCondition / PfClearCondition | Conditions pickers (valued → 1..6 stepper) |
+    | Combat → Add item | PfAddInventoryItem | Inventory → Add Item picker |
+    | Combat → Adjust coin | PfAdjustCoin | Inventory → Adjust Coin picker |
+    | Combat → Change armor | PfEquipArmor | Manage → Equip Armor picker |
+    | Combat → Hold/Stow shield · Raise/Lower | PfEquipShield / PfRaiseShield | Manage → Equip Shield picker / Raise-Shield tile |
+    | Combat → Add/Remove weapon | PfAddWeapon / PfRemoveWeapon | Manage → Add/Remove Weapon pickers |
+    | Combat → Etch weapon/armor runes | PfSetWeaponRunes / PfSetArmorRunes | Manage → rune stepper pickers |
+    | Spells → Add a spell | PfLearnSpell | Manage → Learn Spell picker |
+    | Feats → Add/Remove feat | PfTakeFeat / PfRemoveFeat | Manage → Take/Remove Feat pickers |
+    | Lore → Add a note | PfAddNote | Manage → Add Note picker |
+    | Stats → Level Up | PfLevelUp | Progress → PfLevelUpDialog (kept Material) |
+  - **Manage-group divergence (noted):** iOS relocates its equip/rune/learn-spell/feat mutations into the character **edit flow**; Android has no PF2e editor reopen yet, so those fold into a **Manage** actions group so nothing becomes unreachable. Rest = `PfDailyPreparations` (there is no dedicated Rest intent). Level Up opens the existing (still-Material) `PfLevelUpDialog` relocated verbatim into the layer — its restyle to a `WizardShell` wizard is **#36 (pending)**.
+- [ ] 36. PF2e Level Up — `PathfinderLevelUpView.swift` ↔ `PfLevelUpDialog` (now in `ui/actions/PathfinderActionsLayer.kt`, opened from the Progress action group)
 
 ## Campaign
 

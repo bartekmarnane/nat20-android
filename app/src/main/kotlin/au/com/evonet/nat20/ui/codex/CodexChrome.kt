@@ -86,6 +86,12 @@ fun CodexScaffold(
     modifier: Modifier = Modifier,
     /** In-campaign Act pill target; null ⇒ no pill (edition without an actions layer yet). */
     onAct: (() -> Unit)? = null,
+    /**
+     * When false the diamond tab bar is hidden and the body is a single page
+     * ([pageContent] called with page 0) — the PF2e single-scroll sheet (#34).
+     * Defaults true so the 2014/2024 paged codices are unaffected.
+     */
+    showTabBar: Boolean = true,
     pageContent: @Composable (page: Int) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
@@ -116,16 +122,21 @@ fun CodexScaffold(
         )
         OrnamentalDivider(Modifier.padding(horizontal = 22.dp, vertical = 20.dp))
 
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier.weight(1f).fillMaxWidth(),
-        ) { page -> pageContent(page) }
+        if (showTabBar) {
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.weight(1f).fillMaxWidth(),
+            ) { page -> pageContent(page) }
 
-        CodexTabBar(
-            tabs = tabLabels,
-            selected = pagerState.currentPage,
-            onSelect = { index -> scope.launch { pagerState.animateScrollToPage(index) } },
-        )
+            CodexTabBar(
+                tabs = tabLabels,
+                selected = pagerState.currentPage,
+                onSelect = { index -> scope.launch { pagerState.animateScrollToPage(index) } },
+            )
+        } else {
+            // Single-scroll body (PF2e #34): no pager, no tab bar.
+            Box(Modifier.weight(1f).fillMaxWidth()) { pageContent(0) }
+        }
     }
 }
 

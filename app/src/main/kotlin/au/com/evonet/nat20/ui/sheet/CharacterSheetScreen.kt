@@ -97,6 +97,23 @@ fun CharacterSheetScreen(
             onSave = onSave,
             modifier = Modifier.fillMaxSize(),
         )
+    } else if (character.rulesetId == PathfinderRuleset.RULESET_ID) {
+        // PF2e (parity #34–35): single read-only scroll on the shared parchment
+        // chrome (no tab bar), with the Act pill opening the PF2e actions layer.
+        PathfinderSheetView(
+            character = character,
+            activeCampaign = activeCampaign,
+            hasPastAdventures = hasPastAdventures,
+            onBack = onBack,
+            onEdit = onEdit,
+            onStartCampaign = { showStart = true },
+            onEndCampaign = { showEnd = true },
+            onOpenJournal = onOpenJournal,
+            onOpenPastAdventures = onOpenPastAdventures,
+            onApplyIntent = onApplyIntent,
+            onSave = onSave,
+            modifier = Modifier.fillMaxSize(),
+        )
     } else {
         Scaffold(
             modifier = Modifier.fillMaxSize(),
@@ -108,10 +125,6 @@ fun CharacterSheetScreen(
                     colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(containerColor = androidx.compose.ui.graphics.Color.Transparent),
                     actions = {
                         if (inCampaign) {
-                            // No Actions button here: the old cross-ruleset sheet fired 2014
-                            // intents that always no-op'd on 2024/PF2e payloads. Those codices
-                            // carry their own interactive surfaces; a 2024 actions layer is
-                            // parity #24's problem.
                             TextButton(onClick = onOpenJournal) { Text("Journal") }
                         } else {
                             if (hasPastAdventures) {
@@ -128,10 +141,7 @@ fun CharacterSheetScreen(
                 if (inCampaign && activeCampaign != null) {
                     ActiveCampaignBanner(activeCampaign.name, onEnd = { showEnd = true })
                 }
-                when (character.rulesetId) {
-                    PathfinderRuleset.RULESET_ID -> PathfinderSheetView(character, onApplyIntent, Modifier.fillMaxSize())
-                    else -> UnsupportedRuleset(character.rulesetId)
-                }
+                UnsupportedRuleset(character.rulesetId)
             }
         }
     }
