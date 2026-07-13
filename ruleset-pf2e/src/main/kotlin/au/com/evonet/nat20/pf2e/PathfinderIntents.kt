@@ -348,6 +348,22 @@ data class PfLevelUp(
 ) : CharacterIntent {
     override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
         val p = character.pf()
+        val (updated, hpGained) = PfLevelMath.advance(p, skillIncrease, abilityBoosts)
+        return IntentResult(
+            character.copy(payload = updated),
+            PfLeveledUpEvent(updated.level, hpGained, skillIncrease?.displayName, abilityBoosts.map { it.abbreviation }),
+        )
+    }
+}
+
+/**
+ * The one copy of the per-level advancement maths, shared by the [PfLevelUp]
+ * intent and [PathfinderBuilder]'s above-level-1 creation so the two can never
+ * drift. Throws [CharacterIntentError.Invalid] on an illegal choice.
+ */
+object PfLevelMath {
+    /** Advances [p] one level, returning the leveled payload + the HP gained. */
+    fun advance(p: PathfinderPayload, skillIncrease: PfSkill?, abilityBoosts: List<PfAbility>): Pair<PathfinderPayload, Int> {
         if (p.level >= PathfinderPayload.MAX_LEVEL) throw CharacterIntentError.Invalid("Already at maximum level")
         val newLevel = p.level + 1
 
@@ -421,9 +437,6 @@ data class PfLevelUp(
         } else {
             leveled
         }
-        return IntentResult(
-            character.copy(payload = updated),
-            PfLeveledUpEvent(newLevel, maxOf(1, hpGained), skillIncrease?.displayName, abilityBoosts.map { it.abbreviation }),
-        )
+        return updated to maxOf(1, hpGained)
     }
 }

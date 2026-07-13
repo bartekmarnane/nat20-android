@@ -110,6 +110,9 @@ object PfFeats {
     }
 }
 
+/** One earned feat slot: the level it's earned at + its type — the key the creation wizard picks against. */
+data class FeatSlotKey(val level: Int, val type: PfFeatType)
+
 /** How many feat slots of each type a character of a given level + class has earned. */
 object FeatSlots {
     /** Class-feat cadence: martials get one at level 1 then every even level; the seeded casters start at 2. */

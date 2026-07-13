@@ -37,6 +37,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import au.com.evonet.nat20.domain.Character
 import au.com.evonet.nat20.domain.CharacterIntent
+import au.com.evonet.nat20.pf2e.PathfinderCatalog
 import au.com.evonet.nat20.pf2e.PathfinderConditions
 import au.com.evonet.nat20.pf2e.PathfinderPayload
 import au.com.evonet.nat20.pf2e.PfAddNote
@@ -477,7 +478,10 @@ private fun PfLore(character: Character, payload: PathfinderPayload, onApplyInte
             PfStatRow("Name", character.name)
             PfStatRow("Ancestry", listOfNotNull(payload.heritage?.slugToTitle(), payload.ancestry.takeIf { it.isNotEmpty() }?.slugToTitle()).joinToString(" ").ifEmpty { "—" })
             PfStatRow("Background", payload.background?.slugToTitle() ?: "—")
-            PfStatRow("Class", payload.className.takeIf { it.isNotEmpty() }?.slugToTitle()?.let { "$it ${payload.level}" } ?: "Level ${payload.level}")
+            val subclassName = payload.subclass?.let { id ->
+                PathfinderCatalog.pfClass(payload.className)?.subclasses?.firstOrNull { it.id == id }?.name ?: id.slugToTitle()
+            }
+            PfStatRow("Class", listOfNotNull(subclassName, payload.className.takeIf { it.isNotEmpty() }?.slugToTitle()).joinToString(" ").takeIf { it.isNotEmpty() }?.let { "$it ${payload.level}" } ?: "Level ${payload.level}")
             payload.keyAbility?.let { PfStatRow("Key Ability", it.displayName) }
             payload.alignmentOrEdicts?.let { PfStatRow("Edicts / Anathema", it) }
         }

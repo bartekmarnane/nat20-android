@@ -34,6 +34,8 @@ data class PathfinderPayload(
     val heritage: String? = null,
     val background: String? = null,
     val className: String = "",
+    /** The class's defining subclass pick (racket/bloodline/…, [PfSubclass] id); null when the class has none. */
+    val subclass: String? = null,
     val level: Int = 1,
     val abilityScores: PfAbilityScores = PfAbilityScores(),
     /** Drives the class DC + (later) spell attack/DC; null until a class is chosen. */
