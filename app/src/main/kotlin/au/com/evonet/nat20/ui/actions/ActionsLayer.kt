@@ -9,6 +9,7 @@ import au.com.evonet.nat20.dnd5e.AddNote
 import au.com.evonet.nat20.dnd5e.AdjustCoin
 import au.com.evonet.nat20.dnd5e.AdjustExhaustion
 import au.com.evonet.nat20.dnd5e.ApplyCondition
+import au.com.evonet.nat20.dnd5e.ApplyEffect
 import au.com.evonet.nat20.dnd5e.CancelEffect
 import au.com.evonet.nat20.dnd5e.ClearCondition
 import au.com.evonet.nat20.dnd5e.DnD5ePayload
@@ -17,9 +18,12 @@ import au.com.evonet.nat20.dnd5e.ExpendSpellSlot
 import au.com.evonet.nat20.dnd5e.GainTempHp
 import au.com.evonet.nat20.dnd5e.Heal
 import au.com.evonet.nat20.dnd5e.LongRest
+import au.com.evonet.nat20.dnd5e.MarkDeathSave
 import au.com.evonet.nat20.dnd5e.RaceTraits
+import au.com.evonet.nat20.dnd5e.RollDeathSave
 import au.com.evonet.nat20.dnd5e.SetInspiration
 import au.com.evonet.nat20.dnd5e.ShortRest
+import au.com.evonet.nat20.dnd5e.Spell
 import au.com.evonet.nat20.dnd5e.SpendHitDie
 import au.com.evonet.nat20.dnd5e.SpendResource
 import au.com.evonet.nat20.dnd5e.TakeDamage
@@ -27,7 +31,10 @@ import au.com.evonet.nat20.dnd5e.UseClassFeature
 import au.com.evonet.nat20.dnd5e.availableClassFeatures
 import au.com.evonet.nat20.dnd5e.availableResourcePools
 import au.com.evonet.nat20.dnd5e.core.Ability
+import au.com.evonet.nat20.dnd5e.core.ActiveEffect
 import au.com.evonet.nat20.dnd5e.core.CastingProgression
+import au.com.evonet.nat20.dnd5e.core.EffectDuration
+import au.com.evonet.nat20.dnd5e.core.EffectSource
 import au.com.evonet.nat20.dnd5e.core.FeatureRecovery
 import au.com.evonet.nat20.dnd5e.core.RestKind
 import au.com.evonet.nat20.dnd5e.effectiveDamageResistances
@@ -41,22 +48,12 @@ import au.com.evonet.nat20.domain.NoteKind
 /**
  * Where the codex shell should send an action tile whose mechanic already
  * has an Android surface (parity #19: route to the EXISTING flow rather than
- * duplicating it — the dedicated pickers arrive with slices B/C).
+ * duplicating it — the remaining routes shrink as picker slices land).
  */
 internal enum class ActionRoute {
-    /** Attack roll → the existing `AttackSheet` flow. */
-    ATTACK,
-    /** Mark death save → the existing death-saves manage dialog. */
-    DEATH_SAVES,
     /** Level up → the existing `LevelUpWizard`. */
     LEVEL_UP,
-    /** Saving throw / ability check → Stats tab tap-to-roll rows. */
-    STATS_TAB,
-    /** Skill check → Skills tab tap-to-roll rows. */
-    SKILLS_TAB,
-    /** Manage effects / concentration → Combat tab sections. */
-    COMBAT_TAB,
-    /** Cast a spell (and long-rest spell prep) → Spells tab cast flow. */
+    /** Long-rest spell prep → Spells tab prepare flow. */
     SPELLS_TAB,
     /** Acquire / use / drop item → editable Items tab. */
     ITEMS_TAB,
@@ -64,7 +61,7 @@ internal enum class ActionRoute {
     LORE_TAB,
 }
 
-/** The Slice-A pickers this layer can mount full-screen. */
+/** The Slice-A/B pickers this layer can mount full-screen. */
 private enum class PickerKind {
     TAKE_DAMAGE, HEAL, TEMP_HP,
     ADD_NOTE, END_ENCOUNTER, BEGIN_ENCOUNTER,
@@ -73,6 +70,9 @@ private enum class PickerKind {
     ADJUST_COIN,
     SHORT_REST, LONG_REST, SPEND_HIT_DIE,
     EXPEND_SLOT, SPEND_RESOURCE, USE_FEATURE,
+    // Slice B — rolls, combat, cast, effects.
+    SKILL_CHECK, ABILITY_CHECK, SAVING_THROW, DEATH_SAVE,
+    ATTACK, CONCENTRATION, MANAGE_EFFECTS, CAST_CHOOSE,
 }
 
 /** A concentration save owed after damage landed on a concentrating caster. */
@@ -99,6 +99,8 @@ internal fun DnD5eActionsLayer(
 ) {
     var picker by remember { mutableStateOf<PickerKind?>(null) }
     var pendingConSave by remember { mutableStateOf<PendingConcentrationSave?>(null) }
+    // The spell mid-cast (chooser → target picker hand-off, slice B).
+    var castingSpell by remember { mutableStateOf<Spell?>(null) }
 
     if (showSheet) {
         ActionsSheetView(
@@ -125,14 +127,18 @@ internal fun DnD5eActionsLayer(
                     "spend-resource" -> picker = PickerKind.SPEND_RESOURCE
                     "feature" -> picker = PickerKind.USE_FEATURE
 
+                    // Slice-B pickers.
+                    "skill" -> picker = PickerKind.SKILL_CHECK
+                    "check" -> picker = PickerKind.ABILITY_CHECK
+                    "save" -> picker = PickerKind.SAVING_THROW
+                    "death" -> picker = PickerKind.DEATH_SAVE
+                    "attack" -> picker = PickerKind.ATTACK
+                    "concentrate" -> picker = PickerKind.CONCENTRATION
+                    "manage-effects" -> picker = PickerKind.MANAGE_EFFECTS
+                    "cast" -> picker = PickerKind.CAST_CHOOSE
+
                     // Mechanics with existing surfaces — route, don't duplicate.
-                    "attack" -> onRoute(ActionRoute.ATTACK)
-                    "death" -> onRoute(ActionRoute.DEATH_SAVES)
                     "level" -> onRoute(ActionRoute.LEVEL_UP)
-                    "save", "check" -> onRoute(ActionRoute.STATS_TAB)
-                    "skill" -> onRoute(ActionRoute.SKILLS_TAB)
-                    "cast" -> onRoute(ActionRoute.SPELLS_TAB)
-                    "manage-effects", "concentrate" -> onRoute(ActionRoute.COMBAT_TAB)
                     "add-item", "use-item", "drop" -> onRoute(ActionRoute.ITEMS_TAB)
                     "summon-familiar", "conjure-animals", "tashas-summon",
                     "animate-dead", "find-steed", "bind-companion",
@@ -380,7 +386,104 @@ internal fun DnD5eActionsLayer(
             },
         )
 
+        // ── Slice B — rolls ──
+
+        PickerKind.SKILL_CHECK -> SkillCheckPicker(
+            payload = payload,
+            onCancel = { picker = null },
+            onCommit = { onApplyIntent(it); picker = null },
+        )
+
+        PickerKind.ABILITY_CHECK -> AbilityCheckPicker(
+            payload = payload,
+            onCancel = { picker = null },
+            onCommit = { onApplyIntent(it); picker = null },
+        )
+
+        PickerKind.SAVING_THROW -> SavingThrowPicker(
+            payload = payload,
+            onCancel = { picker = null },
+            onCommit = { onApplyIntent(it); picker = null },
+        )
+
+        PickerKind.DEATH_SAVE -> DeathSavePicker(
+            deathSaves = payload.deathSaves,
+            currentHp = payload.currentHp,
+            hasHalflingLuck = RaceTraits.hasHalflingLuck(payload.race),
+            onCancel = { picker = null },
+            onRoll = { d20 ->
+                onApplyIntent(RollDeathSave(d20))
+                picker = null
+            },
+            onMark = { outcome ->
+                onApplyIntent(MarkDeathSave(outcome))
+                picker = null
+            },
+        )
+
+        // ── Slice B — combat / magic / effects ──
+
+        PickerKind.ATTACK -> AttackPicker(
+            payload = payload,
+            onCancel = { picker = null },
+            onCommit = { onApplyIntent(it); picker = null },
+        )
+
+        PickerKind.CONCENTRATION -> ConcentrationPicker(
+            current = payload.concentratingOn,
+            onCancel = { picker = null },
+            onStart = { name ->
+                // Non-spell concentration source: an ad-hoc owner effect —
+                // ApplyEffect swaps out any prior concentration (5e: one at a time).
+                onApplyIntent(
+                    ApplyEffect(
+                        ActiveEffect(
+                            id = ActiveEffect.newId(),
+                            name = name,
+                            source = EffectSource.Custom,
+                            modifiers = emptyList(),
+                            duration = EffectDuration.Concentration,
+                            concentrationOwner = true,
+                        ),
+                    ),
+                )
+                picker = null
+            },
+            onEnd = {
+                onApplyIntent(EndConcentration())
+                picker = null
+            },
+        )
+
+        PickerKind.MANAGE_EFFECTS -> EffectsListPicker(
+            effects = payload.activeEffects,
+            onCancel = { picker = null },
+            // Stays open for triage — the row list live-updates as effects end.
+            onCancelEffect = { onApplyIntent(CancelEffect(it)) },
+        )
+
+        PickerKind.CAST_CHOOSE -> CastSpellChooserPicker(
+            payload = payload,
+            onCancel = { picker = null },
+            onPick = { spell ->
+                picker = null
+                castingSpell = spell
+            },
+        )
+
         null -> Unit
+    }
+
+    castingSpell?.let { spell ->
+        CastTargetPicker(
+            payload = payload,
+            spell = spell,
+            onCancel = { castingSpell = null },
+            onCommit = { intent ->
+                onApplyIntent(intent)
+                castingSpell = null
+            },
+        )
     }
 
     pendingConSave?.let { pending ->

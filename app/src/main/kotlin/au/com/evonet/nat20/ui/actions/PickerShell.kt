@@ -3,6 +3,7 @@ package au.com.evonet.nat20.ui.actions
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
@@ -298,4 +299,45 @@ internal fun PickerRow(
 @Composable
 internal fun PickerGap(height: Dp) {
     Spacer(Modifier.height(height))
+}
+
+// ── Outcome + defeated atoms (slice B, iOS `OutcomeChipRow` / `DefeatedToggle`) ─
+
+/** One selectable outcome in an [OutcomeChipRow]. */
+internal data class OutcomeOption<T>(val value: T, val label: String, val tone: Color)
+
+/**
+ * Equal-width row of small-caps outcome chips (Failure=danger / Unjudged=accent
+ * / Success=accentGold on iOS; attack pickers reuse it for Miss/Hit/Critical).
+ */
+@Composable
+internal fun <T> OutcomeChipRow(
+    selection: T,
+    options: List<OutcomeOption<T>>,
+    onSelect: (T) -> Unit,
+) {
+    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        options.forEach { option ->
+            SmallCapsChip(
+                option.label,
+                active = selection == option.value,
+                tone = option.tone,
+                modifier = Modifier.weight(1f),
+            ) { onSelect(option.value) }
+        }
+    }
+}
+
+/** "Was the target defeated?" two-chip toggle (iOS `DefeatedToggle`). */
+@Composable
+internal fun DefeatedToggle(defeated: Boolean, onChange: (Boolean) -> Unit) {
+    val palette = MaterialTheme.natPalette
+    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        SmallCapsChip("Still standing", active = !defeated, tone = palette.accent, modifier = Modifier.weight(1f)) {
+            onChange(false)
+        }
+        SmallCapsChip("Defeated", active = defeated, tone = palette.danger, modifier = Modifier.weight(1f)) {
+            onChange(true)
+        }
+    }
 }

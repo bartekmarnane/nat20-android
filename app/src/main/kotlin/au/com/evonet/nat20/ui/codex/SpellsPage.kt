@@ -40,7 +40,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import au.com.evonet.nat20.dnd5e.CastSpell
 import au.com.evonet.nat20.dnd5e.DnD5eCatalog
 import au.com.evonet.nat20.dnd5e.DnD5ePayload
 import au.com.evonet.nat20.dnd5e.ExpendSpellSlot
@@ -60,6 +59,7 @@ import au.com.evonet.nat20.dnd5e.totalCurrentSlots
 import au.com.evonet.nat20.dnd5e.totalMaxSlots
 import au.com.evonet.nat20.domain.Character
 import au.com.evonet.nat20.domain.CharacterIntent
+import au.com.evonet.nat20.ui.actions.CastTargetPicker
 import au.com.evonet.nat20.ui.slugToTitle
 import au.com.evonet.nat20.ui.theme.Cinzel
 import au.com.evonet.nat20.ui.theme.Cormorant
@@ -96,6 +96,9 @@ internal fun SpellsPage(
     val prepared = CastingProgression.usesPreparation(primaryClass)
     var addLevel by remember { mutableStateOf<Int?>(null) } // null = closed; 0 = cantrip; ≥1 = leveled
     var spellAction by remember { mutableStateOf<SpellAction?>(null) }
+    // A cast in flight — resolved through the shared #19 CastTargetPicker
+    // (slot, target, attack-or-save, outcome, defeated), same as the Act tile.
+    var castTarget by remember { mutableStateOf<Spell?>(null) }
 
     // Learning/forgetting cantrips & known spells is a direct (unlogged) list edit.
     fun editPayload(transform: (DnD5ePayload) -> DnD5ePayload) {
@@ -188,7 +191,8 @@ internal fun SpellsPage(
 
     spellAction?.let { action ->
         val s = action.spell
-        val hasSlot = action.cantrip || (payload.totalCurrentSlots[s.level] ?: 0) > 0
+        val hasSlot = action.cantrip || s.ritual ||
+            (s.level..9).any { (payload.totalCurrentSlots[it] ?: 0) > 0 }
         AlertDialog(
             onDismissRequest = { spellAction = null },
             title = { Text(s.name) },
@@ -196,13 +200,14 @@ internal fun SpellsPage(
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text("${s.levelLabel} · ${s.schoolName}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     if (!action.cantrip && !hasSlot) {
-                        Text("No level-${s.level} slots remaining.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("No level-${s.level}+ slots remaining.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             },
             confirmButton = {
                 TextButton(enabled = hasSlot, onClick = {
-                    onApplyIntent(CastSpell(s.index, s.name, s.level, s.level, requiresConcentration = s.concentration, applyToSelf = true))
+                    // Hand off to the shared cast-target picker (#19 slice B).
+                    castTarget = s
                     spellAction = null
                 }) { Text("Cast") }
             },
@@ -222,6 +227,18 @@ internal fun SpellsPage(
                     }) { Text(if (prepared && !action.cantrip) "Unprepare" else "Remove") }
                     TextButton(onClick = { spellAction = null }) { Text("Close") }
                 }
+            },
+        )
+    }
+
+    castTarget?.let { s ->
+        CastTargetPicker(
+            payload = payload,
+            spell = s,
+            onCancel = { castTarget = null },
+            onCommit = { intent ->
+                onApplyIntent(intent)
+                castTarget = null
             },
         )
     }

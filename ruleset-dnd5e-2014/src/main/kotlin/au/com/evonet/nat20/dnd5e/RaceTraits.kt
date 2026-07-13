@@ -69,6 +69,45 @@ object RaceTraits {
     /** Savage Attacks (Half-Orc) — roll an extra weapon damage die on a melee critical hit. */
     fun hasSavageAttacks(race: String): Boolean = race.equals("half-orc", ignoreCase = true)
 
+    /** A race trait granting advantage on a specific saving throw, with the "why". */
+    data class SaveAdvantage(val traitName: String, val reason: String)
+
+    /**
+     * Whether a race trait grants advantage on a save with this structured
+     * context (parity #19 saving-throw picker's "Save against" chips):
+     * Dwarven/Stout Resilience vs poison, Fey Ancestry vs Charmed, Brave vs
+     * Frightened, Gnome Cunning on INT/WIS/CHA saves against magic. Null ⇒ no
+     * trait fires; roll a plain d20.
+     */
+    fun advantageOnSave(
+        race: String,
+        ability: au.com.evonet.nat20.dnd5e.core.Ability,
+        damageType: String? = null,
+        condition: String? = null,
+        isMagicalSource: Boolean = false,
+    ): SaveAdvantage? {
+        val r = race.lowercase()
+        val vsPoison = damageType.equals("poison", ignoreCase = true) || condition.equals("poisoned", ignoreCase = true)
+        return when {
+            r in setOf("hill-dwarf", "mountain-dwarf") && vsPoison ->
+                SaveAdvantage("Dwarven Resilience", "advantage on saves against poison")
+            r == "stout-halfling" && vsPoison ->
+                SaveAdvantage("Stout Resilience", "advantage on saves against poison")
+            r in setOf("high-elf", "wood-elf", "half-elf") && condition.equals("charmed", ignoreCase = true) ->
+                SaveAdvantage("Fey Ancestry", "advantage on saves against being Charmed")
+            r in setOf("lightfoot-halfling", "stout-halfling") && condition.equals("frightened", ignoreCase = true) ->
+                SaveAdvantage("Brave", "advantage on saves against being Frightened")
+            r in setOf("forest-gnome", "rock-gnome") && isMagicalSource &&
+                ability in setOf(
+                    au.com.evonet.nat20.dnd5e.core.Ability.INTELLIGENCE,
+                    au.com.evonet.nat20.dnd5e.core.Ability.WISDOM,
+                    au.com.evonet.nat20.dnd5e.core.Ability.CHARISMA,
+                ) ->
+                SaveAdvantage("Gnome Cunning", "advantage on INT/WIS/CHA saves against magic")
+            else -> null
+        }
+    }
+
     /** Non-numeric trait reminders surfaced on the sheet. */
     fun reminders(race: String): List<Reminder> = when (race.lowercase()) {
         "hill-dwarf", "mountain-dwarf" -> listOf(

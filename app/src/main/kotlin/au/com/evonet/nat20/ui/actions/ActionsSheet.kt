@@ -71,12 +71,12 @@ internal data class ActionGroup(val title: String, val items: List<ActionItem>)
  * Magic group; conditional tiles (summons, Bind companion, Spend resource)
  * surface only when the relevant content is on the character.
  *
- * Slice-A gaps (deliberate — tiles omitted until their pickers land):
- * TODO(#19 slice B): "Learn spell" (wizard scroll-copy picker + intent audit).
+ * Remaining gaps (deliberate — tiles omitted until their pickers/intents land):
+ * "Learn spell" — Android's inventory has no scroll spell-link and no
+ *   LearnSpellFromScroll intent (PARITY #17/#19 deferral).
  * TODO(#19 slice C): Effects group buff/debuff × ability/save/skill tiles,
  *   "Ally's spell", and "Custom effect" (EffectPicker / CustomEffectPicker /
- *   AllyCastPicker). Managing/cancelling effects stays reachable on the
- *   Combat tab, where the "Manage effects" and "Concentration" tiles route.
+ *   AllyCastPicker).
  * TODO(#19): "Recharge at dawn" — no RechargeAtDawn intent on Android yet
  *   (wondrous-item charge meters are a payload gap, see PARITY #17).
  */

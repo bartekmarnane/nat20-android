@@ -2,6 +2,7 @@ package au.com.evonet.nat20.dnd5e
 
 import au.com.evonet.nat20.dnd5e.core.Coin
 import au.com.evonet.nat20.dnd5e.core.HpChoice
+import au.com.evonet.nat20.dnd5e.core.SaveOutcome
 import au.com.evonet.nat20.domain.CharacterEvent
 import kotlinx.serialization.Serializable
 
@@ -185,6 +186,17 @@ data class CastSpellEvent(
     val fromScroll: Boolean = false,
     val fromPact: Boolean = false,
     val target: String? = null,
+    // ── Resolution (optional — parity #19 cast-target picker) ──
+    val attackD20: Int? = null,
+    val attackTotal: Int? = null,
+    val attackOutcome: au.com.evonet.nat20.dnd5e.core.AttackOutcome? = null,
+    val saveDC: Int? = null,
+    val saveAbility: String? = null,
+    val saveOutcome: SaveOutcome? = null,
+    val damageHalvedBySave: Boolean = false,
+    val damage: Int? = null,
+    val damageType: String? = null,
+    val targetKilled: Boolean = false,
 ) : CharacterEvent {
     override val summary: String
         get() {
@@ -197,7 +209,27 @@ data class CastSpellEvent(
             }
             val pact = if (fromPact) " (pact slot)" else ""
             val tgt = target?.let { " on $it" } ?: ""
-            return "$head$tgt$pact"
+            val resolution = buildString {
+                when (attackOutcome) {
+                    au.com.evonet.nat20.dnd5e.core.AttackOutcome.MISS -> append(" — missed${attackTotal?.let { " (rolled $it)" } ?: ""}")
+                    au.com.evonet.nat20.dnd5e.core.AttackOutcome.HIT -> append(" — hit${attackTotal?.let { " (rolled $it)" } ?: ""}")
+                    au.com.evonet.nat20.dnd5e.core.AttackOutcome.CRITICAL -> append(" — critical hit!")
+                    null -> {}
+                }
+                when (saveOutcome) {
+                    SaveOutcome.PASSED -> append(
+                        " — target saved${saveDC?.let { " vs DC $it" } ?: ""}${if (damageHalvedBySave) " (half damage)" else ""}",
+                    )
+                    SaveOutcome.FAILED -> append(" — target failed the ${saveAbility ?: ""} save${saveDC?.let { " vs DC $it" } ?: ""}")
+                    null -> {}
+                }
+                if (damage != null && attackOutcome != au.com.evonet.nat20.dnd5e.core.AttackOutcome.MISS) {
+                    val type = damageType?.takeIf { it.isNotBlank() }?.let { " ${it.lowercase()}" } ?: ""
+                    append(" for $damage$type damage")
+                }
+                if (targetKilled) append(" — felled")
+            }
+            return "$head$tgt$resolution$pact"
         }
 }
 
@@ -378,6 +410,8 @@ data class AttackEvent(
     val target: String? = null,
     /** Class damage riders applied this hit (Sneak Attack, Divine Smite), for the journal. */
     val riders: List<String> = emptyList(),
+    /** True when this blow felled the target (parity #19 attack picker). */
+    val targetKilled: Boolean = false,
 ) : CharacterEvent {
     override val summary: String
         get() {
@@ -389,10 +423,11 @@ data class AttackEvent(
                 ""
             }
             val rider = riders.takeIf { it.isNotEmpty() }?.let { " (${it.joinToString(" + ")})" } ?: ""
+            val felled = if (targetKilled) " — felled" else ""
             return when (outcome) {
                 au.com.evonet.nat20.dnd5e.core.AttackOutcome.MISS -> "Attacked$tgt with $weaponName — missed (rolled $attackTotal)"
-                au.com.evonet.nat20.dnd5e.core.AttackOutcome.HIT -> "Hit$tgt with $weaponName$dmg$rider (rolled $attackTotal)"
-                au.com.evonet.nat20.dnd5e.core.AttackOutcome.CRITICAL -> "Critical hit$tgt with $weaponName$dmg$rider!"
+                au.com.evonet.nat20.dnd5e.core.AttackOutcome.HIT -> "Hit$tgt with $weaponName$dmg$rider (rolled $attackTotal)$felled"
+                au.com.evonet.nat20.dnd5e.core.AttackOutcome.CRITICAL -> "Critical hit$tgt with $weaponName$dmg$rider!$felled"
             }
         }
 }
@@ -417,6 +452,8 @@ data class CheckRolledEvent(
     val naturalD20: Int? = null,
     val dc: Int? = null,
     val success: Boolean? = null,
+    /** Optional context line ("to force the door", "vs. dragon's breath"). */
+    val note: String? = null,
 ) : CharacterEvent {
     override val summary: String
         get() {
@@ -425,10 +462,13 @@ data class CheckRolledEvent(
                 1 -> " (natural 1)"
                 else -> ""
             }
+            val ctx = note?.takeIf { it.isNotBlank() }?.let { " — $it" } ?: ""
             return when {
-                dc != null && success == true -> "$label: rolled $total vs DC $dc — success$nat"
-                dc != null && success == false -> "$label: rolled $total vs DC $dc — failure$nat"
-                else -> "$label: rolled $total$nat"
+                dc != null && success == true -> "$label: rolled $total vs DC $dc — success$nat$ctx"
+                dc != null && success == false -> "$label: rolled $total vs DC $dc — failure$nat$ctx"
+                success == true -> "$label: rolled $total — success$nat$ctx"
+                success == false -> "$label: rolled $total — failure$nat$ctx"
+                else -> "$label: rolled $total$nat$ctx"
             }
         }
 }

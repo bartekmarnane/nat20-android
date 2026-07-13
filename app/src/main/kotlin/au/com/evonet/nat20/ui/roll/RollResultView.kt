@@ -77,6 +77,8 @@ fun RollResultView(
     allowAdvantageToggle: Boolean = true,
     luckyReroll: Boolean = false,
     onSettled: (RollResult) -> Unit = {},
+    /** Fired when a settled roll is torn down (reroll / adv-dis flip) so callers can clear stale judgment. */
+    onReset: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val haptics = LocalHapticFeedback.current
@@ -119,6 +121,7 @@ fun RollResultView(
     }
 
     fun reroll() {
+        if (result != null) onReset()
         result = null
         rollKey++
     }

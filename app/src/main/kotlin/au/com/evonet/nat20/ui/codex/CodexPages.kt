@@ -59,7 +59,6 @@ import au.com.evonet.nat20.dnd5e.WeaponProperties
 import au.com.evonet.nat20.dnd5e.advantageDescriptors
 import au.com.evonet.nat20.dnd5e.availableResourcePools
 import au.com.evonet.nat20.dnd5e.core.Ability
-import au.com.evonet.nat20.dnd5e.core.DeathSaveOutcome
 import au.com.evonet.nat20.dnd5e.core.DeathSaves
 import au.com.evonet.nat20.dnd5e.core.DnD5eClasses
 import au.com.evonet.nat20.dnd5e.core.Proficiency
@@ -89,6 +88,8 @@ import au.com.evonet.nat20.dnd5e.totalMaxSlots
 import au.com.evonet.nat20.dnd5e.warlockLevel
 import au.com.evonet.nat20.domain.Character
 import au.com.evonet.nat20.domain.CharacterIntent
+import au.com.evonet.nat20.ui.actions.AttackPicker
+import au.com.evonet.nat20.ui.actions.DeathSavePicker
 import au.com.evonet.nat20.ui.roll.RollDialog
 import au.com.evonet.nat20.ui.roll.RollResultView
 import au.com.evonet.nat20.ui.slugToTitle
@@ -669,7 +670,15 @@ internal fun CombatPage(character: Character, payload: DnD5ePayload, onApplyInte
         )
     }
     if (attacking) {
-        AttackSheet(payload, onApplyIntent, onDismiss = { attacking = false })
+        // The shared #19 attack picker (slice B) — the old AttackSheet dialog is gone.
+        AttackPicker(
+            payload = payload,
+            onCancel = { attacking = false },
+            onCommit = { intent ->
+                onApplyIntent(intent)
+                attacking = false
+            },
+        )
     }
     if (rollingInit) {
         RollDialog(
@@ -697,7 +706,23 @@ internal fun CombatPage(character: Character, payload: DnD5ePayload, onApplyInte
         )
     }
     if (acBreakdown) AcBreakdownDialog(payload) { acBreakdown = false }
-    if (deathDialog) DeathSavesDialog(payload, onApplyIntent) { deathDialog = false }
+    if (deathDialog) {
+        // The shared #19 death-save picker (slice B) — the old manage dialog is gone.
+        DeathSavePicker(
+            deathSaves = payload.deathSaves,
+            currentHp = payload.currentHp,
+            hasHalflingLuck = RaceTraits.hasHalflingLuck(payload.race),
+            onCancel = { deathDialog = false },
+            onRoll = { d20 ->
+                onApplyIntent(RollDeathSave(d20))
+                deathDialog = false
+            },
+            onMark = { outcome ->
+                onApplyIntent(MarkDeathSave(outcome))
+                deathDialog = false
+            },
+        )
+    }
 }
 
 /** Hit-dice tile: remaining over total with the class die (tap to spend). */
@@ -778,76 +803,6 @@ private fun DeathSavesTile(ds: DeathSaves, modifier: Modifier = Modifier, onClic
                 )
             }
         }
-    }
-}
-
-/**
- * The full death-save management flow (roll + manual marks), kept from A7f-2.
- * Internal: the #19 Actions layer's "Mark death save" tile routes here too.
- */
-@Composable
-internal fun DeathSavesDialog(payload: DnD5ePayload, onApplyIntent: (CharacterIntent) -> Unit, onDismiss: () -> Unit) {
-    val ds = payload.deathSaves
-    var rolling by remember { mutableStateOf(false) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Death saves") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                val status = when {
-                    ds.isDead -> "Dead — three failures"
-                    ds.isStable -> "Stable — three successes"
-                    payload.currentHp == 0 -> "Dying — roll a death save each turn"
-                    else -> "Not dying"
-                }
-                Text(
-                    status,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (ds.isDead) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text("Successes", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-                    Text(
-                        "●".repeat(ds.successes) + "○".repeat(3 - ds.successes),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                }
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text("Failures", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-                    Text(
-                        "✕".repeat(ds.failures) + "·".repeat(3 - ds.failures),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
-                val resolved = ds.isStable || ds.isDead
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(enabled = !resolved, onClick = { onApplyIntent(MarkDeathSave(DeathSaveOutcome.SUCCESS)) }) { Text("Success") }
-                    OutlinedButton(enabled = !resolved, onClick = { onApplyIntent(MarkDeathSave(DeathSaveOutcome.FAILURE)) }) { Text("Failure") }
-                    OutlinedButton(enabled = !ds.isCleared, onClick = { onApplyIntent(MarkDeathSave(DeathSaveOutcome.CLEAR)) }) { Text("Clear") }
-                }
-                Text(
-                    "Roll auto-applies the result; the manual buttons are for physical dice.",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        },
-        confirmButton = {
-            val resolved = ds.isStable || ds.isDead
-            TextButton(enabled = !resolved, onClick = { rolling = true }) { Text("Roll a death save") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Close") } },
-    )
-    if (rolling) {
-        RollDialog(
-            title = "Death save",
-            spec = RollSpec.d(1, 20),
-            allowAdvantageToggle = false,
-            onSettled = { result -> result.naturalD20?.let { onApplyIntent(RollDeathSave(it)) } },
-            onDismiss = { rolling = false },
-        )
     }
 }
 

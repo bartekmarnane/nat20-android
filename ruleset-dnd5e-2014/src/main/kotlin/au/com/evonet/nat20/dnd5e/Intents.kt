@@ -16,6 +16,7 @@ import au.com.evonet.nat20.dnd5e.core.FeatureRecovery
 import au.com.evonet.nat20.dnd5e.core.FeatureUseEntry
 import au.com.evonet.nat20.dnd5e.core.HpChoice
 import au.com.evonet.nat20.dnd5e.core.LevelUpMath
+import au.com.evonet.nat20.dnd5e.core.SaveOutcome
 import au.com.evonet.nat20.domain.Character
 import au.com.evonet.nat20.domain.CharacterIntent
 import au.com.evonet.nat20.domain.CharacterIntentError
@@ -203,6 +204,8 @@ data class MakeAttack(
     val expendSlotLevel: Int? = null,
     /** An ammunition item id to spend one of this attack (ranged weapons); null = none. */
     val ammoItemId: String? = null,
+    /** True when this blow felled the target (journal colour only — no target entity exists). */
+    val targetKilled: Boolean = false,
 ) : CharacterIntent {
     override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
         if (weaponName.isBlank()) throw CharacterIntentError.Invalid("Attack needs a weapon")
@@ -237,6 +240,7 @@ data class MakeAttack(
             damageType = damageType,
             target = target?.trim()?.takeIf { it.isNotEmpty() },
             riders = if (outcome == AttackOutcome.MISS) emptyList() else riders,
+            targetKilled = targetKilled && outcome != AttackOutcome.MISS,
         )
         return IntentResult(character.copy(payload = updatedPayload), event)
     }
@@ -266,14 +270,26 @@ data class RollCheck(
     val total: Int,
     val naturalD20: Int? = null,
     val dc: Int? = null,
+    /** The player's own success/failure call when no [dc] was set (#19 pickers); null = unjudged. */
+    val judgedSuccess: Boolean? = null,
+    /** Optional context line for the journal ("to force the door", "vs. dragon's breath"). */
+    val note: String? = null,
 ) : CharacterIntent {
     override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
         if (label.isBlank()) throw CharacterIntentError.Invalid("Check needs a label")
-        // Natural 20/1 don't auto-succeed/fail on ability checks (RAW); judge by total.
-        val success = dc?.let { total >= it }
+        // Natural 20/1 don't auto-succeed/fail on ability checks (RAW); judge by
+        // total when a DC is set, otherwise record the player's own call.
+        val success = dc?.let { total >= it } ?: judgedSuccess
         return IntentResult(
             character,
-            CheckRolledEvent(label = label.trim(), total = total, naturalD20 = naturalD20, dc = dc, success = success),
+            CheckRolledEvent(
+                label = label.trim(),
+                total = total,
+                naturalD20 = naturalD20,
+                dc = dc,
+                success = success,
+                note = note?.trim()?.takeIf { it.isNotEmpty() },
+            ),
         )
     }
 }
@@ -498,6 +514,24 @@ data class CastSpell(
     val requiresConcentration: Boolean = false,
     /** For a target-picked buff (Bless, Mage Armor), whether the caster applies the effect to themselves. */
     val applyToSelf: Boolean = false,
+    // ── Resolution (optional — parity #19 cast-target picker; journal colour only) ──
+    /** Kept d20 face of a spell-attack roll (Fire Bolt); null for save/utility spells. */
+    val attackD20: Int? = null,
+    /** Attack-roll total + outcome for spell-attack spells; null otherwise. */
+    val attackTotal: Int? = null,
+    val attackOutcome: AttackOutcome? = null,
+    /** Save DC + ability abbreviation the target rolled against ("DEX"); null for non-save spells. */
+    val saveDC: Int? = null,
+    val saveAbility: String? = null,
+    /** The target's save result; null for non-save spells or a group save-for-half. */
+    val saveOutcome: SaveOutcome? = null,
+    /** True when a successful save halved the rolled damage (Fireball). */
+    val damageHalvedBySave: Boolean = false,
+    /** Total damage dealt this cast (post-halving) and its lowercased type. */
+    val damage: Int? = null,
+    val damageType: String? = null,
+    /** True when the target was felled by this spell. */
+    val targetKilled: Boolean = false,
 ) : CharacterIntent {
     override fun applyTo(character: Character, ruleset: Ruleset): IntentResult {
         if (slotLevel < spellLevel) {
@@ -551,6 +585,16 @@ data class CastSpell(
             fromScroll = fromScroll,
             fromPact = fromPact,
             target = trimmedTarget,
+            attackD20 = attackD20,
+            attackTotal = attackTotal,
+            attackOutcome = attackOutcome,
+            saveDC = saveDC,
+            saveAbility = saveAbility,
+            saveOutcome = saveOutcome,
+            damageHalvedBySave = damageHalvedBySave,
+            damage = damage,
+            damageType = damageType,
+            targetKilled = targetKilled,
         )
         return IntentResult(character.copy(payload = updated), event)
     }

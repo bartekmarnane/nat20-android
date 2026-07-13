@@ -140,13 +140,70 @@ data class Spell(
     val concentration: Boolean = false,
     val ritual: Boolean = false,
     val classes: List<NamedRef> = emptyList(),
+    /** SRD `attack_type` ("ranged"/"melee") — present only on spell-attack spells (Fire Bolt). */
+    @SerialName("attack_type") val attackType: String? = null,
+    /** SRD save block — present only on save-DC spells (Fireball). */
+    val dc: SpellDc? = null,
+    /** SRD damage block — dice tables by slot level (leveled) or character level (cantrips). */
+    val damage: SpellDamage? = null,
 ) {
     val schoolName: String get() = school.name
     val description: String get() = desc.joinToString("\n\n")
     val higherLevelText: String get() = higherLevel.joinToString("\n\n")
     val classNames: List<String> get() = classes.map { it.name }
     val levelLabel: String get() = if (level == 0) "Cantrip" else "Level $level"
+
+    /** Whether this spell rolls damage dice on this cast (has a dice table). */
+    val dealsDamage: Boolean
+        get() = damage != null && (damage.damageAtSlotLevel.isNotEmpty() || damage.damageAtCharacterLevel.isNotEmpty())
+
+    /** True when a successful save halves the damage instead of negating it (Fireball). */
+    val saveHalves: Boolean get() = dc?.dcSuccess.equals("half", ignoreCase = true)
+
+    /**
+     * How this cast resolves at the table, from the SRD fields (attack and save
+     * are mutually exclusive in 5e RAW). Drives the cast-target picker's branch.
+     */
+    val resolutionKind: SpellResolutionKind
+        get() = when {
+            attackType != null -> SpellResolutionKind.ATTACK
+            dc != null -> SpellResolutionKind.SAVE
+            dealsDamage -> SpellResolutionKind.DAMAGE_ONLY
+            else -> SpellResolutionKind.UTILITY
+        }
+
+    /**
+     * The damage dice notation for a cast at [slotLevel] by a caster of
+     * [characterLevel]: leveled spells scale by the highest slot-table row ≤
+     * the slot; cantrips by the highest character-level row ≤ the caster level.
+     */
+    fun damageDice(slotLevel: Int, characterLevel: Int): String? {
+        val d = damage ?: return null
+        if (d.damageAtSlotLevel.isNotEmpty()) {
+            return d.damageAtSlotLevel.filterKeys { it <= slotLevel }.maxByOrNull { it.key }?.value
+        }
+        return d.damageAtCharacterLevel.filterKeys { it <= characterLevel }.maxByOrNull { it.key }?.value
+    }
 }
+
+/** Resolution shape of a spell — what the player rolls / decides to record the cast. */
+enum class SpellResolutionKind { ATTACK, SAVE, DAMAGE_ONLY, UTILITY }
+
+/** SRD save block on a spell: which ability the target rolls and what a success does. */
+@Serializable
+data class SpellDc(
+    @SerialName("dc_type") val dcType: NamedRef = NamedRef(),
+    /** "none" / "half" / "other" — halves ⇒ roll damage regardless of the save. */
+    @SerialName("dc_success") val dcSuccess: String? = null,
+)
+
+/** SRD damage block on a spell: type + a dice table keyed by slot or character level. */
+@Serializable
+data class SpellDamage(
+    @SerialName("damage_type") val damageType: NamedRef? = null,
+    @SerialName("damage_at_slot_level") val damageAtSlotLevel: Map<Int, String> = emptyMap(),
+    @SerialName("damage_at_character_level") val damageAtCharacterLevel: Map<Int, String> = emptyMap(),
+)
 
 /** A `{ index, name, url }` reference in the SRD JSON; only [name] is needed. */
 @Serializable

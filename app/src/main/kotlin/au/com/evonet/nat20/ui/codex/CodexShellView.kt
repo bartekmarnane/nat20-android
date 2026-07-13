@@ -101,11 +101,10 @@ fun CodexShellView(
     val pagerState = rememberPagerState(pageCount = { tabs.size })
     val scope = rememberCoroutineScope()
     var levelingUp by remember { mutableStateOf(false) }
-    // Actions layer (parity #19): the Act pill opens the grouped sheet; tiles
-    // whose mechanic already has a codex surface route back into it here.
+    // Actions layer (parity #19): the Act pill opens the grouped sheet; most
+    // tiles mount their own full-screen pickers inside the layer (slice B),
+    // the few remaining tab-hosted mechanics route back into the shell here.
     var showActions by remember { mutableStateOf(false) }
-    var attacking by remember { mutableStateOf(false) }
-    var managingDeathSaves by remember { mutableStateOf(false) }
 
     Column(modifier.fillMaxSize().statusBarsPadding()) {
         TopNavRow(
@@ -159,25 +158,13 @@ fun CodexShellView(
         onApplyIntent = onApplyIntent,
         onRoute = { route ->
             when (route) {
-                ActionRoute.ATTACK -> attacking = true
-                ActionRoute.DEATH_SAVES -> managingDeathSaves = true
                 ActionRoute.LEVEL_UP -> levelingUp = true
-                ActionRoute.STATS_TAB -> scope.launch { pagerState.animateScrollToPage(CodexTab.STATS.ordinal) }
-                ActionRoute.SKILLS_TAB -> scope.launch { pagerState.animateScrollToPage(CodexTab.SKILLS.ordinal) }
-                ActionRoute.COMBAT_TAB -> scope.launch { pagerState.animateScrollToPage(CodexTab.COMBAT.ordinal) }
                 ActionRoute.SPELLS_TAB -> scope.launch { pagerState.animateScrollToPage(CodexTab.SPELLS.ordinal) }
                 ActionRoute.ITEMS_TAB -> scope.launch { pagerState.animateScrollToPage(CodexTab.ITEMS.ordinal) }
                 ActionRoute.LORE_TAB -> scope.launch { pagerState.animateScrollToPage(CodexTab.LORE.ordinal) }
             }
         },
     )
-
-    if (attacking) {
-        AttackSheet(payload, onApplyIntent, onDismiss = { attacking = false })
-    }
-    if (managingDeathSaves) {
-        DeathSavesDialog(payload, onApplyIntent, onDismiss = { managingDeathSaves = false })
-    }
 }
 
 // ── Top nav row ────────────────────────────────────────────────────────────────
