@@ -34,12 +34,12 @@ import au.com.evonet.nat20.ui.codex.CodexShellView
 
 /**
  * The character sheet host: per-ruleset body dispatch (the iOS
- * `CharacterSheetView` pattern). The 2014 codex owns its own chrome (parity
- * #12) — nav row, hero, campaign region, tab bar all live in `CodexShellView`,
- * so the host renders it bare and only keeps the dialogs. The 2024 / PF2e
- * bodies (later audit items) keep the phase-aware Material Scaffold: building
- * → Edit + Start Campaign; in a campaign → Actions + Journal, with an
- * active-campaign banner and End in context.
+ * `CharacterSheetView` pattern). The 2014 (parity #12) and 2024 (parity #24)
+ * codices each own their own parchment chrome via the shared `CodexScaffold`
+ * (nav row, hero, campaign region, tab bar), so the host renders them bare and
+ * only keeps the Start/End campaign dialogs. PF2e (and any unsupported ruleset)
+ * still uses the phase-aware Material Scaffold: building → Edit + Start
+ * Campaign; in a campaign → Journal, with an active-campaign banner + End.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -79,6 +79,24 @@ fun CharacterSheetScreen(
             onSave = onSave,
             modifier = Modifier.fillMaxSize(),
         )
+    } else if (character.rulesetId == DnD5e2024Ruleset.RULESET_ID) {
+        // 2024 (parity #24–30): owns the shared parchment chrome via CodexScaffold,
+        // exactly like the 2014 shell. The Act pill / actions layer is slice #31;
+        // dialogs (Start / End campaign) stay hosted here below.
+        Codex2024ShellView(
+            character = character,
+            activeCampaign = activeCampaign,
+            hasPastAdventures = hasPastAdventures,
+            onBack = onBack,
+            onEdit = onEdit,
+            onStartCampaign = { showStart = true },
+            onEndCampaign = { showEnd = true },
+            onOpenJournal = onOpenJournal,
+            onOpenPastAdventures = onOpenPastAdventures,
+            onApplyIntent = onApplyIntent,
+            onSave = onSave,
+            modifier = Modifier.fillMaxSize(),
+        )
     } else {
         Scaffold(
             modifier = Modifier.fillMaxSize(),
@@ -111,7 +129,6 @@ fun CharacterSheetScreen(
                     ActiveCampaignBanner(activeCampaign.name, onEnd = { showEnd = true })
                 }
                 when (character.rulesetId) {
-                    DnD5e2024Ruleset.RULESET_ID -> Codex2024ShellView(character, onApplyIntent, onSave, Modifier.fillMaxSize())
                     PathfinderRuleset.RULESET_ID -> PathfinderSheetView(character, onApplyIntent, Modifier.fillMaxSize())
                     else -> UnsupportedRuleset(character.rulesetId)
                 }
