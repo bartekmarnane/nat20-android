@@ -17,6 +17,7 @@ import au.com.evonet.nat20.domain.CharacterIntentError
 import au.com.evonet.nat20.domain.CharacterPhase
 import au.com.evonet.nat20.domain.JournalProseKind
 import au.com.evonet.nat20.domain.LoggedEvent
+import au.com.evonet.nat20.domain.PartyMember
 import au.com.evonet.nat20.domain.RulesetRegistry
 import au.com.evonet.nat20.domain.apply
 import au.com.evonet.nat20.domain.end
@@ -86,10 +87,10 @@ class CharacterStore(
      * phase, and persist both. The character can no longer be freely edited —
      * mutations now flow through [applyIntent] and are logged.
      */
-    fun startCampaign(character: Character, name: String) {
+    fun startCampaign(character: Character, name: String, party: List<PartyMember> = emptyList()) {
         viewModelScope.launch {
             val now = Instant.now()
-            val started = Campaign.start(character, name = name, startedAt = now)
+            val started = Campaign.start(character, name = name, startedAt = now).copy(party = party)
             // Seed an opening journal line so the journal isn't empty on day one (A7f).
             val campaign = registry.ruleset(character.rulesetId)?.let { ruleset ->
                 val opening = ruleset.makeProseEvent(openingLine(character, name), JournalProseKind.CAMPAIGN_OPENING)
@@ -99,6 +100,31 @@ class CharacterStore(
             characters.upsert(
                 character.copy(phase = CharacterPhase.InCampaign(campaign.id), updatedAt = now),
             )
+        }
+    }
+
+    /**
+     * Rename the campaign (from campaign settings, parity #37). Re-reads the
+     * latest row first so a concurrent log append isn't clobbered.
+     */
+    fun renameCampaign(campaign: Campaign, newName: String) {
+        val trimmed = newName.trim()
+        if (trimmed.isEmpty()) return
+        viewModelScope.launch {
+            val latest = campaigns.campaign(campaign.id) ?: return@launch
+            campaigns.upsert(latest.copy(name = trimmed))
+        }
+    }
+
+    /**
+     * Replace the informational party roster (from campaign settings, parity
+     * #37). Re-reads the latest row first so a concurrent log append isn't
+     * clobbered.
+     */
+    fun updateParty(campaign: Campaign, party: List<PartyMember>) {
+        viewModelScope.launch {
+            val latest = campaigns.campaign(campaign.id) ?: return@launch
+            campaigns.upsert(latest.copy(party = party))
         }
     }
 

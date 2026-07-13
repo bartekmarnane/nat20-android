@@ -4,6 +4,7 @@ import au.com.evonet.nat20.domain.Campaign
 import au.com.evonet.nat20.domain.CharacterCodecError
 import au.com.evonet.nat20.domain.LoggedEvent
 import au.com.evonet.nat20.domain.NoteKind
+import au.com.evonet.nat20.domain.PartyMember
 import au.com.evonet.nat20.domain.Ruleset
 import au.com.evonet.nat20.domain.RulesetRegistry
 import au.com.evonet.nat20.domain.SessionChronicle
@@ -26,6 +27,7 @@ class CampaignCodec(
     private val json = Json { ignoreUnknownKeys = true }
     private val logSerializer = ListSerializer(LoggedEventEnvelope.serializer())
     private val chronicleSerializer = ListSerializer(ChronicleEnvelope.serializer())
+    private val partySerializer = ListSerializer(PartyMemberEnvelope.serializer())
 
     fun toEntity(campaign: Campaign): PersistentCampaign {
         val rulesetId = campaign.startSnapshot.rulesetId
@@ -46,6 +48,7 @@ class CampaignCodec(
                 chronicleSerializer,
                 campaign.chronicleParagraphs.map { it.toEnvelope() },
             ),
+            partyJson = json.encodeToString(partySerializer, campaign.party.map { it.toEnvelope() }),
         )
     }
 
@@ -64,6 +67,7 @@ class CampaignCodec(
             log = log,
             chronicleParagraphs = json.decodeFromString(chronicleSerializer, row.chronicleJson)
                 .map { it.toDomain() },
+            party = json.decodeFromString(partySerializer, row.partyJson).map { it.toDomain() },
         )
     }
 
@@ -95,6 +99,22 @@ class CampaignCodec(
         paragraph = paragraph,
         generatedAt = Instant.parse(generatedAt),
     )
+
+    private fun PartyMember.toEnvelope() = PartyMemberEnvelope(
+        id = id.toString(),
+        name = name,
+        characterClass = characterClass,
+        race = race,
+        level = level,
+    )
+
+    private fun PartyMemberEnvelope.toDomain() = PartyMember(
+        id = UUID.fromString(id),
+        name = name,
+        characterClass = characterClass,
+        race = race,
+        level = level,
+    )
 }
 
 /** Serializable mirror of a [LoggedEvent]; the event is stored as type id + JSON. */
@@ -114,4 +134,14 @@ internal data class ChronicleEnvelope(
     val sessionId: String,
     val paragraph: String,
     val generatedAt: String,
+)
+
+/** Serializable mirror of a [PartyMember] (parity #37). */
+@Serializable
+internal data class PartyMemberEnvelope(
+    val id: String,
+    val name: String,
+    val characterClass: String? = null,
+    val race: String? = null,
+    val level: Int? = null,
 )

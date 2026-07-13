@@ -5,10 +5,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -27,6 +25,8 @@ import au.com.evonet.nat20.domain.Campaign
 import au.com.evonet.nat20.domain.Character
 import au.com.evonet.nat20.domain.CharacterIntent
 import au.com.evonet.nat20.domain.CharacterPhase
+import au.com.evonet.nat20.domain.PartyMember
+import au.com.evonet.nat20.ui.campaign.CampaignSetupScreen
 import au.com.evonet.nat20.dnd5e.DnD5eRuleset
 import au.com.evonet.nat20.dnd5e2024.DnD5e2024Ruleset
 import au.com.evonet.nat20.pf2e.PathfinderRuleset
@@ -49,8 +49,10 @@ fun CharacterSheetScreen(
     hasPastAdventures: Boolean,
     onBack: () -> Unit,
     onEdit: () -> Unit,
-    onStartCampaign: (String) -> Unit,
-    onEndCampaign: () -> Unit,
+    onStartCampaign: (String, List<PartyMember>) -> Unit,
+    onRenameCampaign: (String) -> Unit,
+    onUpdateParty: (List<PartyMember>) -> Unit,
+    onLeaveCampaign: () -> Unit,
     onOpenJournal: () -> Unit,
     onOpenPastAdventures: () -> Unit,
     onBrowseSpells: () -> Unit,
@@ -146,23 +148,27 @@ fun CharacterSheetScreen(
         }
     }
 
+    // Start Adventuring → the full campaign setup screen (create mode).
     if (showStart) {
-        StartCampaignDialog(
-            defaultName = "${character.name}'s Adventure",
-            onDismiss = { showStart = false },
-            onConfirm = { name -> showStart = false; onStartCampaign(name) },
+        CampaignSetupScreen(
+            create = true,
+            initialName = "${character.name}'s Adventure",
+            onCancel = { showStart = false },
+            onBegin = { name, party -> showStart = false; onStartCampaign(name, party) },
         )
     }
 
-    if (showEnd) {
-        AlertDialog(
-            onDismissRequest = { showEnd = false },
-            title = { Text("End campaign?") },
-            text = { Text("${character.name} returns to building. The journal is kept in Past Adventures.") },
-            confirmButton = {
-                TextButton(onClick = { showEnd = false; onEndCampaign() }) { Text("End") }
-            },
-            dismissButton = { TextButton(onClick = { showEnd = false }) { Text("Cancel") } },
+    // The in-campaign "End"/settings affordance opens the setup screen in edit
+    // mode (rename + party roster + Leave); iOS also leaves from settings.
+    if (showEnd && activeCampaign != null) {
+        CampaignSetupScreen(
+            create = false,
+            initialName = activeCampaign.name,
+            initialParty = activeCampaign.party,
+            onCancel = { showEnd = false },
+            onRename = onRenameCampaign,
+            onPartyChange = onUpdateParty,
+            onLeave = { showEnd = false; onLeaveCampaign() },
         )
     }
 }
@@ -186,35 +192,6 @@ private fun ActiveCampaignBanner(name: String, onEnd: () -> Unit) {
             }
         }
     }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun StartCampaignDialog(
-    defaultName: String,
-    onDismiss: () -> Unit,
-    onConfirm: (String) -> Unit,
-) {
-    var name by remember { mutableStateOf(defaultName) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Start a campaign") },
-        text = {
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                label = { Text("Campaign name") },
-                singleLine = true,
-            )
-        },
-        confirmButton = {
-            TextButton(
-                enabled = name.isNotBlank(),
-                onClick = { onConfirm(name.trim()) },
-            ) { Text("Start") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
-    )
 }
 
 @Composable

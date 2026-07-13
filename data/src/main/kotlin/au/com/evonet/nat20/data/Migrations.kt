@@ -59,4 +59,11 @@ internal object Migrations {
             db.execSQL("ALTER TABLE `characters` ADD COLUMN `portraitData` BLOB")
         }
     }
+
+    /** v6 → v7 (parity #37): additive — party-roster column on campaigns. */
+    val MIGRATION_6_7 = object : Migration(6, 7) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE `campaigns` ADD COLUMN `partyJson` TEXT NOT NULL DEFAULT '[]'")
+        }
+    }
 }

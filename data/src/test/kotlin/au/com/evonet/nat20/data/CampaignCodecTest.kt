@@ -8,6 +8,7 @@ import au.com.evonet.nat20.domain.CharacterPhase
 import au.com.evonet.nat20.domain.JournalProseKind
 import au.com.evonet.nat20.domain.LoggedEvent
 import au.com.evonet.nat20.domain.NoteKind
+import au.com.evonet.nat20.domain.PartyMember
 import au.com.evonet.nat20.domain.Ruleset
 import au.com.evonet.nat20.domain.RulesetId
 import au.com.evonet.nat20.domain.RulesetRegistry
@@ -77,6 +78,24 @@ class CampaignCodecTest {
             )
 
         assertEquals(campaign, codec.toDomain(codec.toEntity(campaign)))
+    }
+
+    @Test
+    fun `party roster round-trips`() {
+        val committed = character.copy(phase = CharacterPhase.InCampaign(UUID.randomUUID()))
+        val campaign = Campaign.start(committed, name = "The Sunless Citadel", startedAt = character.createdAt)
+            .copy(
+                party = listOf(
+                    PartyMember(name = "Bram", characterClass = "Fighter", race = "Half-Orc", level = 3),
+                    PartyMember(name = "Sable"),
+                ),
+            )
+
+        val decoded = codec.toDomain(codec.toEntity(campaign))
+        assertEquals(campaign, decoded)
+        assertEquals(2, decoded.party.size)
+        assertEquals("Fighter", decoded.party.first().characterClass)
+        assertEquals(3, decoded.party.first().level)
     }
 
     @Test

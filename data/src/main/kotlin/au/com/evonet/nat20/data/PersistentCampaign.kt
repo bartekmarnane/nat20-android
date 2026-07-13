@@ -33,4 +33,10 @@ data class PersistentCampaign(
      */
     @ColumnInfo(defaultValue = "[]")
     val chronicleJson: String = "[]",
+    /**
+     * JSON array of party-member envelopes (parity #37). Added in DB v7 with a
+     * `'[]'` default so the v6→v7 migration matches the generated schema.
+     */
+    @ColumnInfo(defaultValue = "[]")
+    val partyJson: String = "[]",
 )

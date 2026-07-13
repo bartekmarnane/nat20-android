@@ -30,6 +30,12 @@ data class Campaign(
      * for play.
      */
     val chronicleParagraphs: List<SessionChronicle> = emptyList(),
+    /**
+     * The informational party roster — fellow adventurers the character travels
+     * with (names + optional class/race/level). Empty by default; edited from
+     * campaign setup/settings. Not the deferred party-merged chronicle (A23).
+     */
+    val party: List<PartyMember> = emptyList(),
 ) {
     /** Active until it's ended. */
     val isActive: Boolean get() = endedAt == null
