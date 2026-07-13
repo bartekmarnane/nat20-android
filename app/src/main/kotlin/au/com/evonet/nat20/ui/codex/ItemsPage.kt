@@ -10,11 +10,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
@@ -43,6 +40,8 @@ import au.com.evonet.nat20.dnd5e.DropItem
 import au.com.evonet.nat20.dnd5e.InventoryItem
 import au.com.evonet.nat20.dnd5e.ItemKind
 import au.com.evonet.nat20.dnd5e.UseItem
+import au.com.evonet.nat20.dnd5e.withItemRemoved
+import au.com.evonet.nat20.dnd5e.withItemReplaced
 import au.com.evonet.nat20.dnd5e.core.Coin
 import au.com.evonet.nat20.domain.Character
 import au.com.evonet.nat20.domain.CharacterIntent
@@ -122,8 +121,8 @@ internal fun ItemsPage(
     }
 
     if (showAdd) {
-        AddItemDialog(
-            onPick = { onApplyIntent(AcquireItem(it)); showAdd = false },
+        AddItemSheet(
+            onAdd = { onApplyIntent(AcquireItem(it)); showAdd = false },
             onDismiss = { showAdd = false },
         )
     }
@@ -134,11 +133,13 @@ internal fun ItemsPage(
         )
     }
     detail?.let { item ->
-        ItemDetailDialog(
+        EditItemSheet(
             item = item,
+            // Edit / Delete are direct, unjournaled payload edits (iOS parity).
+            onSave = { updated -> onSave(character.copy(payload = payload.withItemReplaced(updated))); detail = null },
+            onDelete = { onSave(character.copy(payload = payload.withItemRemoved(item.id))); detail = null },
             onUse = useAction(item) { onApplyIntent(it); detail = null },
-            onDrop = { onApplyIntent(DropItem(item.id, item.quantity)); detail = null },
-            onToggleEquip = { toggleEquip(item); detail = null },
+            onDrop = { onApplyIntent(DropItem(item.id, 1)); detail = null },
             onDismiss = { detail = null },
         )
     }
@@ -270,96 +271,6 @@ private fun itemDetail(item: InventoryItem): String? = when {
 }
 
 // ── Dialogs ───────────────────────────────────────────────────────────────────
-
-/** Row-tap detail + actions: equip/unequip, use (consumables), drop. */
-@Composable
-private fun ItemDetailDialog(
-    item: InventoryItem,
-    onUse: (() -> Unit)?,
-    onDrop: () -> Unit,
-    onToggleEquip: () -> Unit,
-    onDismiss: () -> Unit,
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(item.name) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(kindLabel(item.kind), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                itemDetail(item)?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
-                if (item.quantity > 1) Text("Quantity: ${item.quantity}", style = MaterialTheme.typography.bodyMedium)
-                if (item.notes.isNotBlank()) Text(item.notes, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        },
-        confirmButton = {
-            Row {
-                if (item.kind.isEquippable) {
-                    TextButton(onClick = onToggleEquip) { Text(if (item.equipped) "Unequip" else "Equip") }
-                }
-                onUse?.let { TextButton(onClick = it) { Text("Use") } }
-            }
-        },
-        dismissButton = {
-            Row {
-                TextButton(onClick = onDrop) { Text("Drop", color = MaterialTheme.colorScheme.error) }
-                TextButton(onClick = onDismiss) { Text("Close") }
-            }
-        },
-    )
-}
-
-private data class CatalogueChoice(val name: String, val category: String, val make: () -> InventoryItem)
-
-@Composable
-private fun AddItemDialog(onPick: (InventoryItem) -> Unit, onDismiss: () -> Unit) {
-    val choices = remember {
-        buildList {
-            DnD5eCatalog.weapons.forEach { w -> add(CatalogueChoice(w.name, "Weapon") { w.makeItem() }) }
-            DnD5eCatalog.armor.forEach { a -> add(CatalogueChoice(a.name, "Armor") { a.makeItem() }) }
-            DnD5eCatalog.gear.forEach { g -> add(CatalogueChoice(g.name, "Gear") { g.makeItem() }) }
-        }.sortedBy { it.name }
-    }
-    var query by remember { mutableStateOf("") }
-    val filtered = remember(query) {
-        if (query.isBlank()) choices else choices.filter { it.name.contains(query, ignoreCase = true) }
-    }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Add item") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = query,
-                    onValueChange = { query = it },
-                    label = { Text("Search") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                LazyColumn(Modifier.heightIn(max = 320.dp)) {
-                    items(filtered, key = { it.name }) { choice ->
-                        Row(
-                            Modifier
-                                .fillMaxWidth()
-                                .clickable { onPick(choice.make()) }
-                                .padding(vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(choice.name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                            Text(
-                                choice.category,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {},
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Done") } },
-    )
-}
 
 @Composable
 private fun CoinDialog(onAdjust: (Coin, Int) -> Unit, onDismiss: () -> Unit) {

@@ -1,5 +1,6 @@
 package au.com.evonet.nat20.dnd5e
 
+import au.com.evonet.nat20.dnd5e.core.Ability
 import au.com.evonet.nat20.dnd5e.core.AbilityScores
 import au.com.evonet.nat20.dnd5e.core.Coin
 import au.com.evonet.nat20.domain.Character
@@ -287,6 +288,40 @@ class InventoryCodecTests {
                 DnD5eCatalog.gearPiece("potion-of-healing")!!.makeItem(quantity = 3).copy(id = "g1"),
             ),
             coins = mapOf(Coin.GP to 25, Coin.SP to 8),
+        )
+        val decoded = ruleset.decodePayload(ruleset.encodePayload(payload))
+        assertEquals(payload, decoded)
+    }
+
+    @Test
+    fun `magic-item rider fields round-trip`() {
+        val scroll = InventoryItem(
+            id = "s1", name = "Scroll of Fireball", kind = ItemKind.SCROLL,
+            scroll = ScrollProperties(spellID = "fireball", spellName = "Fireball", spellLevel = 3, useScrollDC = true),
+        )
+        val wand = InventoryItem(
+            id = "w1", name = "Wand of Fireballs", kind = ItemKind.WONDROUS, equipped = true,
+            wondrous = WondrousProperties(currentCharges = 5, maxCharges = 7, rechargeDice = "1d6+1"),
+            acBonus = 1,
+        )
+        val cloak = InventoryItem(
+            id = "c1", name = "Cloak of Many Wards", kind = ItemKind.WONDROUS, equipped = true,
+            saveBonus = 1,
+            saveBonusByAbility = mapOf(Ability.DEXTERITY to 2, Ability.WISDOM to 1),
+            skillBonus = mapOf("stealth" to 5, "perception" to 2),
+            damageResistances = listOf("fire", "cold"),
+            damageImmunities = listOf("poison"),
+            conditionImmunities = listOf("frightened", "charmed"),
+            advantageOn = listOf("Perception checks", "saves vs charm"),
+        )
+        val sword = InventoryItem(
+            id = "b1", name = "+1 Longsword", kind = ItemKind.WEAPON, equipped = true,
+            weapon = WeaponProperties(WeaponProperties.Kind.MELEE, "1d8", "slashing", listOf("versatile (1d10)")),
+            attackBonus = 1,
+        )
+        val payload = DnD5ePayload(
+            classes = listOf(ClassEntry("wizard", 5)),
+            inventory = listOf(scroll, wand, cloak, sword),
         )
         val decoded = ruleset.decodePayload(ruleset.encodePayload(payload))
         assertEquals(payload, decoded)

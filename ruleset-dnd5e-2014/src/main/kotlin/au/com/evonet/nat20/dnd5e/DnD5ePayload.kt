@@ -146,3 +146,15 @@ data class DnD5ePayload(
         const val MINIMUM_MAX_HP: Int = 1
     }
 }
+
+/**
+ * Replaces the inventory line whose id matches [item] with the edited copy. Used by
+ * the Edit Item sheet's Save path — a **direct, unjournaled** payload edit (mirrors
+ * iOS + the existing equip toggle), not an intent.
+ */
+fun DnD5ePayload.withItemReplaced(item: InventoryItem): DnD5ePayload =
+    copy(inventory = inventory.map { if (it.id == item.id) item else it })
+
+/** Removes the inventory line with [itemId] outright (Edit Item sheet's Delete path). */
+fun DnD5ePayload.withItemRemoved(itemId: String): DnD5ePayload =
+    copy(inventory = inventory.filterNot { it.id == itemId })
