@@ -1,15 +1,10 @@
 package au.com.evonet.nat20.ui
 
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavBackStackEntry
@@ -23,11 +18,7 @@ import au.com.evonet.nat20.domain.Campaign
 import au.com.evonet.nat20.domain.Character
 import au.com.evonet.nat20.domain.CharacterPhase
 import au.com.evonet.nat20.store.CharacterStore
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import au.com.evonet.nat20.ui.editor.DnD5e2024WizardScreen
-import au.com.evonet.nat20.ui.editor.PathfinderWizardScreen
+import au.com.evonet.nat20.ui.editor.CreationWizardScreen
 import au.com.evonet.nat20.ui.editor.DnD5eWizardScreen
 import au.com.evonet.nat20.ui.journal.JournalScreen
 import au.com.evonet.nat20.ui.past.PastAdventuresScreen
@@ -52,9 +43,7 @@ import java.util.UUID
 private object Routes {
     const val ROSTER = "roster"
     const val SHEET = "sheet/{id}"
-    const val CREATE = "editor"
-    const val CREATE_2024 = "editor2024"
-    const val CREATE_PF2E = "editorPf2e"
+    const val CREATE = "create"
     const val EDIT = "editor/{id}"
     const val JOURNAL = "journal/{id}/{campaignId}"
     const val PAST = "past/{id}"
@@ -93,24 +82,17 @@ fun NatApp() {
 
     NavHost(navController = nav, startDestination = Routes.ROSTER) {
         composable(Routes.ROSTER) {
-            var chooseEdition by remember { mutableStateOf(false) }
             val campaignNames by store.activeCampaignNames.collectAsState()
             RosterScreen(
                 characters = characters,
                 campaignNames = campaignNames,
                 canCreate = PatronStore.canCreateMore(characters.size, isPatron),
                 onSelect = { nav.navigate(Routes.sheet(it.id)) },
-                onNew = { chooseEdition = true },
+                onNew = { nav.navigate(Routes.CREATE) },
                 onUpgrade = { nav.navigate(Routes.PATRON) },
                 onDelete = { store.delete(it.id) },
                 onOpenSettings = { nav.navigate(Routes.SETTINGS) },
             )
-            if (chooseEdition) {
-                EditionChooser(
-                    onPick = { route -> chooseEdition = false; nav.navigate(route) },
-                    onDismiss = { chooseEdition = false },
-                )
-            }
         }
 
         composable(Routes.SETTINGS) {
@@ -224,22 +206,9 @@ fun NatApp() {
         }
 
         composable(Routes.CREATE) {
-            DnD5eWizardScreen(
-                existing = null,
-                onSave = { store.save(it); nav.popBackStack() },
-                onCancel = { nav.popBackStack() },
-            )
-        }
-
-        composable(Routes.CREATE_2024) {
-            DnD5e2024WizardScreen(
-                onSave = { store.save(it); nav.popBackStack() },
-                onCancel = { nav.popBackStack() },
-            )
-        }
-
-        composable(Routes.CREATE_PF2E) {
-            PathfinderWizardScreen(
+            // The unified creation flow: Ruleset step first, then the chosen
+            // edition's wizard inside the same shell (iOS CharacterCreationWizard).
+            CreationWizardScreen(
                 onSave = { store.save(it); nav.popBackStack() },
                 onCancel = { nav.popBackStack() },
             )
@@ -261,31 +230,6 @@ fun NatApp() {
             }
         }
     }
-}
-
-/** Pick which ruleset a new character uses before opening the matching creation wizard (A21/A22). */
-@Composable
-private fun EditionChooser(onPick: (String) -> Unit, onDismiss: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Choose a ruleset") },
-        text = {
-            androidx.compose.foundation.layout.Column(
-                verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(4.dp),
-            ) {
-                RulesetOption("D&D 5e (2014)") { onPick(Routes.CREATE) }
-                RulesetOption("D&D 5e (2024)") { onPick(Routes.CREATE_2024) }
-                RulesetOption("Pathfinder 2e (Remaster)") { onPick(Routes.CREATE_PF2E) }
-            }
-        },
-        confirmButton = {},
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
-    )
-}
-
-@Composable
-private fun RulesetOption(label: String, onClick: () -> Unit) {
-    androidx.compose.material3.OutlinedButton(onClick = onClick, modifier = Modifier.fillMaxWidth()) { Text(label) }
 }
 
 /** The character's active campaign, if it's committed to one. */

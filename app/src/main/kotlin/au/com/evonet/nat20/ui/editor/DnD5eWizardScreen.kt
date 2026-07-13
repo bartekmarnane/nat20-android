@@ -16,17 +16,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -62,8 +58,9 @@ import kotlin.math.max
  * The multi-step D&D 5e creation/edit wizard (A8). Replaces the minimal A6
  * form. Steps: Name → Race → Class → Background → Abilities → Skills → Review,
  * reading the SRD catalogues (`DnD5eCatalog`) and materialising a draft into a
- * `Character`. Port of the iOS step-8 wizard (Ruleset step omitted — one
- * ruleset; Manner/Spells/Advancements deferred).
+ * `Character`. Hosted in the shared [EditorShell] chrome; the unified creation
+ * flow prefixes the Ruleset step (`stepOffset = 1`, `onExitFirstStep` returns to
+ * it), while the edit route hosts it standalone. (Manner step deferred.)
  */
 private enum class WizStep(val title: String) {
     NAME("Name"), RACE("Race"), CLASS("Class"), BACKGROUND("Background"),
@@ -102,7 +99,13 @@ private fun asiLevels(classId: String?, level: Int): List<Int> =
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DnD5eWizardScreen(existing: Character?, onSave: (Character) -> Unit, onCancel: () -> Unit) {
+fun DnD5eWizardScreen(
+    existing: Character?,
+    onSave: (Character) -> Unit,
+    onCancel: () -> Unit,
+    stepOffset: Int = 0,
+    onExitFirstStep: (() -> Unit)? = null,
+) {
     val source = existing?.payload as? DnD5ePayload
 
     var stepIndex by rememberSaveable { mutableIntStateOf(0) }
@@ -195,51 +198,56 @@ fun DnD5eWizardScreen(existing: Character?, onSave: (Character) -> Unit, onCance
         }
     }
 
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(if (existing == null) "New Character" else "Edit Character")
-                        Text(
-                            "Step ${stepIndex + 1} of ${steps.size} · ${step.title}",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                },
-                navigationIcon = { TextButton(onClick = onCancel) { Text("Cancel") } },
-            )
-        },
-    ) { inner ->
-        Column(Modifier.padding(inner).fillMaxSize()) {
-            Column(Modifier.weight(1f).fillMaxWidth()) {
-                when (step) {
-                    WizStep.NAME -> IdentityStep(name, { name = it }, Modifier.fillMaxSize().padding(16.dp))
-                    WizStep.RACE -> PickStep(DnD5eCatalog.races, raceId, { it.id }, { it.name }, { it.description }) { raceId = it }
-                    WizStep.CLASS -> ClassStep(classId, level, onPick = { classId = it; chosenSkills = emptySet() }, onLevel = { level = it })
-                    WizStep.BACKGROUND -> PickStep(DnD5eCatalog.backgrounds, backgroundId, { it.id }, { it.name }, { it.description }) { backgroundId = it }
-                    WizStep.ABILITIES -> AbilitiesStep(base, raceBonus, finalScores) { base = it }
-                    WizStep.SKILLS -> SkillsStep(klass, backgroundSkills, chosenSkills) { chosenSkills = it }
-                    WizStep.FIGHTING_STYLE -> FightingStyleStep(fightingStyle) { fightingStyle = it }
-                    WizStep.SPELLS -> SpellsStep(klass, chosenCantrips, chosenSpells, { chosenCantrips = it }, { chosenSpells = it })
-                    WizStep.ADVANCEMENTS -> AdvancementsStep(
-                        klass, level, needsSubclass, advLevels, finalScores, isSpellcaster, subclass, advs,
-                        onSubclass = { subclass = it },
-                        onAdv = { lvl, st -> advs = advs + (lvl to st) },
-                    )
-                    WizStep.REVIEW -> ReviewStep(name, race, klass, level, background, finalScores, backgroundSkills + chosenSkills)
-                }
+    EditorShell(
+        kicker = "Step ${stepOffset + stepIndex + 1} of ${stepOffset + steps.size}",
+        title = if (existing == null) "New Character" else "Edit Character",
+        stepCount = stepOffset + steps.size,
+        currentIndex = stepOffset + stepIndex,
+        onBack = {
+            when {
+                stepIndex > 0 -> stepIndex--
+                onExitFirstStep != null -> onExitFirstStep()
+                else -> onCancel()
             }
-            NavBar(
-                showBack = stepIndex > 0,
-                isLast = step == WizStep.REVIEW,
-                canAdvance = canAdvance(),
-                onBack = { stepIndex-- },
-                onNext = { stepIndex++ },
-                onSave = { onSave(build()) },
-            )
+        },
+        onJump = { target ->
+            if (target < stepOffset) {
+                onExitFirstStep?.invoke()
+            } else {
+                stepIndex = (target - stepOffset).coerceIn(0, steps.lastIndex)
+            }
+        },
+        scrollableContent = false, // several step bodies scroll themselves (LazyColumn / verticalScroll)
+        footer = {
+            WizardSecondaryButton("Cancel", onCancel)
+            Spacer(Modifier.weight(1f))
+            WizardPrimaryButton(
+                label = when {
+                    step != WizStep.REVIEW -> "Continue"
+                    existing == null -> "Create"
+                    else -> "Save"
+                },
+                enabled = canAdvance(),
+            ) { if (step == WizStep.REVIEW) onSave(build()) else stepIndex++ }
+        },
+    ) {
+        Column(Modifier.weight(1f).fillMaxWidth()) {
+            when (step) {
+                WizStep.NAME -> IdentityStep(name, { name = it }, Modifier.fillMaxSize().padding(16.dp))
+                WizStep.RACE -> PickStep(DnD5eCatalog.races, raceId, { it.id }, { it.name }, { it.description }) { raceId = it }
+                WizStep.CLASS -> ClassStep(classId, level, onPick = { classId = it; chosenSkills = emptySet() }, onLevel = { level = it })
+                WizStep.BACKGROUND -> PickStep(DnD5eCatalog.backgrounds, backgroundId, { it.id }, { it.name }, { it.description }) { backgroundId = it }
+                WizStep.ABILITIES -> AbilitiesStep(base, raceBonus, finalScores) { base = it }
+                WizStep.SKILLS -> SkillsStep(klass, backgroundSkills, chosenSkills) { chosenSkills = it }
+                WizStep.FIGHTING_STYLE -> FightingStyleStep(fightingStyle) { fightingStyle = it }
+                WizStep.SPELLS -> SpellsStep(klass, chosenCantrips, chosenSpells, { chosenCantrips = it }, { chosenSpells = it })
+                WizStep.ADVANCEMENTS -> AdvancementsStep(
+                    klass, level, needsSubclass, advLevels, finalScores, isSpellcaster, subclass, advs,
+                    onSubclass = { subclass = it },
+                    onAdv = { lvl, st -> advs = advs + (lvl to st) },
+                )
+                WizStep.REVIEW -> ReviewStep(name, race, klass, level, background, finalScores, backgroundSkills + chosenSkills)
+            }
         }
     }
 }
@@ -492,19 +500,6 @@ private fun ReviewLine(label: String, value: String) {
 }
 
 // ── Shared ───────────────────────────────────────────────────────────────────
-
-@Composable
-private fun NavBar(showBack: Boolean, isLast: Boolean, canAdvance: Boolean, onBack: () -> Unit, onNext: () -> Unit, onSave: () -> Unit) {
-    Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-        if (showBack) OutlinedButton(onClick = onBack) { Text("Back") }
-        Spacer(Modifier.weight(1f))
-        if (isLast) {
-            Button(onClick = onSave, enabled = canAdvance) { Text("Save") }
-        } else {
-            Button(onClick = onNext, enabled = canAdvance) { Text("Next") }
-        }
-    }
-}
 
 @Composable
 private fun Stepper(value: Int, range: IntRange, onChange: (Int) -> Unit) {

@@ -16,17 +16,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -100,7 +96,12 @@ private fun asiLevels2024(classId: String?, level: Int): List<Int> =
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DnD5e2024WizardScreen(onSave: (Character) -> Unit, onCancel: () -> Unit) {
+fun DnD5e2024WizardScreen(
+    onSave: (Character) -> Unit,
+    onCancel: () -> Unit,
+    stepOffset: Int = 0,
+    onExitFirstStep: (() -> Unit)? = null,
+) {
     var stepIndex by rememberSaveable { mutableIntStateOf(0) }
     var name by rememberSaveable { mutableStateOf("") }
     var speciesId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -166,34 +167,46 @@ fun DnD5e2024WizardScreen(onSave: (Character) -> Unit, onCancel: () -> Unit) {
         return Character.new(name.trim(), DnD5e2024Ruleset(), payload, Instant.now())
     }
 
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text("New Character · 2024")
-                        Text("Step ${stepIndex + 1} of ${steps.size} · ${step.title}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                },
-                navigationIcon = { TextButton(onClick = onCancel) { Text("Cancel") } },
-            )
-        },
-    ) { inner ->
-        Column(Modifier.padding(inner).fillMaxSize()) {
-            Column(Modifier.weight(1f).fillMaxWidth()) {
-                when (step) {
-                    Wiz2024.NAME -> IdentityStep(name, { name = it }, Modifier.fillMaxSize().padding(16.dp))
-                    Wiz2024.SPECIES -> Pick2024(DnD5e2024Catalog.species, speciesId, { it.id }, { it.name }, { it.description }) { speciesId = it }
-                    Wiz2024.CLASS -> Class2024(classId, level, onPick = { classId = it; chosenSkills = emptySet() }, onLevel = { level = it })
-                    Wiz2024.BACKGROUND -> Pick2024(DnD5e2024Catalog.backgrounds, backgroundId, { it.id }, { it.name }, { "${it.description} · ${it.abilityOptions.joinToString(", ") { a -> a.abbreviation }}" }) { backgroundId = it; plus2 = null; plus1 = null }
-                    Wiz2024.ABILITIES -> Abilities2024(base, background, asiMode, plus2, plus1, finalScores, onBase = { base = it }, onMode = { asiMode = it; plus2 = null; plus1 = null }, onPlus2 = { plus2 = it; if (plus1 == it) plus1 = null }, onPlus1 = { plus1 = it })
-                    Wiz2024.SKILLS -> Skills2024(klass, backgroundSkills, chosenSkills) { chosenSkills = it }
-                    Wiz2024.ADVANCEMENTS -> Advancements2024(klass, level, needsSubclass, asiLevels, finalScores, subclass, advs, onSubclass = { subclass = it }, onAdv = { lvl, s -> advs = advs + (lvl to s) })
-                    Wiz2024.REVIEW -> Review2024(name, speciesId, klass, level, background, finalScores, backgroundSkills + chosenSkills)
-                }
+    EditorShell(
+        kicker = "Step ${stepOffset + stepIndex + 1} of ${stepOffset + steps.size}",
+        title = "New Character",
+        stepCount = stepOffset + steps.size,
+        currentIndex = stepOffset + stepIndex,
+        onBack = {
+            when {
+                stepIndex > 0 -> stepIndex--
+                onExitFirstStep != null -> onExitFirstStep()
+                else -> onCancel()
             }
-            Nav2024(showBack = stepIndex > 0, isLast = step == Wiz2024.REVIEW, canAdvance = canAdvance(), onBack = { stepIndex-- }, onNext = { stepIndex++ }, onSave = { onSave(build()) })
+        },
+        onJump = { target ->
+            if (target < stepOffset) {
+                onExitFirstStep?.invoke()
+            } else {
+                stepIndex = (target - stepOffset).coerceIn(0, steps.lastIndex)
+            }
+        },
+        scrollableContent = false, // several step bodies scroll themselves (LazyColumn / verticalScroll)
+        footer = {
+            WizardSecondaryButton("Cancel", onCancel)
+            Spacer(Modifier.weight(1f))
+            WizardPrimaryButton(
+                label = if (step == Wiz2024.REVIEW) "Create" else "Continue",
+                enabled = canAdvance(),
+            ) { if (step == Wiz2024.REVIEW) onSave(build()) else stepIndex++ }
+        },
+    ) {
+        Column(Modifier.weight(1f).fillMaxWidth()) {
+            when (step) {
+                Wiz2024.NAME -> IdentityStep(name, { name = it }, Modifier.fillMaxSize().padding(16.dp))
+                Wiz2024.SPECIES -> Pick2024(DnD5e2024Catalog.species, speciesId, { it.id }, { it.name }, { it.description }) { speciesId = it }
+                Wiz2024.CLASS -> Class2024(classId, level, onPick = { classId = it; chosenSkills = emptySet() }, onLevel = { level = it })
+                Wiz2024.BACKGROUND -> Pick2024(DnD5e2024Catalog.backgrounds, backgroundId, { it.id }, { it.name }, { "${it.description} · ${it.abilityOptions.joinToString(", ") { a -> a.abbreviation }}" }) { backgroundId = it; plus2 = null; plus1 = null }
+                Wiz2024.ABILITIES -> Abilities2024(base, background, asiMode, plus2, plus1, finalScores, onBase = { base = it }, onMode = { asiMode = it; plus2 = null; plus1 = null }, onPlus2 = { plus2 = it; if (plus1 == it) plus1 = null }, onPlus1 = { plus1 = it })
+                Wiz2024.SKILLS -> Skills2024(klass, backgroundSkills, chosenSkills) { chosenSkills = it }
+                Wiz2024.ADVANCEMENTS -> Advancements2024(klass, level, needsSubclass, asiLevels, finalScores, subclass, advs, onSubclass = { subclass = it }, onAdv = { lvl, s -> advs = advs + (lvl to s) })
+                Wiz2024.REVIEW -> Review2024(name, speciesId, klass, level, background, finalScores, backgroundSkills + chosenSkills)
+            }
         }
     }
 }
@@ -385,15 +398,6 @@ private fun Review2024Line(label: String, value: String) {
 }
 
 // ── Shared atoms ─────────────────────────────────────────────────────────────
-
-@Composable
-private fun Nav2024(showBack: Boolean, isLast: Boolean, canAdvance: Boolean, onBack: () -> Unit, onNext: () -> Unit, onSave: () -> Unit) {
-    Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-        if (showBack) OutlinedButton(onClick = onBack) { Text("Back") }
-        Spacer(Modifier.weight(1f))
-        if (isLast) Button(onClick = onSave, enabled = canAdvance) { Text("Save") } else Button(onClick = onNext, enabled = canAdvance) { Text("Next") }
-    }
-}
 
 @Composable
 private fun Stepper2024(value: Int, range: IntRange, onChange: (Int) -> Unit) {

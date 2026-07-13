@@ -4,21 +4,15 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -51,7 +45,12 @@ private enum class PfWiz(val title: String) {
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun PathfinderWizardScreen(onSave: (Character) -> Unit, onCancel: () -> Unit) {
+fun PathfinderWizardScreen(
+    onSave: (Character) -> Unit,
+    onCancel: () -> Unit,
+    stepOffset: Int = 0,
+    onExitFirstStep: (() -> Unit)? = null,
+) {
     val steps = PfWiz.entries
     var stepIndex by remember { mutableIntStateOf(0) }
     var name by remember { mutableStateOf("") }
@@ -90,22 +89,42 @@ fun PathfinderWizardScreen(onSave: (Character) -> Unit, onCancel: () -> Unit) {
         PfWiz.REVIEW -> true
     }
 
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text("New Character · PF2e")
-                        Text("Step ${stepIndex + 1} of ${steps.size} · ${step.title}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                },
-                navigationIcon = { TextButton(onClick = onCancel) { Text("Cancel") } },
-            )
+    EditorShell(
+        kicker = "Step ${stepOffset + stepIndex + 1} of ${stepOffset + steps.size}",
+        title = "New Character",
+        stepCount = stepOffset + steps.size,
+        currentIndex = stepOffset + stepIndex,
+        onBack = {
+            when {
+                stepIndex > 0 -> stepIndex--
+                onExitFirstStep != null -> onExitFirstStep()
+                else -> onCancel()
+            }
         },
-    ) { inner ->
-        Column(Modifier.padding(inner).fillMaxSize()) {
-            Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        onJump = { target ->
+            if (target < stepOffset) {
+                onExitFirstStep?.invoke()
+            } else {
+                stepIndex = (target - stepOffset).coerceIn(0, steps.lastIndex)
+            }
+        },
+        scrollableContent = false, // the step area below scrolls itself (as it did pre-shell)
+        footer = {
+            WizardSecondaryButton("Cancel", onCancel)
+            Spacer(Modifier.weight(1f))
+            WizardPrimaryButton(
+                label = if (step == PfWiz.REVIEW) "Create" else "Continue",
+                enabled = canAdvance(),
+            ) {
+                if (step == PfWiz.REVIEW) {
+                    onSave(Character.new(name.trim(), PathfinderRuleset(), PathfinderBuilder.build(choices()), Instant.now()))
+                } else {
+                    stepIndex++
+                }
+            }
+        },
+    ) {
+        Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 when (step) {
                     PfWiz.NAME -> IdentityStep(name, { name = it })
                     PfWiz.ANCESTRY -> {
@@ -170,15 +189,6 @@ fun PathfinderWizardScreen(onSave: (Character) -> Unit, onCancel: () -> Unit) {
                     }
                 }
             }
-            Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                if (stepIndex > 0) OutlinedButton(onClick = { stepIndex-- }, modifier = Modifier.weight(1f)) { Text("Back") }
-                if (step == PfWiz.REVIEW) {
-                    Button(onClick = { onSave(Character.new(name.trim(), PathfinderRuleset(), PathfinderBuilder.build(choices()), Instant.now())) }, modifier = Modifier.weight(1f)) { Text("Create") }
-                } else {
-                    Button(enabled = canAdvance(), onClick = { stepIndex++ }, modifier = Modifier.weight(1f)) { Text("Next") }
-                }
-            }
-        }
     }
 }
 

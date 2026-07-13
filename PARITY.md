@@ -29,7 +29,9 @@ Legend: `[ ]` not audited · `[~]` audited, fixes in progress · `[x]` fixed + v
 
 ## Character creation
 
-- [ ] 7. Creation entry — iOS: unified wizard w/ Ruleset step (`CharacterCreationWizard.swift`) · Android: EditionChooser AlertDialog in `NatApp.kt` — **structural**
+- [~] 7. Creation entry — iOS: unified wizard w/ Ruleset step (`CharacterCreationWizard.swift`) · Android: EditionChooser AlertDialog in `NatApp.kt` — **structural**
+  - Built 2026-07-13: unified `CreationWizardScreen` (Ruleset step w/ selection-dot edition tiles, indicator previews 1→8 steps once an edition is picked) + shared `EditorShell` chrome in new `ui/editor/WizardShell.kt` (back circle + kicker/title nav row, diamond step rail w/ tap-back jumps, hairline divider, pinned gradient footer w/ capsule Cancel + Continue/Create/Save buttons, `WizardStepSection`). EditionChooser AlertDialog + the three per-edition create routes removed; single "create" route. All three wizards re-hosted on `EditorShell` with `stepOffset = 1` + `onExitFirstStep` (back/jump from their first step returns to the Ruleset step); 2014 edit route unchanged (stepOffset 0). Step bodies untouched — that's items 8–10. Awaiting visual confirm.
+  - Deferred: Content Sources disclosure under the selected 2014 row (needs the SourceCatalog port); per-edition draft retention when switching editions mid-flow (iOS keeps three drafts — Android re-entering an edition resets it); AI-describe card seam (A20).
 - [ ] 8. 2014 wizard — `DnD5eEditorView.swift` + steps ↔ `ui/editor/DnD5eWizardScreen.kt` (iOS extra steps: Equipment, Manner, AI-describe card)
 - [ ] 9. 2024 wizard — `DnD5e2024EditorView.swift` ↔ `ui/editor/DnD5e2024WizardScreen.kt` (iOS extra steps: Weapon Mastery, Fighting Style, Armor, Subclass, Spells)
 - [ ] 10. PF2e wizard — `PathfinderEditorView.swift` ↔ `ui/editor/PathfinderWizardScreen.kt` (iOS extra steps: Subclass, Spells, Feats, Advancement, Equipment)
