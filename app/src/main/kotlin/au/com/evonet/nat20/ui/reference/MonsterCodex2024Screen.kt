@@ -36,121 +36,57 @@ import au.com.evonet.nat20.dnd5e2024.MonsterCatalog2024
  * Port of the iOS `MonsterCodex2024View`. Attribution: SRD 5.2 (CC BY 4.0).
  */
 /** Chromeless D&D 5e (2024) bestiary body for the [ReferenceTabShell]. */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MonsterCodex2024Body() {
     var query by remember { mutableStateOf("") }
     var crFilter by remember { mutableStateOf<Double?>(null) }
-    var expanded by remember { mutableStateOf<String?>(null) }
 
     val monsters = remember(query, crFilter) {
         MonsterCatalog2024.all.filter { m ->
             (crFilter == null || m.challengeRating == crFilter) &&
                 (query.isBlank() || m.name.contains(query.trim(), ignoreCase = true) || m.type.contains(query.trim(), ignoreCase = true))
-        }
+        }.map { it.toView() }
     }
 
-    Column(Modifier.fillMaxSize()) {
-        OutlinedTextField(
-            value = query,
-            onValueChange = { query = it },
-            label = { Text("Search ${MonsterCatalog2024.all.size} monsters") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-        )
-        LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(CrFilters) { cr ->
-                FilterChip(
-                    selected = crFilter == cr,
-                    onClick = { crFilter = if (crFilter == cr) null else cr },
-                    label = { Text("CR ${crLabel(cr)}") },
-                )
+    MonsterCodexList(
+        query = query,
+        onQuery = { query = it },
+        hint = "Search ${MonsterCatalog2024.all.size} monsters",
+        monsters = monsters,
+        filterPills = {
+            CrFilters.forEach { cr ->
+                ReferencePill("CR ${crLabel(cr)}", crFilter == cr) { crFilter = if (crFilter == cr) null else cr }
             }
-        }
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            items(monsters, key = { it.id }) { monster ->
-                MonsterRow(monster, expanded == monster.id) { expanded = if (expanded == monster.id) null else monster.id }
-            }
-        }
-    }
+        },
+    )
 }
 
-@Composable
-private fun MonsterRow(monster: Monster2024, expanded: Boolean, onToggle: () -> Unit) {
-    Card(Modifier.fillMaxWidth().clickable(onClick = onToggle)) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Row(Modifier.fillMaxWidth()) {
-                Column(Modifier.weight(1f)) {
-                    Text(monster.name, style = MaterialTheme.typography.titleMedium)
-                    Text(monster.subtitle, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                Text("CR ${monster.crLabel}", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-            }
-            AnimatedVisibility(expanded) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
-                    MetaLine("Armor Class", "${monster.armorClass}" + monster.armorDetail.takeIf { it.isNotBlank() }?.let { " ($it)" }.orEmpty())
-                    MetaLine("Hit Points", "${monster.hitPoints}" + monster.hitDice.takeIf { it.isNotBlank() }?.let { " ($it)" }.orEmpty())
-                    MetaLine("Speed", monster.speed)
-                    AbilityGrid(monster.abilities)
-                    MetaLine("Saving Throws", monster.savesDisplay)
-                    MetaLine("Skills", monster.skillsDisplay)
-                    MetaLine("Resistances", monster.damageResistances)
-                    MetaLine("Immunities", listOf(monster.damageImmunities, monster.conditionImmunities).filter { it.isNotBlank() }.joinToString("; "))
-                    MetaLine("Vulnerabilities", monster.damageVulnerabilities)
-                    MetaLine("Senses", listOf(monster.sensesDisplay, "passive Perception ${monster.passivePerception}").filter { it.isNotBlank() }.joinToString(", "))
-                    MetaLine("Languages", monster.languages)
-                    NamedTextBlock("Traits", monster.traits)
-                    NamedTextBlock("Actions", monster.actions)
-                    NamedTextBlock("Bonus Actions", monster.bonusActions)
-                    NamedTextBlock("Reactions", monster.reactions)
-                    NamedTextBlock("Legendary Actions", monster.legendaryActions)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun AbilityGrid(a: Monster2024.Abilities) {
-    val pairs = listOf("STR" to a.str, "DEX" to a.dex, "CON" to a.con, "INT" to a.int, "WIS" to a.wis, "CHA" to a.cha)
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        pairs.forEach { (label, score) ->
-            Column(horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
-                Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text("$score", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-                val mod = Math.floorDiv(score - 10, 2)
-                Text(if (mod >= 0) "+$mod" else "$mod", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-    }
-}
-
-@Composable
-private fun NamedTextBlock(title: String, entries: List<Monster2024.NamedText>) {
-    if (entries.isEmpty()) return
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(title.uppercase(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-        entries.forEach { e ->
-            Text(
-                buildAnnotatedNamed(e.name, e.desc),
-                style = MaterialTheme.typography.bodySmall,
-            )
-        }
-    }
-}
-
-private fun buildAnnotatedNamed(name: String, desc: String): String = "$name. $desc"
-
-@Composable
-private fun MetaLine(label: String, value: String) {
-    if (value.isBlank()) return
-    Text("$label: $value", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-}
+private fun Monster2024.toView() = MonsterView(
+    id = id,
+    name = name,
+    subtitle = subtitle,
+    badge = "CR $crLabel",
+    meta = listOf(
+        "Armor Class" to "$armorClass" + armorDetail.takeIf { it.isNotBlank() }?.let { " ($it)" }.orEmpty(),
+        "Hit Points" to "$hitPoints" + hitDice.takeIf { it.isNotBlank() }?.let { " ($it)" }.orEmpty(),
+        "Speed" to speed,
+        "Saving Throws" to savesDisplay,
+        "Skills" to skillsDisplay,
+        "Resistances" to damageResistances,
+        "Immunities" to listOf(damageImmunities, conditionImmunities).filter { it.isNotBlank() }.joinToString("; "),
+        "Vulnerabilities" to damageVulnerabilities,
+        "Senses" to listOf(sensesDisplay, "passive Perception $passivePerception").filter { it.isNotBlank() }.joinToString(", "),
+        "Languages" to languages,
+    ),
+    abilities = listOf("STR" to abilities.str, "DEX" to abilities.dex, "CON" to abilities.con, "INT" to abilities.int, "WIS" to abilities.wis, "CHA" to abilities.cha),
+    blocks = listOf(
+        "Traits" to traits.map { it.name to it.desc },
+        "Actions" to actions.map { it.name to it.desc },
+        "Bonus Actions" to bonusActions.map { it.name to it.desc },
+        "Reactions" to reactions.map { it.name to it.desc },
+        "Legendary Actions" to legendaryActions.map { it.name to it.desc },
+    ),
+)
 
 /** A representative ladder of challenge ratings for the filter chips. */
 private val CrFilters: List<Double> = listOf(0.0, 0.125, 0.25, 0.5, 1.0, 2.0, 3.0, 5.0, 10.0, 15.0, 20.0, 25.0, 30.0)

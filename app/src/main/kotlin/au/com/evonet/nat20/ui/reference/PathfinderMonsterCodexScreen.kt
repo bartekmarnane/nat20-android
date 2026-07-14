@@ -37,58 +37,43 @@ import au.com.evonet.nat20.pf2e.PFMonsterCatalog
  * License, via Archives of Nethys.
  */
 /** Chromeless Pathfinder 2e Monster Core body for the [ReferenceTabShell]. */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PathfinderMonsterCodexBody() {
     var query by remember { mutableStateOf("") }
     var levelFilter by remember { mutableStateOf<Int?>(null) }
-    var expanded by remember { mutableStateOf<String?>(null) }
 
     val monsters = remember(query, levelFilter) {
         PFMonsterCatalog.all.filter { m ->
             (levelFilter == null || m.level == levelFilter) &&
                 (query.isBlank() || m.name.contains(query.trim(), ignoreCase = true) || m.traits.any { it.contains(query.trim(), ignoreCase = true) })
-        }
+        }.map { it.toView() }
     }
 
-    Column(Modifier.fillMaxSize()) {
-        OutlinedTextField(
-            value = query, onValueChange = { query = it },
-            label = { Text("Search ${PFMonsterCatalog.all.size} creatures") }, singleLine = true,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-        )
-        LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(LevelFilters) { lvl ->
-                FilterChip(levelFilter == lvl, { levelFilter = if (levelFilter == lvl) null else lvl }, label = { Text("Lv $lvl") })
+    MonsterCodexList(
+        query = query,
+        onQuery = { query = it },
+        hint = "Search ${PFMonsterCatalog.all.size} creatures",
+        monsters = monsters,
+        filterPills = {
+            LevelFilters.forEach { lvl ->
+                ReferencePill("Lv $lvl", levelFilter == lvl) { levelFilter = if (levelFilter == lvl) null else lvl }
             }
-        }
-        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            items(monsters, key = { it.id }) { m -> MonsterRow(m, expanded == m.id) { expanded = if (expanded == m.id) null else m.id } }
-        }
-    }
+        },
+    )
 }
 
-@Composable
-private fun MonsterRow(monster: PFMonster, expanded: Boolean, onToggle: () -> Unit) {
-    Card(Modifier.fillMaxWidth().clickable(onClick = onToggle)) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Row(Modifier.fillMaxWidth()) {
-                Column(Modifier.weight(1f)) {
-                    Text(monster.name, style = MaterialTheme.typography.titleMedium)
-                    Text(monster.subtitle, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                Text("AC ${monster.ac} · ${monster.hp} HP", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-            }
-            AnimatedVisibility(expanded) {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
-                    if (monster.description.isNotBlank()) Text(monster.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(cleanStatblock(monster.statblock), style = MaterialTheme.typography.bodySmall)
-                }
-            }
-        }
-    }
-}
+private fun PFMonster.toView() = MonsterView(
+    id = id,
+    name = name,
+    subtitle = subtitle,
+    badge = "AC $ac · $hp HP",
+    meta = emptyList(),
+    abilities = emptyList(),
+    blocks = buildList {
+        if (description.isNotBlank()) add("Description" to listOf("" to description))
+        add("Statblock" to listOf("" to cleanStatblock(statblock)))
+    },
+)
 
 /** Light Markdown → plain text: drop the bold/italic markers, keep the line structure. */
 private fun cleanStatblock(markdown: String): String =

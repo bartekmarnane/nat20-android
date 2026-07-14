@@ -166,9 +166,12 @@ Legend: `[ ]` not audited · `[~]` audited, fixes in progress · `[x]` fixed + v
 
 ## Reference (Settings → …)
 
-- [ ] 41. Spell library shell + 3 ruleset tabs — `ReferenceTabShell.swift` + per-ruleset views ↔ `ui/reference/SpellLibraryShell.kt`
-- [ ] 42. Item catalog + details — per-ruleset ↔ `ItemCatalogShell.kt` (iOS pushes detail screens; Android uses dialogs)
-- [ ] 43. Monster codex + statblocks — per-ruleset ↔ `MonsterCodexShell.kt`
+- [~] 41. Spell library shell + 3 ruleset tabs — `ReferenceTabShell.swift` + per-ruleset views ↔ `ui/reference/SpellLibraryShell.kt`
+  - Audited 2026-07-14: already parchment (built on the shared `ReferenceChrome` — `ReferenceSearchField`/`ReferencePill`/`ReferenceSectionHeader` + `ReferenceTabShell` ruleset tabs). No restyle needed. Divergence: spell detail is a Material `AlertDialog` popup, not iOS's pushed parchment detail screen (content is shown; dialog-vs-push is the known acceptable divergence flagged at the audit start). Detail-dialog parchment polish is a follow-up.
+- [~] 42. Item catalog + details — per-ruleset ↔ `ItemCatalogShell.kt`
+  - Audited 2026-07-14: already parchment on `ReferenceChrome` (category chips + search + item rows). Same detail-vs-dialog divergence as #41 (`ItemDetailDialog` is a Material AlertDialog). Follow-up: parchment-style the detail popup.
+- [~] 43. Monster codex + statblocks — per-ruleset ↔ `MonsterCodexShell.kt`
+  - Restyled 2026-07-14 (directly): the three bestiary bodies (2014/2024/PF2e) were stock Material3 (OutlinedTextField/FilterChip/Card) inside the parchment `ReferenceChrome`. New shared `MonsterCodexAtoms.kt` (`MonsterView` model + `MonsterCodexList` renderer: `ReferenceSearchField` + `ReferencePill` filter row + expandable parchment statblock cards — accent italic name, CR/AC-HP badge, ability sextet, meta lines, named-text blocks). Each body maps its model (`Monster`/`Monster2024`/`PFMonster`) to `MonsterView`; PF2e keeps its markdown statblock as text blocks. CR filters (2014/2024) / level filters (PF2e) preserved.
 - [ ] 44. Custom Creatures list + form — iOS only · Android: **missing**
 - [x] 45. PF2e Actions reference — removed 2026-07-13 (Android-only, no iOS counterpart; see #4)
 
