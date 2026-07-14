@@ -21,6 +21,7 @@ class Nat20Application : Application() {
         // Hydrate the homebrew race library from Room, then keep it persisted
         // write-through (parity #11).
         container.customRaceSync.start()
+        container.customCreatureSync.start()
 
         if (BuildConfig.DEBUG) {
             container.applicationScope.launch {

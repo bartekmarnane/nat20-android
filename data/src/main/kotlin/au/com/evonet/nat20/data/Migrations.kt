@@ -61,6 +61,17 @@ internal object Migrations {
     }
 
     /** v6 → v7 (parity #37): additive — party-roster column on campaigns. */
+    val MIGRATION_7_8 = object : Migration(7, 8) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `custom_creatures` (" +
+                    "`id` TEXT NOT NULL, `creatureId` TEXT NOT NULL, `name` TEXT NOT NULL, " +
+                    "`payloadJson` TEXT NOT NULL, `createdAt` TEXT NOT NULL, `updatedAt` TEXT NOT NULL, " +
+                    "PRIMARY KEY(`id`))",
+            )
+        }
+    }
+
     val MIGRATION_6_7 = object : Migration(6, 7) {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL("ALTER TABLE `campaigns` ADD COLUMN `partyJson` TEXT NOT NULL DEFAULT '[]'")

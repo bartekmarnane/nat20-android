@@ -8,6 +8,7 @@ import au.com.evonet.nat20.data.CharacterRepository
 import au.com.evonet.nat20.data.CustomRaceRepository
 import au.com.evonet.nat20.data.Nat20Data
 import au.com.evonet.nat20.store.CustomRaceSync
+import au.com.evonet.nat20.store.CustomCreatureSync
 import au.com.evonet.nat20.domain.RulesetRegistry
 import au.com.evonet.nat20.patron.PatronStore
 import au.com.evonet.nat20.settings.AppSettings
@@ -40,6 +41,9 @@ class AppContainer(context: Context) {
 
     /** Hydrates + write-through-persists the homebrew race library (parity #11). */
     val customRaceSync: CustomRaceSync = CustomRaceSync(customRaceRepository, applicationScope)
+
+    /** Hydrates + write-through-persists the homebrew creature library (parity #44). */
+    val customCreatureSync: CustomCreatureSync = CustomCreatureSync(repositories.customCreatures, applicationScope)
 
     /** On-device chronicler. Gemini Nano is hardware-gated, so this is inert
      *  (isAvailable == false) until run on supported hardware — see the generator. */

@@ -17,6 +17,7 @@ object Nat20Data {
         val characters: CharacterRepository,
         val campaigns: CampaignRepository,
         val customRaces: CustomRaceRepository,
+        val customCreatures: CustomCreatureRepository,
     )
 
     fun create(context: Context, registry: RulesetRegistry): Repositories {
@@ -32,6 +33,7 @@ object Nat20Data {
                 Migrations.MIGRATION_4_5,
                 Migrations.MIGRATION_5_6,
                 Migrations.MIGRATION_6_7,
+                Migrations.MIGRATION_7_8,
             )
             .build()
 
@@ -41,6 +43,7 @@ object Nat20Data {
             characters = RoomCharacterRepository(database.characterDao(), characterCodec),
             campaigns = RoomCampaignRepository(database.campaignDao(), campaignCodec),
             customRaces = RoomCustomRaceRepository(database.customRaceDao()),
+            customCreatures = RoomCustomCreatureRepository(database.customCreatureDao()),
         )
     }
 }

@@ -53,6 +53,7 @@ private object Routes {
     const val CREDITS = "credits"
     const val SPELL_LIBRARY = "spell-library"
     const val MONSTER_CODEX = "monster-codex"
+    const val CUSTOM_CREATURES = "custom-creatures"
     const val ITEM_CATALOG = "item-catalog"
     const val PATRON = "patron"
     const val ARG_ID = "id"
@@ -106,6 +107,7 @@ fun NatApp() {
                 onOpenSpellLibrary = { nav.navigate(Routes.SPELL_LIBRARY) },
                 onOpenMonsterCodex = { nav.navigate(Routes.MONSTER_CODEX) },
                 onOpenItemCatalog = { nav.navigate(Routes.ITEM_CATALOG) },
+                onOpenCustomCreatures = { nav.navigate(Routes.CUSTOM_CREATURES) },
                 onOpenCredits = { nav.navigate(Routes.CREDITS) },
                 onBack = { nav.popBackStack() },
             )
@@ -121,6 +123,10 @@ fun NatApp() {
 
         composable(Routes.SPELL_LIBRARY) {
             SpellLibraryShell(onBack = { nav.popBackStack() })
+        }
+
+        composable(Routes.CUSTOM_CREATURES) {
+            au.com.evonet.nat20.ui.reference.CustomCreaturesScreen(onBack = { nav.popBackStack() })
         }
 
         composable(Routes.MONSTER_CODEX) {

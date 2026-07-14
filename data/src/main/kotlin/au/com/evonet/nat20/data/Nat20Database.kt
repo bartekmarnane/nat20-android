@@ -13,17 +13,19 @@ import androidx.room.RoomDatabase
  * - v5 (parity #11): adds the `custom_races` table for homebrew races.
  * - v6 (parity #23): adds `characters.portraitData` (BLOB) for character portraits.
  * - v7 (parity #37): adds `campaigns.partyJson` for the informational party roster.
+ * - v8 (parity #44): adds the `custom_creatures` table for homebrew creatures.
  *
  * Each step is an additive migration (see `Migrations`), validated against the
  * exported schema in `data/schemas`.
  */
 @Database(
-    entities = [PersistentCharacter::class, PersistentCampaign::class, PersistentCustomRace::class],
-    version = 7,
+    entities = [PersistentCharacter::class, PersistentCampaign::class, PersistentCustomRace::class, PersistentCustomCreature::class],
+    version = 8,
     exportSchema = true,
 )
 abstract class Nat20Database : RoomDatabase() {
     abstract fun characterDao(): CharacterDao
     abstract fun campaignDao(): CampaignDao
     abstract fun customRaceDao(): CustomRaceDao
+    abstract fun customCreatureDao(): CustomCreatureDao
 }

@@ -62,6 +62,7 @@ fun SettingsScreen(
     onOpenSpellLibrary: () -> Unit,
     onOpenMonsterCodex: () -> Unit,
     onOpenItemCatalog: () -> Unit,
+    onOpenCustomCreatures: () -> Unit,
     onOpenCredits: () -> Unit,
     onBack: () -> Unit,
 ) {
@@ -128,6 +129,7 @@ fun SettingsScreen(
                     SettingsTile("Spell Library", "Browse every SRD spell", onOpenSpellLibrary)
                     SettingsTile("Item Catalog", "Browse SRD weapons, armor, and gear", onOpenItemCatalog)
                     SettingsTile("Monster Codex", "Browse the SRD bestiary", onOpenMonsterCodex)
+                    SettingsTile("Custom Creatures", "Manage your homebrew creature library", onOpenCustomCreatures)
                 }
             }
 
