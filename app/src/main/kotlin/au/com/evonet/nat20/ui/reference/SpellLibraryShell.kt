@@ -183,6 +183,10 @@ fun SpellLibraryPfBody() {
                 monogram = s.traditions.firstOrNull()?.name?.firstOrNull()?.uppercase() ?: "✦",
                 badges = emptyList(),
                 group = s.rank,
+                // PF2e spells belong to traditions, not classes — feed them to the
+                // generic filter row so the tab gets Arcane/Divine/Occult/Primal
+                // pills (matching iOS's tradition filter).
+                classes = s.traditions.map { it.name.lowercase().replaceFirstChar(Char::uppercase) },
                 detailLines = buildList {
                     add("Traditions" to s.traditions.joinToString(", ") { it.name.lowercase().replaceFirstChar(Char::uppercase) })
                     add("Actions" to s.actions)
@@ -214,8 +218,8 @@ private fun GroupedSpellList(models: List<SpellRowModel>, pathfinder: Boolean, s
     val grouped = remember(filtered) { filtered.groupBy { it.group }.toSortedMap() }
     val levels = remember(models) { models.map { it.group }.distinct().sorted() }
     // Class chips are derived from the catalogue itself, so they always match
-    // the data (and pick up supplements). Empty for PF2e (tradition-based),
-    // which hides the row entirely.
+    // the data (and pick up supplements). PF2e feeds its traditions through the
+    // same slot, so its row reads Arcane/Divine/Occult/Primal.
     val classes = remember(models) { models.flatMap { it.classes }.distinct().sorted() }
 
     Column(Modifier.fillMaxSize()) {
