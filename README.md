@@ -131,6 +131,32 @@ The iOS app was built abstraction-first and shipped in a working order that prov
 - [ ] **A23. Party mode — shared journals (cross-platform)** — players in the same campaign share third-person journal entries; join by **code** (no accounts). **Cross-platform from day one** (iOS + Android players in one campaign) — this is the explicit reason iOS dropped CloudKit as the transport. A thin shared **party plane** (Supabase recommended: anonymous auth + RLS + realtime + receipt-validating edge function; Swift + Kotlin + JS SDKs) holds campaigns/memberships/shared entries, kept *separate* from the local-first private plane. Each entry carries `inputPayload` (portable structured event) + `bodyBasic` (deterministic third-person) + `bodyNarrated` (on-device-AI polish, backfilled by any capable teammate's device — Android Gemini Nano can narrate an iOS member's entries and vice-versa). **Read-gated** behind the same IAP as A14. *(iOS 16 — unbuilt on both platforms; needs the shared backend designed jointly. Do not get ahead of the reference app.)*
 - [ ] **A24. Active-effects / summon cross-character propagation, PDF export, and the iOS "coverage gaps" long tail** — track against the iOS README as those land there. *(iOS open follow-ups.)*
 
+## Screen-parity audit (2026-07-13/14)
+
+**`PARITY.md` is the audit checklist** — all 45 iOS screens walked and brought to visual/structural
+parity (44 built, 1 Android-only screen removed), one commit per screen/slice. Every item is `[~]`
+(built, compiling, tested) awaiting the on-device visual pass to flip to `[x]`; per-item notes record
+what was fixed and every deliberate divergence. Room walked v4 → **v8** during the audit
+(custom_races → portraitData → campaigns.partyJson → custom_creatures). The audit also produced
+these **engine-gap follow-ups** (UI is built; the engine data/intents don't exist yet — each is
+additive):
+
+- [ ] **P1. 2014 level-up choice types** — Expertise / Metamagic / Pact Boon / Eldritch Invocation /
+  Spell Swap / parameterized feats need a `LevelChoice`-style intent extension + catalogues
+  (`InvocationCatalog`/`PactBoonCatalog`/`MetamagicCatalog`). *(iOS `LevelUpTypes.LevelChoice`.)*
+- [ ] **P2. 2024 ShortRest + SpendResource** — `ShortRest2024`/`SpendResource2024` intents + a
+  resource-pool accessor were never ported; their Act tiles are omitted until they exist.
+- [ ] **P3. PF2e level-up depth** — Monk Path to Perfection + per-level feat slots inside `PfLevelUp`.
+- [ ] **P4. Multi-page PDF export** — `CharacterSheetPdf` renders a single front page; iOS ships
+  multi-page per-ruleset layouts (`CharacterSheet*PDFExporter`).
+- [ ] **P5. 2014 campaign-start spell prep** — a `PrepareAtCampaignStart` helper (prep-caster limits +
+  pools) so campaign setup can seed `preparedSpells`.
+- [ ] **P6. Reference detail screens** — spell/item detail popups are Material dialogs; iOS pushes
+  parchment detail screens. Also: journal per-event glyph map + long-press entry editors
+  (`updateLoggedEvent`/`deleteLoggedEvent` domain support), scroll-spell source filtering,
+  ability-score methods (Array/Point-Buy/Roll) in the wizards, Content-Sources disclosure
+  (`SourceCatalog` port), and the wondrous-charge/scroll-DC `UseItem` runtime.
+
 ## Open decisions
 
 - **Multi-ruleset module seam — resolved (anticipate now).** Mirror iOS's `DnD5eCore` / version-package split from the start (`:ruleset-dnd5e-core` + `:ruleset-dnd5e-2014`), rather than extracting later. The 2024 / PF2e modules get scaffolded at their build steps (A21/A22), not as empty modules now.
