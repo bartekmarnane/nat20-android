@@ -14,9 +14,14 @@ import kotlinx.serialization.json.Json
 object DnD5e2024Catalog {
     private val json = Json { ignoreUnknownKeys = true }
 
-    /** SRD 5.2 spells (339), sorted by level then name, for the 2024 Spell Library + caster picker. */
+    /**
+     * The 2024 spell library, sorted by level then name: SRD 5.2 (339, CC BY
+     * 4.0) merged with the licensed PHB 2024 gap set (32 spells outside the
+     * SRD — the smites, Witch Bolt, Aura of Vitality, the new named spells, …).
+     */
     val spellLibrary: List<Spell2024> by lazy {
-        load("Spells2024.json", Spell2024.serializer()).sortedWith(compareBy({ it.level }, { it.name }))
+        (load("Spells2024.json", Spell2024.serializer()) + load("PHB2024-Spells.json", Spell2024.serializer()))
+            .sortedWith(compareBy({ it.level }, { it.name }))
     }
 
     private val spellsById by lazy { spellLibrary.associateBy { it.id } }

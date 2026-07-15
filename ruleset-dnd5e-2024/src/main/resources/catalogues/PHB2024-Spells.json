@@ -1,0 +1,412 @@
+[
+ {
+  "id": "blade-ward",
+  "name": "Blade Ward",
+  "level": 0,
+  "school": "Abjuration",
+  "classes": [
+   "bard",
+   "sorcerer",
+   "warlock",
+   "wizard"
+  ],
+  "concentration": true,
+  "ritual": false,
+  "description": "You adopt a parrying stance, appearing to onlookers as though you are ready to fend off attacks. Until the spell ends, whenever a creature makes an attack roll against you, the attacker subtracts 1d4 from the attack roll. Concentration, up to 1 minute."
+ },
+ {
+  "id": "friends",
+  "name": "Friends",
+  "level": 0,
+  "school": "Enchantment",
+  "classes": [
+   "bard",
+   "sorcerer",
+   "warlock",
+   "wizard"
+  ],
+  "concentration": true,
+  "ritual": false,
+  "description": "You magically emanate a sense of friendship toward one creature you can see within 10 feet of yourself. The target must succeed on a Wisdom saving throw or have the Charmed condition for the duration. The target succeeds automatically if it isn't a Humanoid, if you're fighting it, or if you have cast this spell on it within the past 24 hours. The spell ends early if the target takes damage or if you make an attack roll, deal damage, or force anyone to make a saving throw. When the spell ends, the target knows it was Charmed by you. Concentration, up to 1 minute."
+ },
+ {
+  "id": "thorn-whip",
+  "name": "Thorn Whip",
+  "level": 0,
+  "school": "Transmutation",
+  "classes": [
+   "druid"
+  ],
+  "concentration": false,
+  "ritual": false,
+  "description": "You create a vine-like whip covered in thorns that lashes out at your command toward a creature in range. Make a melee spell attack against the target. On a hit, the target takes 1d6 Piercing damage, and if it is Large or smaller, you can pull it up to 10 feet closer to you. Cantrip Upgrade: the damage increases by 1d6 when you reach levels 5 (2d6), 11 (3d6), and 17 (4d6)."
+ },
+ {
+  "id": "armor-of-agathys",
+  "name": "Armor of Agathys",
+  "level": 1,
+  "school": "Abjuration",
+  "classes": [
+   "warlock"
+  ],
+  "concentration": false,
+  "ritual": false,
+  "description": "Protective magical frost surrounds you. You gain 5 Temporary Hit Points. If a creature hits you with a melee attack roll while you have these Hit Points, the creature takes 5 Cold damage. The spell lasts for 1 hour. Using a Higher-Level Spell Slot: the Temporary Hit Points and the Cold damage both increase by 5 for each spell slot level above 1."
+ },
+ {
+  "id": "arms-of-hadar",
+  "name": "Arms of Hadar",
+  "level": 1,
+  "school": "Conjuration",
+  "classes": [
+   "warlock"
+  ],
+  "concentration": false,
+  "ritual": false,
+  "description": "Invoking Hadar, you cause tendrils to erupt from yourself. Each creature in a 10-foot Emanation originating from you makes a Strength saving throw. On a failed save, a target takes 2d6 Necrotic damage and can't take Reactions until the start of its next turn. On a successful save, a target takes half as much damage only. Using a Higher-Level Spell Slot: the damage increases by 1d6 for each spell slot level above 1."
+ },
+ {
+  "id": "compelled-duel",
+  "name": "Compelled Duel",
+  "level": 1,
+  "school": "Enchantment",
+  "classes": [
+   "paladin"
+  ],
+  "concentration": true,
+  "ritual": false,
+  "description": "You try to compel a creature into a duel. One creature that you can see within 30 feet of you makes a Wisdom saving throw. On a failed save, the target has Disadvantage on attack rolls against creatures other than you, and it can't willingly move to a space that is more than 30 feet away from you. The spell ends if you make an attack roll against a creature other than the target, if you cast a spell on an enemy other than the target, if an ally of yours damages the target, or if you end your turn more than 30 feet away from the target. Casting time: 1 bonus action. Concentration, up to 1 minute."
+ },
+ {
+  "id": "hail-of-thorns",
+  "name": "Hail of Thorns",
+  "level": 1,
+  "school": "Conjuration",
+  "classes": [
+   "ranger"
+  ],
+  "concentration": false,
+  "ritual": false,
+  "description": "As you hit the creature, this spell creates a rain of thorns that sprouts from your ranged weapon or ammunition. The target of the attack and each creature within 5 feet of it must succeed on a Dexterity saving throw or take 1d10 Piercing damage, or half as much damage on a successful one. Casting time: 1 bonus action, which you take immediately after you hit a creature with a Ranged weapon. Using a Higher-Level Spell Slot: the damage increases by 1d10 for each spell slot level above 1."
+ },
+ {
+  "id": "thunderous-smite",
+  "name": "Thunderous Smite",
+  "level": 1,
+  "school": "Evocation",
+  "classes": [
+   "paladin"
+  ],
+  "concentration": false,
+  "ritual": false,
+  "description": "Your strike rings with thunder that is audible within 300 feet of you, and the attack deals an extra 2d6 Thunder damage to the target. Additionally, if the target is a creature, it must succeed on a Strength saving throw or be pushed 10 feet away from you and have the Prone condition. Casting time: 1 bonus action, which you take immediately after hitting a creature with a Melee weapon or an Unarmed Strike. Using a Higher-Level Spell Slot: the damage increases by 1d6 for each spell slot level above 1."
+ },
+ {
+  "id": "witch-bolt",
+  "name": "Witch Bolt",
+  "level": 1,
+  "school": "Evocation",
+  "classes": [
+   "sorcerer",
+   "warlock",
+   "wizard"
+  ],
+  "concentration": true,
+  "ritual": false,
+  "description": "A beam of crackling energy lances toward a creature within 60 feet of you. Make a ranged spell attack against the target. On a hit, it takes 2d12 Lightning damage. On each of your subsequent turns, you can take a Bonus Action to deal 1d12 Lightning damage to the target automatically, even if the first attack missed. The spell ends if the target is ever outside the spell's range or if it has Total Cover from you. Concentration, up to 1 minute. Using a Higher-Level Spell Slot: the initial damage increases by 1d12 for each spell slot level above 1."
+ },
+ {
+  "id": "wrathful-smite",
+  "name": "Wrathful Smite",
+  "level": 1,
+  "school": "Necromancy",
+  "classes": [
+   "paladin"
+  ],
+  "concentration": false,
+  "ritual": false,
+  "description": "Your attack deals an extra 1d6 Necrotic damage to the target, and if the target is a creature, it must succeed on a Wisdom saving throw or have the Frightened condition until the spell ends. At the end of each of its turns, the Frightened target repeats the save, ending the spell on itself on a success. Casting time: 1 bonus action, which you take immediately after hitting a creature with a Melee weapon or an Unarmed Strike. Duration: 1 minute. Using a Higher-Level Spell Slot: the damage increases by 1d6 for each spell slot level above 1."
+ },
+ {
+  "id": "arcane-vigor",
+  "name": "Arcane Vigor",
+  "level": 2,
+  "school": "Abjuration",
+  "classes": [
+   "sorcerer",
+   "wizard"
+  ],
+  "concentration": false,
+  "ritual": false,
+  "description": "You tap into your life force to heal yourself. Roll one or two of your unexpended Hit Point Dice, and regain a number of Hit Points equal to the roll's total plus your spellcasting ability modifier. Those dice are then expended. Casting time: 1 bonus action. Using a Higher-Level Spell Slot: the number of unexpended Hit Point Dice you can roll increases by one for each spell slot level above 2."
+ },
+ {
+  "id": "cloud-of-daggers",
+  "name": "Cloud of Daggers",
+  "level": 2,
+  "school": "Conjuration",
+  "classes": [
+   "bard",
+   "sorcerer",
+   "warlock",
+   "wizard"
+  ],
+  "concentration": true,
+  "ritual": false,
+  "description": "You conjure a spinning cloud of daggers in a 5-foot Cube centered on a point you choose within 60 feet of you. Each creature in that area takes 4d4 Slashing damage. A creature also takes this damage if it enters the Cube for the first time on a turn or ends its turn there. Concentration, up to 1 minute. Using a Higher-Level Spell Slot: the damage increases by 2d4 for each spell slot level above 2."
+ },
+ {
+  "id": "crown-of-madness",
+  "name": "Crown of Madness",
+  "level": 2,
+  "school": "Enchantment",
+  "classes": [
+   "bard",
+   "sorcerer",
+   "warlock",
+   "wizard"
+  ],
+  "concentration": true,
+  "ritual": false,
+  "description": "One creature that you can see within 120 feet of you must succeed on a Wisdom saving throw or have the Charmed condition for the duration. While Charmed in this way, a twisted crown of iron appears on its head, and a madness glows in its eyes. The Charmed target must use its action before moving on each of its turns to make a melee attack against a creature other than itself that you mentally choose. The target can act normally on its turn if you choose no creature or if none are within its reach. On your later turns, you must take the Magic action to maintain control over the target, or the spell ends. The target repeats the saving throw at the end of each of its turns, ending the spell on itself on a success. Concentration, up to 1 minute."
+ },
+ {
+  "id": "aura-of-vitality",
+  "name": "Aura of Vitality",
+  "level": 3,
+  "school": "Evocation",
+  "classes": [
+   "cleric",
+   "paladin"
+  ],
+  "concentration": true,
+  "ritual": false,
+  "description": "An aura radiates from you in a 30-foot Emanation for the duration. When you cast the spell and at the start of each of your turns until it ends, you can restore 2d6 Hit Points to one creature in the aura. Concentration, up to 1 minute."
+ },
+ {
+  "id": "blinding-smite",
+  "name": "Blinding Smite",
+  "level": 3,
+  "school": "Evocation",
+  "classes": [
+   "paladin"
+  ],
+  "concentration": false,
+  "ritual": false,
+  "description": "Your strike flares with brilliant light, and the attack deals an extra 3d8 Radiant damage to the target, which must succeed on a Constitution saving throw or have the Blinded condition until the spell ends. At the end of each of its turns, the Blinded target repeats the save, ending the spell on itself on a success. Casting time: 1 bonus action, which you take immediately after hitting a creature with a Melee weapon or an Unarmed Strike. Duration: 1 minute. Using a Higher-Level Spell Slot: the damage increases by 1d8 for each spell slot level above 3."
+ },
+ {
+  "id": "conjure-barrage",
+  "name": "Conjure Barrage",
+  "level": 3,
+  "school": "Conjuration",
+  "classes": [
+   "ranger"
+  ],
+  "concentration": false,
+  "ritual": false,
+  "description": "You brandish the weapon used to cast the spell and conjure similar spectral weapons that shoot forward and then dissipate. Each creature of your choice that you can see in a 60-foot Cone makes a Dexterity saving throw, taking 5d8 Force damage on a failed save or half as much damage on a successful one. Using a Higher-Level Spell Slot: the damage increases by 1d8 for each spell slot level above 3."
+ },
+ {
+  "id": "elemental-weapon",
+  "name": "Elemental Weapon",
+  "level": 3,
+  "school": "Transmutation",
+  "classes": [
+   "druid",
+   "paladin",
+   "ranger"
+  ],
+  "concentration": true,
+  "ritual": false,
+  "description": "A nonmagical weapon you touch becomes a magic weapon. Choose one of the following damage types: Acid, Cold, Fire, Lightning, or Thunder. For the duration, the weapon has a +1 bonus to attack rolls and deals an extra 1d4 damage of the chosen type when it hits. Concentration, up to 1 hour. Using a Higher-Level Spell Slot: if you use a level 5 or 6 spell slot, the bonus to attack rolls increases to +2 and the extra damage increases to 2d4. If you use a level 7 or higher spell slot, the bonus increases to +3 and the extra damage increases to 3d4."
+ },
+ {
+  "id": "hunger-of-hadar",
+  "name": "Hunger of Hadar",
+  "level": 3,
+  "school": "Conjuration",
+  "classes": [
+   "warlock"
+  ],
+  "concentration": true,
+  "ritual": false,
+  "description": "You open a gateway to the dark between the stars. A 20-foot-radius Sphere of blackness and bitter cold appears, centered on a point within 150 feet of you and lasting for the duration. The Sphere is Difficult Terrain, and no light, magical or otherwise, can illuminate the area. Any creature fully within the area has the Blinded condition. Any creature that starts its turn in the area takes 2d6 Cold damage. Any creature that ends its turn in the area must succeed on a Dexterity saving throw or take 2d6 Acid damage from otherworldly tendrils. Concentration, up to 1 minute. Using a Higher-Level Spell Slot: the Cold or Acid damage (your choice) increases by 1d6 for each spell slot level above 3."
+ },
+ {
+  "id": "lightning-arrow",
+  "name": "Lightning Arrow",
+  "level": 3,
+  "school": "Transmutation",
+  "classes": [
+   "ranger"
+  ],
+  "concentration": false,
+  "ritual": false,
+  "description": "As your attack hits or misses the target, the weapon's ammunition, or the weapon itself if it's a thrown weapon, transforms into a bolt of lightning. Instead of the weapon's normal damage, the target takes 4d8 Lightning damage on a hit, or half as much damage on a miss. Whether you hit or miss, each creature within 10 feet of the target must succeed on a Dexterity saving throw or take 2d8 Lightning damage, or half as much damage on a successful one. Casting time: 1 bonus action, which you take immediately after making a ranged attack roll with a weapon. Using a Higher-Level Spell Slot: the damage for both effects increases by 1d8 for each spell slot level above 3."
+ },
+ {
+  "id": "aura-of-purity",
+  "name": "Aura of Purity",
+  "level": 4,
+  "school": "Abjuration",
+  "classes": [
+   "paladin"
+  ],
+  "concentration": true,
+  "ritual": false,
+  "description": "An aura radiates from you in a 30-foot Emanation for the duration. While in the aura, you and your allies have Resistance to Poison damage and Advantage on saving throws to avoid or end effects that include the Blinded, Charmed, Deafened, Frightened, Paralyzed, Poisoned, or Stunned condition. Concentration, up to 10 minutes."
+ },
+ {
+  "id": "grasping-vine",
+  "name": "Grasping Vine",
+  "level": 4,
+  "school": "Conjuration",
+  "classes": [
+   "druid",
+   "ranger"
+  ],
+  "concentration": true,
+  "ritual": false,
+  "description": "You conjure a vine that sprouts from a surface in an unoccupied space that you can see within 60 feet of you. The vine lasts for the duration. Make a melee spell attack against a creature within 30 feet of the vine. On a hit, the target takes 4d8 Bludgeoning damage and is pulled up to 30 feet toward the vine; if the target is Huge or smaller, it has the Grappled condition (escape DC equal to your spell save DC). The vine can grapple only one creature at a time, and you can cause the vine to release a Grappled creature (no action required). As a Bonus Action on your later turns, you can repeat the attack against a creature within 30 feet of the vine. Concentration, up to 1 minute."
+ },
+ {
+  "id": "staggering-smite",
+  "name": "Staggering Smite",
+  "level": 4,
+  "school": "Enchantment",
+  "classes": [
+   "paladin"
+  ],
+  "concentration": false,
+  "ritual": false,
+  "description": "Your strike pierces both body and mind, and the attack deals an extra 4d6 Psychic damage to the target. The target must succeed on a Wisdom saving throw or have the Stunned condition until the end of your next turn. Casting time: 1 bonus action, which you take immediately after hitting a creature with a Melee weapon or an Unarmed Strike. Using a Higher-Level Spell Slot: the damage increases by 1d6 for each spell slot level above 4."
+ },
+ {
+  "id": "banishing-smite",
+  "name": "Banishing Smite",
+  "level": 5,
+  "school": "Conjuration",
+  "classes": [
+   "paladin"
+  ],
+  "concentration": true,
+  "ritual": false,
+  "description": "Your strike crackles with force, and the attack deals an extra 5d10 Force damage to the target. Additionally, if this attack reduces the target to 50 Hit Points or fewer, you banish it. If the target is native to a different plane of existence than the one you are on, the target disappears, returning to its home plane. If the target is native to the plane you are on, the target vanishes into a harmless demiplane. While there, the target has the Incapacitated condition. It remains there until the spell ends, at which point it reappears in the space it left or in the nearest unoccupied space if that space is occupied. Casting time: 1 bonus action, which you take immediately after hitting a creature with a Melee weapon or an Unarmed Strike. Concentration, up to 1 minute."
+ },
+ {
+  "id": "circle-of-power",
+  "name": "Circle of Power",
+  "level": 5,
+  "school": "Abjuration",
+  "classes": [
+   "cleric",
+   "paladin",
+   "wizard"
+  ],
+  "concentration": true,
+  "ritual": false,
+  "description": "An aura radiates from you in a 30-foot Emanation for the duration. While in the aura, you and your allies have Advantage on saving throws against spells and other magical effects. Additionally, when an affected creature succeeds on a saving throw made against a spell or magical effect that allows it to make a saving throw to take only half damage, it instead takes no damage if it succeeds on the saving throw. Concentration, up to 10 minutes."
+ },
+ {
+  "id": "destructive-wave",
+  "name": "Destructive Wave",
+  "level": 5,
+  "school": "Evocation",
+  "classes": [
+   "paladin"
+  ],
+  "concentration": false,
+  "ritual": false,
+  "description": "Destructive energy ripples outward from you in a 30-foot Emanation. Each creature you choose in the Emanation makes a Constitution saving throw. On a failed save, a target takes 5d6 Thunder damage and 5d6 Radiant or Necrotic damage (your choice) and has the Prone condition. On a successful save, a target takes half as much damage only."
+ },
+ {
+  "id": "swift-quiver",
+  "name": "Swift Quiver",
+  "level": 5,
+  "school": "Transmutation",
+  "classes": [
+   "ranger"
+  ],
+  "concentration": true,
+  "ritual": false,
+  "description": "You transmute a quiver on your person so it produces an endless supply of nonmagical ammunition, which seems to leap into your hand when you reach for it. On each of your turns until the spell ends, you can take a Bonus Action to make two attacks with a weapon that uses ammunition from the quiver. Each time you make such a ranged attack, the quiver magically replaces the piece of ammunition you used. Any pieces of ammunition created by this spell disintegrate when the spell ends. If the quiver leaves your possession, the spell ends. Casting time: 1 bonus action. Concentration, up to 1 minute."
+ },
+ {
+  "id": "telepathy",
+  "name": "Telepathy",
+  "level": 8,
+  "school": "Divination",
+  "classes": [
+   "wizard"
+  ],
+  "concentration": false,
+  "ritual": false,
+  "description": "You create a telepathic link between yourself and a willing creature with which you are familiar. The creature can be anywhere on the same plane of existence as you. The spell ends if you or the target are no longer on the same plane. Until the spell ends, you and the target can instantaneously share words, images, sounds, and other sensory messages with one another through the link, and the target recognizes you as the creature it is communicating with. The spell enables a creature with an Intelligence score of at least 1 to understand the meaning of your words and take in the scope of any sensory messages you send to it. Duration: 24 hours."
+ },
+ {
+  "id": "fount-of-moonlight",
+  "name": "Fount of Moonlight",
+  "level": 4,
+  "school": "Evocation",
+  "classes": [
+   "bard",
+   "druid"
+  ],
+  "concentration": true,
+  "ritual": false,
+  "description": "A cool light wreathes your body for the duration, emitting Bright Light in a 20-foot radius and Dim Light for an additional 20 feet. Until the spell ends, you have Resistance to Radiant damage, and your melee attacks deal an extra 2d6 Radiant damage on a hit. In addition, immediately after you take damage from a creature you can see within 60 feet of yourself, you can take a Reaction to force that creature to make a Constitution saving throw. On a failed save, the creature has the Blinded condition until the end of your next turn. Concentration, up to 10 minutes."
+ },
+ {
+  "id": "jallarzis-storm-of-radiance",
+  "name": "Jallarzi's Storm of Radiance",
+  "level": 5,
+  "school": "Evocation",
+  "classes": [
+   "warlock",
+   "wizard"
+  ],
+  "concentration": true,
+  "ritual": false,
+  "description": "You unleash a storm of flashing light and raging thunder in a 10-foot-radius, 40-foot-high Cylinder centered on a point you can see within 120 feet of you. While in this area, creatures have the Blinded and Deafened conditions, and they can't cast spells with a Verbal component. When the storm appears and at the end of each of your turns until the spell ends, each creature in the Cylinder makes a Constitution saving throw, taking 2d10 Radiant damage and 2d10 Thunder damage on a failed save, or half as much damage on a successful one. Concentration, up to 1 minute. Using a Higher-Level Spell Slot: the Radiant and Thunder damage each increase by 1d10 for each spell slot level above 5."
+ },
+ {
+  "id": "yolandes-regal-presence",
+  "name": "Yolande's Regal Presence",
+  "level": 5,
+  "school": "Enchantment",
+  "classes": [
+   "bard",
+   "wizard"
+  ],
+  "concentration": true,
+  "ritual": false,
+  "description": "You surround yourself with unearthly majesty in a 10-foot Emanation. Whenever the Emanation enters the space of a creature you can see and whenever a creature you can see enters the Emanation or ends its turn there, you can force that creature to make a Wisdom saving throw. On a failed save, the target takes 4d6 Psychic damage, has the Prone condition, and is pushed 10 feet away from you. On a successful save, the target takes half as much damage only. A creature makes this save only once per turn. Concentration, up to 1 minute."
+ },
+ {
+  "id": "power-word-fortify",
+  "name": "Power Word Fortify",
+  "level": 7,
+  "school": "Enchantment",
+  "classes": [
+   "bard",
+   "cleric"
+  ],
+  "concentration": false,
+  "ritual": false,
+  "description": "You fortify up to six creatures you can see within 60 feet of you. The spell bestows 120 Temporary Hit Points, which you divide among the affected creatures however you choose."
+ },
+ {
+  "id": "tashas-bubbling-cauldron",
+  "name": "Tasha's Bubbling Cauldron",
+  "level": 6,
+  "school": "Conjuration",
+  "classes": [
+   "warlock",
+   "wizard"
+  ],
+  "concentration": false,
+  "ritual": false,
+  "description": "You conjure a claw-footed cauldron filled with bubbling liquid, which appears in an unoccupied space on the ground within 30 feet of you and lasts for the duration. The cauldron can't be moved and disappears when the spell ends, along with any potions created by it. Choose a common or uncommon potion. The cauldron produces a number of that potion equal to your spellcasting ability modifier (minimum of 1). As a Bonus Action, you or an ally can withdraw one potion from the cauldron; a potion withdrawn from it must be used within 10 minutes, after which it loses its magic. Once all the potions have been withdrawn, the spell ends. Duration: 10 minutes."
+ }
+]

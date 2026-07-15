@@ -131,14 +131,23 @@ class Intents2024Tests {
 
 class Catalog2024Tests {
     @Test
-    fun `the SRD 5_2 spell library loads, sorted by level then name`() {
+    fun `the 2024 spell library merges SRD 5_2 with the licensed PHB gap set`() {
         val spells = DnD5e2024Catalog.spellLibrary
-        assertEquals(339, spells.size)
+        // SRD 5.2 (339) + licensed PHB 2024 gap set (32).
+        assertEquals(371, spells.size)
+        assertEquals(spells.size, spells.map { it.id }.toSet().size) // no duplicate ids
         assertEquals(0, spells.first().level) // cantrips first
         val fireball = DnD5e2024Catalog.spell("fireball")!!
         assertEquals(3, fireball.level)
         assertEquals("Evocation", fireball.school)
         assertTrue(fireball.description.isNotEmpty())
+
+        // Licensed PHB gap spells resolve.
+        val aura = DnD5e2024Catalog.spell("aura-of-vitality")!!
+        assertEquals(3, aura.level)
+        assertTrue(aura.concentration)
+        val witchBolt = DnD5e2024Catalog.spell("witch-bolt")!!
+        assertEquals(1, witchBolt.level)
     }
 }
 
