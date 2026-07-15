@@ -29,9 +29,22 @@ object DnD5eCatalog {
         load("Backgrounds/5e-SRD-Backgrounds.json", Background.serializer())
     }
     val skills: List<Skill> get() = SkillCatalog.all
-    /** SRD 5.1 spells (319) for the read-only Spell Library, level then name. */
+    /**
+     * The full 2014 spell library, level then name: SRD 5.1 (319, CC BY 4.0)
+     * merged with the per-source supplement files — the licensed PHB gap set
+     * (the ~41 PHB spells outside the SRD, e.g. Aura of Vitality and the
+     * smites) plus the Xanathar's/Tasha's drops. Mirrors iOS `SpellCatalog`'s
+     * layered per-publisher files.
+     */
     val spellLibrary: List<Spell> by lazy {
-        load("Spells/5e-SRD-Spells.json", Spell.serializer()).sortedWith(compareBy({ it.level }, { it.name }))
+        val files = listOf(
+            "Spells/5e-SRD-Spells.json",
+            "Spells/PHB-Spells.json",
+            "Spells/Xanathars-Spells.json",
+            "Spells/Tashas-Spells.json",
+        )
+        files.flatMap { load(it, Spell.serializer()) }
+            .sortedWith(compareBy({ it.level }, { it.name }))
     }
 
     /** SRD weapons, name-sorted (A10 inventory). */
