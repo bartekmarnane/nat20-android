@@ -79,7 +79,7 @@ PF2e modules are scaffolded when their steps land, not as empty modules ahead of
   `im_fell_english_regular.ttf`, `im_fell_english_italic.ttf`, `im_fell_english_sc_regular.ttf`.
 - **Licensing — carry attribution verbatim** (build a Credits screen, A9): SRD 5.1 +
   5e-bits/5e-database are **CC BY 4.0**; the five typefaces are **SIL OFL 1.1**. Tasha's /
-  Xanathar's spell content is **not** openly licensed — mirror the iOS stance (no broad reuse).
+  Xanathar's spell content is **not** openly licensed — mirror the iOS stance (limited curated drops only). **PHB spell content outside the SRDs ships under Bartek's separate PHB content licence** (PHB-Spells.json / PHB2024-Spells.json, 2026-07-16) — see the Credits notice.
 
 ## Key simplification vs iOS
 

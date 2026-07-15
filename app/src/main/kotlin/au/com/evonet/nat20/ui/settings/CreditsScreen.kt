@@ -180,6 +180,16 @@ private val GAME_CONTENT = listOf(
             "equipment catalogues. Licensed under CC BY 4.0.",
         listOf(CreditLink("github.com/5e-bits/5e-database", "https://github.com/5e-bits/5e-database"), CreditLink("CC BY 4.0", CC_BY_URL)),
     ),
+    // TODO(Bartek): confirm this notice matches the exact attribution wording
+    // your PHB content licence requires before shipping.
+    CreditEntry(
+        "Player's Handbook (2014 & 2024)",
+        "Spells outside the System Reference Documents (such as Aura of Vitality and the smite spells) " +
+            "are reproduced from the Player's Handbook (2014) and Player's Handbook (2024) by " +
+            "Wizards of the Coast LLC under a separate content licence. This content is not covered by " +
+            "the Creative Commons SRD licences. Dungeons & Dragons and Player's Handbook are trademarks " +
+            "of Wizards of the Coast LLC.",
+    ),
     CreditEntry(
         "System Reference Document 5.2",
         "This work includes material from the System Reference Document 5.2 (“SRD 5.2”) by " +
