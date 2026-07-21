@@ -130,6 +130,61 @@ data class RollResult(
     }
 }
 
+/**
+ * The physical-dice path (A25): the player rolled real dice at the table and
+ * types the faces in instead of tapping ROLL.
+ *
+ * Deliberately thin. The premise is that a hand-entered roll is *the same roll*
+ * — the player supplies only the raw faces and every other rule (keep/drop,
+ * bonus chips, crit doubling, nat-20 detection) runs exactly as it does for an
+ * RNG roll, so the event that reaches the journal is indistinguishable.
+ * Edition-agnostic, so 2014 / 2024 / PF2e all get it from here.
+ */
+object ManualRollEntry {
+    /**
+     * How many faces the player types — one per die, including any a keep rule
+     * will later drop (you rolled both d20s, so you enter both).
+     */
+    fun slotCount(spec: RollSpec): Int = spec.count
+
+    /** The faces this die can show, in pad order. */
+    fun enterableFaces(spec: RollSpec): IntRange = 1..spec.faces
+
+    /** Whether a typed face is one the die could actually have landed on. */
+    fun isValid(face: Int, spec: RollSpec): Boolean = face in enterableFaces(spec)
+
+    /**
+     * Builds the [RollResult] an RNG roll of [spec] would have produced, from
+     * faces the player entered. Out-of-range entries clamp rather than throw —
+     * the pad only offers valid faces, so this guards the exotic paths.
+     */
+    fun result(
+        faces: List<Int>,
+        spec: RollSpec,
+        bonuses: List<RollBonus> = emptyList(),
+    ): RollResult {
+        val dice = faces.map { it.coerceIn(1, spec.faces) }
+        return RollResult(
+            dice = dice,
+            keptIndices = spec.keptIndices(dice),
+            modifier = spec.modifier,
+            bonuses = bonuses,
+            faces = spec.faces,
+        )
+    }
+
+    /**
+     * Indices of kept d20s showing a 1 — the dice Halfling Lucky lets you roll
+     * again. With physical dice the app can't re-roll for the player, so the
+     * view re-opens these slots and asks what the new die shows.
+     */
+    fun luckyRerollIndices(values: List<Int>, spec: RollSpec): List<Int> {
+        if (spec.faces != 20) return emptyList()
+        val kept = spec.keptIndices(values)
+        return values.indices.filter { it in kept && values[it] == 1 }
+    }
+}
+
 /** Rolls [spec] (+ optional [bonuses]) using [random] (injectable for tests). */
 object DiceRoller {
     fun roll(spec: RollSpec, bonuses: List<RollBonus> = emptyList(), random: Random = Random.Default): RollResult {

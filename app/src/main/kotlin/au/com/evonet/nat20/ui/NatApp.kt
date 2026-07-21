@@ -1,6 +1,7 @@
 package au.com.evonet.nat20.ui
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -28,6 +29,7 @@ import au.com.evonet.nat20.ui.patron.PatronScreen
 import au.com.evonet.nat20.patron.PatronStore
 import au.com.evonet.nat20.ui.reference.SpellLibraryShell
 import au.com.evonet.nat20.ui.roster.RosterScreen
+import au.com.evonet.nat20.ui.roll.LocalDiceInput
 import au.com.evonet.nat20.ui.settings.CharacterSettingsScreen
 import au.com.evonet.nat20.ui.settings.CreditsScreen
 import au.com.evonet.nat20.ui.settings.SettingsScreen
@@ -84,6 +86,11 @@ fun NatApp() {
 
     fun find(id: UUID?): Character? = id?.let { wanted -> characters.firstOrNull { it.id == wanted } }
 
+    // Every RollResultView reads this to decide whether to open on the ROLL
+    // button or the face pad (A25). One provider here covers all three rulesets.
+    val diceInput by container.appSettings.diceInput.collectAsState()
+
+    CompositionLocalProvider(LocalDiceInput provides diceInput) {
     NavHost(navController = nav, startDestination = Routes.ROSTER) {
         composable(Routes.ROSTER) {
             val campaignNames by store.activeCampaignNames.collectAsState()
@@ -264,6 +271,7 @@ fun NatApp() {
                 )
             }
         }
+    }
     }
 }
 

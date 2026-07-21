@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import au.com.evonet.nat20.BuildConfig
 import au.com.evonet.nat20.chronicle.NarrationStyle
+import au.com.evonet.nat20.ui.roll.DiceInput
 import au.com.evonet.nat20.settings.AppSettings
 import au.com.evonet.nat20.settings.AppearanceMode
 import au.com.evonet.nat20.ui.theme.Cinzel
@@ -68,6 +69,7 @@ fun SettingsScreen(
 ) {
     val appearance by appSettings.appearance.collectAsState()
     val narration by appSettings.narrationStyle.collectAsState()
+    val diceInput by appSettings.diceInput.collectAsState()
     val palette = MaterialTheme.natPalette
 
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
@@ -109,6 +111,26 @@ fun SettingsScreen(
                 )
                 Text(
                     "Choose a fixed light or dark codex, or follow your device's appearance.",
+                    fontFamily = Cormorant, fontStyle = FontStyle.Italic, fontSize = 15.sp,
+                    color = palette.inkSoft, modifier = Modifier.padding(top = 10.dp),
+                )
+            }
+
+            item {
+                SectionLabel("Dice", Modifier.padding(top = 18.dp, bottom = 8.dp))
+                SegmentedPills(
+                    options = DiceInput.entries,
+                    selected = diceInput,
+                    label = { it.label },
+                    onSelect = { appSettings.setDiceInput(it) },
+                    equalWeight = true,
+                )
+                Text(
+                    if (diceInput == DiceInput.PHYSICAL) {
+                        "Rolls open on a face pad — roll your own dice and tap what they show. The app still does the maths."
+                    } else {
+                        "Tap to roll in the app. Any single roll can still be entered by hand."
+                    },
                     fontFamily = Cormorant, fontStyle = FontStyle.Italic, fontSize = 15.sp,
                     color = palette.inkSoft, modifier = Modifier.padding(top = 10.dp),
                 )

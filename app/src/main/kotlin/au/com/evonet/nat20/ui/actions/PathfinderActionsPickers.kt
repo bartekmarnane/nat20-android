@@ -25,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import au.com.evonet.nat20.dnd5e.core.RollBonus
+import au.com.evonet.nat20.dnd5e.core.RollResult
 import au.com.evonet.nat20.dnd5e.core.RollSpec
 import au.com.evonet.nat20.pf2e.Bulk
 import au.com.evonet.nat20.pf2e.PFCoin
@@ -150,6 +151,7 @@ internal fun PfStrikePicker(payload: PathfinderPayload, onCancel: () -> Unit, on
     var weaponId by remember { mutableStateOf(weapons.firstOrNull()?.id) }
     var attackIndex by remember { mutableIntStateOf(0) } // 0=1st, 1=2nd, 2=3rd
     var target by remember { mutableStateOf("") }
+    var rolled by remember { mutableStateOf<RollResult?>(null) }
     val weapon = weaponId?.let { PfWeapons.by(it) }
     val mods = weapon?.let { payload.strike(it).attackMods } ?: listOf(0, 0, 0)
     val mod = mods.getOrElse(attackIndex) { 0 }
@@ -176,7 +178,18 @@ internal fun PfStrikePicker(payload: PathfinderPayload, onCancel: () -> Unit, on
                     baseSpec = RollSpec.d(1, 20),
                     bonuses = listOf(RollBonus(w.name, mod)),
                     allowAdvantageToggle = false,
-                    onSettled = { result ->
+                    onSettled = { rolled = it },
+                    onReset = { rolled = null },
+                )
+            }
+            // Journalling waits for an explicit commit: the roll can settle more
+            // than once (roll again, or correct a hand-entered face — A23), and
+            // committing from onSettled would log a Strike every time.
+            rolled?.let { result ->
+                PickerGap(16.dp)
+                PrimaryActionButton(
+                    label = "Record strike (${result.total})",
+                    onClick = {
                         onStrike(w.id, attackIndex + 1, result.total, target.trim().takeIf { it.isNotEmpty() })
                     },
                 )

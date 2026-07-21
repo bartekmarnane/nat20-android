@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import au.com.evonet.nat20.dnd5e.core.DiceRoller
 import au.com.evonet.nat20.dnd5e.core.Keep
+import au.com.evonet.nat20.dnd5e.core.ManualRollEntry
 import au.com.evonet.nat20.dnd5e.core.RollBonus
 import au.com.evonet.nat20.dnd5e.core.RollResult
 import au.com.evonet.nat20.dnd5e.core.RollSpec
@@ -58,7 +59,15 @@ import kotlin.random.Random
 private val AdvantageGreen = Color(0xFF246B29)
 private val DisadvantageRed = Color(0xFF8C1A1A)
 
-private enum class Phase { IDLE, ROLLING, SETTLED }
+private enum class Phase {
+    IDLE,
+
+    /** The player is typing in the faces of dice they rolled themselves (A25). */
+    ENTERING,
+    ROLLING,
+    SETTLED,
+}
+
 private enum class Mode { DISADVANTAGE, NORMAL, ADVANTAGE }
 
 /**
@@ -89,8 +98,23 @@ fun RollResultView(
     modifier: Modifier = Modifier,
 ) {
     val haptics = LocalHapticFeedback.current
+    // App-wide default from Settings; only decides which mode this roll *opens*
+    // in. The in-widget toggle overrides it per roll, so a table that rolls
+    // attacks by hand can still tap for damage.
+    val defaultDiceInput = LocalDiceInput.current
+    var sourceOverride by remember { mutableStateOf<DiceInput?>(null) }
+    val diceInput = sourceOverride ?: defaultDiceInput
+
     var mode by remember { mutableStateOf(Mode.NORMAL) }
-    var phase by remember { mutableStateOf(if (initialResult != null) Phase.SETTLED else Phase.IDLE) }
+    var phase by remember {
+        mutableStateOf(
+            when {
+                initialResult != null -> Phase.SETTLED
+                defaultDiceInput == DiceInput.PHYSICAL -> Phase.ENTERING
+                else -> Phase.IDLE
+            },
+        )
+    }
     var rollKey by remember { mutableIntStateOf(0) }
     var displayed by remember { mutableStateOf(initialResult?.dice ?: baseSpec.dieList()) }
     var result by remember { mutableStateOf(initialResult) }
@@ -99,6 +123,25 @@ fun RollResultView(
 
     val canToggle = allowAdvantageToggle && baseSpec.faces == 20 && baseSpec.count == 1
     val spec = if (canToggle) mode.specFor(baseSpec) else baseSpec
+
+    // One entry per die of [spec], including dice a keep rule will drop — you
+    // rolled both d20s, so you type both. Null = not yet filled.
+    var entered by remember { mutableStateOf(List<Int?>(spec.count) { null }) }
+    var activeSlot by remember { mutableIntStateOf(0) }
+    var pendingTens by remember { mutableStateOf<Int?>(null) }
+    var manualKey by remember { mutableIntStateOf(0) }
+    var pendingManual by remember { mutableStateOf<RollResult?>(null) }
+    var luckyUsed by remember { mutableStateOf(false) }
+
+    // Flipping advantage mid-entry means a different set of dice hit the table,
+    // so the slots start over at the new count.
+    LaunchedEffect(spec, phase) {
+        if (phase == Phase.ENTERING && entered.size != spec.count) {
+            entered = List(spec.count) { null }
+            activeSlot = 0
+            pendingTens = null
+        }
+    }
 
     LaunchedEffect(rollKey) {
         if (rollKey == 0) return@LaunchedEffect
@@ -127,35 +170,143 @@ fun RollResultView(
         onSettled(rolled)
     }
 
+    // The hand-entered counterpart of the roll effect above: same settled state,
+    // same streamed bonus chips, same onSettled contract — only the tumble is
+    // skipped, because these dice already landed on the table.
+    LaunchedEffect(manualKey) {
+        val rolled = pendingManual ?: return@LaunchedEffect
+        displayed = rolled.dice
+        result = rolled
+        phase = Phase.SETTLED
+        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+        for (b in bonuses.indices) {
+            delay(300)
+            revealedBonuses = b + 1
+            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+        }
+        // Halfling Lucky: the app can't re-roll a physical die, so empty the
+        // offending slot and ask what the new one shows. Once per roll — a
+        // second 1 stands, same as RAW.
+        val lucky = if (luckyReroll && !luckyUsed) {
+            ManualRollEntry.luckyRerollIndices(rolled.dice, spec)
+        } else {
+            emptyList()
+        }
+        if (lucky.isNotEmpty()) {
+            luckyUsed = true
+            wasLucky = true
+            delay(700)
+            entered = rolled.dice.mapIndexed { i, v -> if (i in lucky) null else v }
+            activeSlot = lucky.first()
+            pendingTens = null
+            result = null
+            revealedBonuses = 0
+            phase = Phase.ENTERING
+            return@LaunchedEffect
+        }
+        onSettled(rolled)
+    }
+
     fun reroll() {
         if (result != null) onReset()
         result = null
+        wasLucky = false
+        luckyUsed = false
         rollKey++
     }
 
-    Column(modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text(
-            spec.displayNotation.uppercase(),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+    /** Open (or re-open) hand entry, tearing down any result it invalidates. */
+    fun beginManualEntry() {
+        if (result != null) onReset()
+        sourceOverride = DiceInput.PHYSICAL
+        entered = List(spec.count) { null }
+        activeSlot = 0
+        pendingTens = null
+        result = null
+        pendingManual = null
+        revealedBonuses = 0
+        wasLucky = false
+        luckyUsed = false
+        phase = Phase.ENTERING
+    }
 
-        if (canToggle && phase != Phase.ROLLING) {
-            ModeSelector(mode) { picked -> mode = picked; if (phase == Phase.SETTLED) reroll() }
+    /** Hand the dice back to the app — abandons a part-typed or entered roll. */
+    fun useAppDice() {
+        if (result != null) onReset()
+        sourceOverride = DiceInput.APP
+        result = null
+        pendingManual = null
+        revealedBonuses = 0
+        wasLucky = false
+        luckyUsed = false
+        phase = Phase.IDLE
+    }
+
+    /** Record a face, advance to the next empty slot, settle when all are full. */
+    fun fill(face: Int) {
+        if (activeSlot !in entered.indices) return
+        val next = entered.toMutableList().also { it[activeSlot] = face }
+        entered = next
+        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+        val nextEmpty = next.indexOfFirst { it == null }
+        if (nextEmpty >= 0) {
+            activeSlot = nextEmpty
+        } else {
+            pendingManual = ManualRollEntry.result(next.filterNotNull(), spec, bonuses)
+            revealedBonuses = 0
+            manualKey++
+        }
+    }
+
+    Column(modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                spec.displayNotation.uppercase(),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            SourceToggle(
+                selected = diceInput,
+                onPick = { picked -> if (picked == DiceInput.PHYSICAL) beginManualEntry() else useAppDice() },
+            )
         }
 
-        if (phase == Phase.IDLE) {
-            RollButton(onClick = { reroll() })
-        } else {
-            DiceRow(displayed = displayed, spec = spec, settled = phase == Phase.SETTLED, mode = if (canToggle) mode else Mode.NORMAL)
-            if (phase == Phase.SETTLED) {
-                result?.let { Flourish(it) }
-                if (wasLucky) {
-                    Text("Halfling Lucky — rerolled a 1", style = MaterialTheme.typography.labelSmall, color = AdvantageGreen)
+        if (canToggle && phase != Phase.ROLLING) {
+            ModeSelector(mode) { picked ->
+                mode = picked
+                if (phase == Phase.SETTLED) {
+                    if (diceInput == DiceInput.PHYSICAL) beginManualEntry() else reroll()
                 }
-                TotalLine(result, revealedBonuses)
-                if (bonuses.isNotEmpty()) BonusChips(bonuses, revealedBonuses)
-                RerollButton(onClick = { reroll() })
+            }
+        }
+
+        when (phase) {
+            Phase.IDLE -> RollButton(onClick = { reroll() })
+            Phase.ENTERING -> EntryStage(
+                spec = spec,
+                entered = entered,
+                activeSlot = activeSlot,
+                pendingTens = pendingTens,
+                luckyPending = wasLucky,
+                onPickSlot = { activeSlot = it; pendingTens = null },
+                onPickTens = { pendingTens = it },
+                onPickFace = { fill(it) },
+            )
+            Phase.ROLLING, Phase.SETTLED -> {
+                DiceRow(displayed = displayed, spec = spec, settled = phase == Phase.SETTLED, mode = if (canToggle) mode else Mode.NORMAL)
+                if (phase == Phase.SETTLED) {
+                    result?.let { Flourish(it) }
+                    if (wasLucky) {
+                        Text("Halfling Lucky — rerolled a 1", style = MaterialTheme.typography.labelSmall, color = AdvantageGreen)
+                    }
+                    TotalLine(result, revealedBonuses)
+                    if (bonuses.isNotEmpty()) BonusChips(bonuses, revealedBonuses)
+                    if (diceInput == DiceInput.PHYSICAL) {
+                        RerollButton(label = "Change the value", onClick = { beginManualEntry() })
+                    } else {
+                        RerollButton(onClick = { reroll() })
+                    }
+                }
             }
         }
     }
@@ -173,6 +324,177 @@ private fun RollButton(onClick: () -> Unit) {
         contentAlignment = Alignment.Center,
     ) {
         Text("ROLL", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+    }
+}
+
+// MARK: - Physical dice entry (A25)
+
+/**
+ * Two tiny chips beside the notation label. Deliberately small — for most
+ * players this is a preference they set once in Settings; the per-roll flip is
+ * for the table that mixes both.
+ */
+@Composable
+private fun SourceToggle(selected: DiceInput, onPick: (DiceInput) -> Unit) {
+    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        DiceInput.entries.forEach { option ->
+            val active = option == selected
+            Box(
+                Modifier
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
+                    .clickable { if (!active) onPick(option) }
+                    .padding(horizontal = 8.dp, vertical = 3.dp),
+            ) {
+                Text(
+                    if (option == DiceInput.APP) "App" else "My dice",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (active) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun EntryStage(
+    spec: RollSpec,
+    entered: List<Int?>,
+    activeSlot: Int,
+    pendingTens: Int?,
+    luckyPending: Boolean,
+    onPickSlot: (Int) -> Unit,
+    onPickTens: (Int) -> Unit,
+    onPickFace: (Int) -> Unit,
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        EntrySlots(entered = entered, activeSlot = activeSlot, onPick = onPickSlot)
+        val prompt = when {
+            luckyPending && entered.any { it == null } -> "Lucky — roll that die again and tap what it shows."
+            entered.size == 1 -> "Tap the face you rolled."
+            else -> "Tap each die's face, in any order."
+        }
+        Text(prompt, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        // A d100 is two physical dice and a 100-button grid would be absurd, so
+        // percentile gets a tens/ones pad. Every other die offers every face.
+        if (spec.faces > 20) {
+            PercentilePad(pendingTens = pendingTens, onPickTens = onPickTens, onPickOnes = onPickFace)
+        } else {
+            FacePad(spec = spec, onPick = onPickFace)
+        }
+    }
+}
+
+/**
+ * One slot per die. Filled slots show the numeral, empty ones a dash. Tapping a
+ * slot re-targets the pad, so a mistyped die is a two-tap fix, not a restart.
+ */
+@Composable
+private fun EntrySlots(entered: List<Int?>, activeSlot: Int, onPick: (Int) -> Unit) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        entered.forEachIndexed { i, value ->
+            val active = i == activeSlot
+            Box(
+                Modifier
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .border(
+                        if (active) 2.dp else 1.dp,
+                        if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                        RoundedCornerShape(8.dp),
+                    )
+                    .background(if (active) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface)
+                    .clickable { onPick(i) },
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    value?.toString() ?: "—",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (value == null) {
+                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun FacePad(spec: RollSpec, onPick: (Int) -> Unit) {
+    val faces = ManualRollEntry.enterableFaces(spec).toList()
+    val perRow = if (faces.size > 12) 5 else minOf(faces.size, 6)
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+        faces.chunked(perRow).forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+                row.forEach { face ->
+                    PadButton(face.toString(), Modifier.weight(1f)) { onPick(face) }
+                }
+                // Keep a short final row aligned with the ones above it.
+                repeat(perRow - row.size) { Box(Modifier.weight(1f)) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PercentilePad(pendingTens: Int?, onPickTens: (Int) -> Unit, onPickOnes: (Int) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+        (0..9).chunked(5).forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+                row.forEach { tens ->
+                    PadButton(
+                        label = if (tens == 0) "00" else "${tens * 10}",
+                        modifier = Modifier.weight(1f),
+                        active = pendingTens == tens * 10,
+                    ) { onPickTens(tens * 10) }
+                }
+            }
+        }
+        (0..9).chunked(5).forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+                row.forEach { ones ->
+                    PadButton(
+                        label = ones.toString(),
+                        modifier = Modifier.weight(1f),
+                        enabled = pendingTens != null,
+                    ) {
+                        // Percentile convention: 00 + 0 reads as 100.
+                        val tens = pendingTens ?: 0
+                        onPickOnes(if (tens == 0 && ones == 0) 100 else tens + ones)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PadButton(
+    label: String,
+    modifier: Modifier = Modifier,
+    active: Boolean = false,
+    enabled: Boolean = true,
+    onClick: () -> Unit,
+) {
+    Box(
+        modifier
+            .height(38.dp)
+            .clip(RoundedCornerShape(7.dp))
+            .background(if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
+            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(7.dp))
+            .clickable(enabled = enabled) { onClick() },
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            label,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = (if (active) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface)
+                .copy(alpha = if (enabled) 1f else 0.35f),
+        )
     }
 }
 
@@ -299,9 +621,9 @@ private fun CritBurst() {
 }
 
 @Composable
-private fun RerollButton(onClick: () -> Unit) {
+private fun RerollButton(label: String = "Roll again", onClick: () -> Unit) {
     Text(
-        "Roll again",
+        label,
         style = MaterialTheme.typography.labelMedium,
         color = MaterialTheme.colorScheme.primary,
         modifier = Modifier.clickable { onClick() }.padding(4.dp),

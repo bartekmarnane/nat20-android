@@ -553,6 +553,9 @@ private fun CheckRollDialog(check: CheckRoll, onApplyIntent: (CharacterIntent) -
                     allowAdvantageToggle = true,
                     luckyReroll = check.lucky,
                     onSettled = { settled = it },
+                    // Re-rolling (or correcting a hand-entered face) invalidates
+                    // the result, so the log button waits for the new one.
+                    onReset = { settled = null },
                 )
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text("Judge vs DC", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
@@ -666,7 +669,7 @@ internal fun CombatPage(character: Character, payload: DnD5ePayload, onApplyInte
             spec = RollSpec.d(1, hitDie),
             bonuses = if (conMod != 0) listOf(RollBonus("CON", conMod)) else emptyList(),
             allowAdvantageToggle = false,
-            onSettled = { result -> onApplyIntent(SpendHitDie(maxOf(1, result.total))) },
+            onCommit = { result -> onApplyIntent(SpendHitDie(maxOf(1, result.total))) },
             onDismiss = { spendHitDie = false },
         )
     }
@@ -686,7 +689,7 @@ internal fun CombatPage(character: Character, payload: DnD5ePayload, onApplyInte
             title = "Initiative",
             spec = RollSpec.d(1, 20),
             bonuses = listOf(RollBonus("DEX", payload.initiativeBonus)),
-            onSettled = { result -> onApplyIntent(SetInitiative(result.total)) },
+            onCommit = { result -> onApplyIntent(SetInitiative(result.total)) },
             onDismiss = { rollingInit = false },
         )
     }

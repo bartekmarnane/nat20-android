@@ -590,12 +590,12 @@ private fun Combat2024(payload: DnD5e2024Payload, onApplyIntent: (CharacterInten
         val dexMod = AbilityScores.modifier(payload.effectiveScore(Ability.DEXTERITY))
         val con = AbilityScores.modifier(payload.effectiveScore(Ability.CONSTITUTION))
         when (kind) {
-            RollKind.DEATH_SAVE -> RollDialog("Death save", RollSpec.d(1, 20), allowAdvantageToggle = false, onSettled = { it.naturalD20?.let { d -> onApplyIntent(RollDeathSave2024(d)) } }, onDismiss = { rolling = null })
+            RollKind.DEATH_SAVE -> RollDialog("Death save", RollSpec.d(1, 20), allowAdvantageToggle = false, onCommit = { it.naturalD20?.let { d -> onApplyIntent(RollDeathSave2024(d)) } }, onDismiss = { rolling = null })
             RollKind.INITIATIVE -> {
                 val alertProf = payload.initiativeBonus - dexMod
-                RollDialog("Initiative", RollSpec.d(1, 20), bonuses = buildList { add(RollBonus("DEX", dexMod)); if (alertProf != 0) add(RollBonus("Alert", alertProf)) }, onSettled = { onApplyIntent(SetInitiative2024(it.total)) }, onDismiss = { rolling = null })
+                RollDialog("Initiative", RollSpec.d(1, 20), bonuses = buildList { add(RollBonus("DEX", dexMod)); if (alertProf != 0) add(RollBonus("Alert", alertProf)) }, onCommit = { onApplyIntent(SetInitiative2024(it.total)) }, onDismiss = { rolling = null })
             }
-            RollKind.HIT_DIE -> RollDialog("Spend a hit die", RollSpec.d(1, hitDie2024(payload)), bonuses = if (con != 0) listOf(RollBonus("CON", con)) else emptyList(), allowAdvantageToggle = false, onSettled = { onApplyIntent(SpendHitDie2024(maxOf(1, it.total))) }, onDismiss = { rolling = null })
+            RollKind.HIT_DIE -> RollDialog("Spend a hit die", RollSpec.d(1, hitDie2024(payload)), bonuses = if (con != 0) listOf(RollBonus("CON", con)) else emptyList(), allowAdvantageToggle = false, onCommit = { onApplyIntent(SpendHitDie2024(maxOf(1, it.total))) }, onDismiss = { rolling = null })
         }
     }
     if (addCond) ConditionPickerDialog(payload.activeConditions, onPick = { onApplyIntent(ApplyCondition2024(it)); addCond = false }, onDismiss = { addCond = false })

@@ -176,6 +176,14 @@ Legend: `[ ]` not audited · `[~]` audited, fixes in progress · `[x]` fixed + v
   - Built 2026-07-14 (directly): homebrew creature feature mirroring Custom Races (#11). Engine: `CustomCreature` (@Serializable: name/size/type/alignment/AC/HP/hit-dice/speed/6 abilities/CR/notes, id `"custom:"+UUID`) + `CustomCreatureLibrary` (StateFlow, add/update/delete/replaceAll + onChange) + `CustomCreatureJson` in `:ruleset-dnd5e-2014`. Data: `custom_creatures` table (**Room v7→v8**, MIGRATION_7_8 CREATE TABLE verified against the exported v8 schema) + DAO + envelope repository; app `CustomCreatureSync` hydrates at startup + write-through reconciles. UI: `CustomCreaturesScreen` (parchment list + dashed "+ NEW CREATURE" + rows) and an editor sheet on `ActionPickerShell` (Identity/Defences/Ability-Scores/Challenge/Notes sections, numeric steppers, size + CR pills, Save + Delete). Wired into Settings → Reference "Custom Creatures" tile + `custom-creatures` route (closes #4's deferred tile). +2 codec tests.
 - [x] 45. PF2e Actions reference — removed 2026-07-13 (Android-only, no iOS counterpart; see #4)
 
+## Post-audit divergences
+
+- **Physical dice (A25 / iOS 27) — Android is ahead.** Hand-entered rolls live in the shared
+  `RollResultView` + `-core` `ManualRollEntry`, so **all three rulesets** (2014 / 2024 / PF2e)
+  get the face pad. On iOS the primitive lives in the `DnD5e` package and only the 2014 ruleset
+  adopted it, so 2024 + PF2e there don't have it yet — an **iOS-side** gap, fixed by promoting
+  `RollResultView`/`RollSpec` into `DnD5eCore`/`DnD5eUICore`.
+
 ## Out of scope for this audit
 
 - AI character creation (backlog A20, unstarted on Android by design)
