@@ -108,23 +108,23 @@ fun PathfinderWizardScreen(
     var backgroundId by rememberSaveable { mutableStateOf<String?>(null) }
     var classId by rememberSaveable { mutableStateOf<String?>(null) }
     var level by rememberSaveable { mutableIntStateOf(1) }
-    var keyAbility by remember { mutableStateOf<PfAbility?>(null) }
+    var keyAbility by rememberSaveable(stateSaver = jsonStateSaver<PfAbility?>()) { mutableStateOf(null) }
     var subclass by rememberSaveable { mutableStateOf<String?>(null) }
-    var ancestryFree by remember { mutableStateOf<List<PfAbility>>(emptyList()) }
-    var backgroundBoost by remember { mutableStateOf<PfAbility?>(null) }
-    var backgroundFree by remember { mutableStateOf<PfAbility?>(null) }
-    var freeBoosts by remember { mutableStateOf<List<PfAbility>>(emptyList()) }
-    var chosenSkills by remember { mutableStateOf<Set<PfSkill>>(emptySet()) }
-    var chosenCantrips by remember { mutableStateOf<Set<String>>(emptySet()) }
-    var chosenRank1 by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var ancestryFree by rememberSaveable(stateSaver = jsonStateSaver<List<PfAbility>>()) { mutableStateOf(emptyList()) }
+    var backgroundBoost by rememberSaveable(stateSaver = jsonStateSaver<PfAbility?>()) { mutableStateOf(null) }
+    var backgroundFree by rememberSaveable(stateSaver = jsonStateSaver<PfAbility?>()) { mutableStateOf(null) }
+    var freeBoosts by rememberSaveable(stateSaver = jsonStateSaver<List<PfAbility>>()) { mutableStateOf(emptyList()) }
+    var chosenSkills by rememberSaveable(stateSaver = jsonStateSaver<Set<PfSkill>>()) { mutableStateOf(emptySet()) }
+    var chosenCantrips by rememberSaveable(stateSaver = jsonStateSaver<Set<String>>()) { mutableStateOf(emptySet()) }
+    var chosenRank1 by rememberSaveable(stateSaver = jsonStateSaver<Set<String>>()) { mutableStateOf(emptySet()) }
     var ancestryFeat by rememberSaveable { mutableStateOf<String?>(null) }
     var classFeat by rememberSaveable { mutableStateOf<String?>(null) }
-    var advBoosts by remember { mutableStateOf<Map<Int, List<PfAbility>>>(emptyMap()) }
-    var skillIncs by remember { mutableStateOf<Map<Int, PfSkill>>(emptyMap()) }
-    var advFeats by remember { mutableStateOf<Map<FeatSlotKey, String>>(emptyMap()) }
+    var advBoosts by rememberSaveable(stateSaver = jsonStateSaver<Map<Int, List<PfAbility>>>()) { mutableStateOf(emptyMap()) }
+    var skillIncs by rememberSaveable(stateSaver = jsonStateSaver<Map<Int, PfSkill>>()) { mutableStateOf(emptyMap()) }
+    var advFeats by rememberSaveable(stateSaver = jsonStateSaver<Map<FeatSlotKey, String>>()) { mutableStateOf(emptyMap()) }
     var armorId by rememberSaveable { mutableStateOf<String?>(null) }
     var shieldId by rememberSaveable { mutableStateOf<String?>(null) }
-    var weaponIds by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var weaponIds by rememberSaveable(stateSaver = jsonStateSaver<Set<String>>()) { mutableStateOf(emptySet()) }
     // Pencil-jump from Review: the footer collapses to a single "Done" back to Review.
     var editingFromReview by rememberSaveable { mutableStateOf(false) }
 

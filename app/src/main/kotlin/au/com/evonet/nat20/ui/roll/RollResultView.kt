@@ -79,15 +79,22 @@ fun RollResultView(
     onSettled: (RollResult) -> Unit = {},
     /** Fired when a settled roll is torn down (reroll / adv-dis flip) so callers can clear stale judgment. */
     onReset: () -> Unit = {},
+    /**
+     * A result the caller already holds — the widget mounts showing it, settled,
+     * with no tumble and without re-firing [onSettled]. Used when a roll outlives
+     * the composable (e.g. stepping away from a wizard's HP step and back) so it
+     * doesn't fall back to an un-rolled ROLL button over a value already committed.
+     */
+    initialResult: RollResult? = null,
     modifier: Modifier = Modifier,
 ) {
     val haptics = LocalHapticFeedback.current
     var mode by remember { mutableStateOf(Mode.NORMAL) }
-    var phase by remember { mutableStateOf(Phase.IDLE) }
+    var phase by remember { mutableStateOf(if (initialResult != null) Phase.SETTLED else Phase.IDLE) }
     var rollKey by remember { mutableIntStateOf(0) }
-    var displayed by remember { mutableStateOf(baseSpec.dieList()) }
-    var result by remember { mutableStateOf<RollResult?>(null) }
-    var revealedBonuses by remember { mutableIntStateOf(0) }
+    var displayed by remember { mutableStateOf(initialResult?.dice ?: baseSpec.dieList()) }
+    var result by remember { mutableStateOf(initialResult) }
+    var revealedBonuses by remember { mutableIntStateOf(if (initialResult != null) bonuses.size else 0) }
     var wasLucky by remember { mutableStateOf(false) }
 
     val canToggle = allowAdvantageToggle && baseSpec.faces == 20 && baseSpec.count == 1

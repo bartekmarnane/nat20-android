@@ -19,6 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,7 +35,9 @@ import au.com.evonet.nat20.dnd5e.DnD5ePayload
 import au.com.evonet.nat20.dnd5e.Feats
 import au.com.evonet.nat20.dnd5e.FightingStyles
 import au.com.evonet.nat20.dnd5e.LevelUp
+import au.com.evonet.nat20.dnd5e.bonusMaxHpPerLevel
 import au.com.evonet.nat20.dnd5e.castableSpellIDs
+import au.com.evonet.nat20.dnd5e.effectiveMaxHp
 import au.com.evonet.nat20.dnd5e.isSpellcaster
 import au.com.evonet.nat20.dnd5e.maxSpellSlots
 import au.com.evonet.nat20.dnd5e.core.Ability
@@ -43,6 +46,7 @@ import au.com.evonet.nat20.dnd5e.core.CastingProgression
 import au.com.evonet.nat20.dnd5e.core.DnD5eClasses
 import au.com.evonet.nat20.dnd5e.core.HpChoice
 import au.com.evonet.nat20.dnd5e.core.LevelUpMath
+import au.com.evonet.nat20.dnd5e.core.RollResult
 import au.com.evonet.nat20.dnd5e.core.RollSpec
 import au.com.evonet.nat20.domain.CharacterIntent
 import au.com.evonet.nat20.ui.editor.EditorShell
@@ -57,6 +61,7 @@ import au.com.evonet.nat20.ui.editor.WizardSegmented
 import au.com.evonet.nat20.ui.editor.WizardStepSection
 import au.com.evonet.nat20.ui.editor.WizardSubSectionCard
 import au.com.evonet.nat20.ui.editor.WizardTextField
+import au.com.evonet.nat20.ui.editor.jsonStateSaver
 import au.com.evonet.nat20.ui.roll.RollResultView
 import au.com.evonet.nat20.ui.slugToTitle
 import au.com.evonet.nat20.ui.theme.Cinzel
@@ -116,7 +121,7 @@ private val MULTICLASS_PREREQS: Map<String, MulticlassPrereq> = mapOf(
 @Composable
 internal fun LevelUpWizard(payload: DnD5ePayload, onApplyIntent: (CharacterIntent) -> Unit, onDismiss: () -> Unit) {
     val existing = payload.classes.map { it.classId }
-    var classId by remember { mutableStateOf(payload.classes.firstOrNull()?.classId ?: "fighter") }
+    var classId by rememberSaveable { mutableStateOf(payload.classes.firstOrNull()?.classId ?: "fighter") }
     val isNew = classId !in existing
     val currentClassLevel = payload.classes.firstOrNull { it.classId == classId }?.level ?: 0
     val newClassLevel = currentClassLevel + 1
@@ -124,19 +129,23 @@ internal fun LevelUpWizard(payload: DnD5ePayload, onApplyIntent: (CharacterInten
     val hitDie = DnD5eClasses.hitDie(classId)
     val conMod = AbilityScores.modifier(payload.abilityScores.constitution)
 
-    var hpMode by remember { mutableStateOf(HpMode.AVERAGE) }
-    var rolledDie by remember(classId) { mutableStateOf<Int?>(null) }
+    var hpMode by rememberSaveable { mutableStateOf(HpMode.AVERAGE) }
+    // Kept across the whole wizard (and process death) so stepping away from the
+    // HP step and back re-seeds the die widget with the roll already committed
+    // instead of dropping it back to an un-rolled ROLL button.
+    var rolledDie by rememberSaveable(classId) { mutableStateOf<Int?>(null) }
+    val rolledResult = rolledDie?.let { RollResult.single(it, faces = hitDie) }
 
     val needsSubclass = klass != null && newClassLevel == klass.subclassLevel &&
         payload.classes.firstOrNull { it.classId == classId }?.subclass == null && klass.subclasses.isNotEmpty()
-    var subclass by remember(classId) { mutableStateOf<String?>(null) }
+    var subclass by rememberSaveable(classId) { mutableStateOf<String?>(null) }
 
     val needsStyle = FightingStyles.grantLevel(classId) == newClassLevel && payload.fightingStyles.isEmpty()
-    var style by remember(classId) { mutableStateOf<String?>(null) }
+    var style by rememberSaveable(classId) { mutableStateOf<String?>(null) }
 
     val classCasts = CastingProgression.forClass(classId) != CastingProgression.NONE
-    var newCantrips by remember(classId) { mutableStateOf<Set<String>>(emptySet()) }
-    var newSpells by remember(classId) { mutableStateOf<Set<String>>(emptySet()) }
+    var newCantrips by rememberSaveable(classId, stateSaver = jsonStateSaver<Set<String>>()) { mutableStateOf(emptySet()) }
+    var newSpells by rememberSaveable(classId, stateSaver = jsonStateSaver<Set<String>>()) { mutableStateOf(emptySet()) }
 
     val className = klass?.name
     val maxLvl = payload.maxSpellSlots.keys.maxOrNull() ?: 1
@@ -157,11 +166,11 @@ internal fun LevelUpWizard(payload: DnD5ePayload, onApplyIntent: (CharacterInten
     val hasSpellChoices = cantripPool.isNotEmpty() || spellPool.isNotEmpty()
 
     val needsAsi = LevelUpMath.grantsAbilityScoreImprovement(classId, newClassLevel)
-    var advMode by remember { mutableStateOf(AdvMode.ASI) }
-    var asiMode by remember { mutableStateOf(AsiMode.ONE) }
-    var asiPicks by remember(classId) { mutableStateOf<List<Ability>>(emptyList()) }
-    var featId by remember(classId, advMode) { mutableStateOf<String?>(null) }
-    var halfFeatPick by remember(featId) { mutableStateOf<Ability?>(null) }
+    var advMode by rememberSaveable { mutableStateOf(AdvMode.ASI) }
+    var asiMode by rememberSaveable { mutableStateOf(AsiMode.ONE) }
+    var asiPicks by rememberSaveable(classId, stateSaver = jsonStateSaver<List<Ability>>()) { mutableStateOf(emptyList()) }
+    var featId by rememberSaveable(classId, advMode) { mutableStateOf<String?>(null) }
+    var halfFeatPick by rememberSaveable(featId, stateSaver = jsonStateSaver<Ability?>()) { mutableStateOf(null) }
 
     val availableFeats = remember(payload.abilityScores, payload.isSpellcaster) {
         Feats.available(payload.abilityScores, payload.isSpellcaster)
@@ -191,8 +200,8 @@ internal fun LevelUpWizard(payload: DnD5ePayload, onApplyIntent: (CharacterInten
     val active = LuStep.entries.filter {
         (it != LuStep.SUBCLASS || needsSubclass) && (it != LuStep.CHOICES || hasChoices)
     }
-    var currentStep by remember { mutableStateOf(LuStep.CLASS) }
-    var furthest by remember { mutableStateOf(LuStep.CLASS) }
+    var currentStep by rememberSaveable { mutableStateOf(LuStep.CLASS) }
+    var furthest by rememberSaveable { mutableStateOf(LuStep.CLASS) }
     // If the class change dropped the current step out of the active set, fall back to Class.
     if (currentStep !in active) currentStep = LuStep.CLASS
     val position = active.indexOf(currentStep).coerceAtLeast(0)
@@ -336,6 +345,7 @@ internal fun LevelUpWizard(payload: DnD5ePayload, onApplyIntent: (CharacterInten
                                         baseSpec = RollSpec.d(1, hitDie),
                                         allowAdvantageToggle = false,
                                         onSettled = { rolledDie = it.keptSum },
+                                        initialResult = rolledResult,
                                     )
                                 }
                             }
@@ -343,6 +353,15 @@ internal fun LevelUpWizard(payload: DnD5ePayload, onApplyIntent: (CharacterInten
                         val dieValue = if (hpMode == HpMode.AVERAGE) LevelUpMath.averageGain(hitDie) else (rolledDie ?: 0)
                         val total = maxOf(1, dieValue + conMod)
                         Spacer(Modifier.height(12.dp))
+                        // The resulting maximum, not just the gain — the gain alone
+                        // never told the player what they were rolling toward.
+                        Text(
+                            "Max HP ${payload.effectiveMaxHp} → ${payload.effectiveMaxHp + total + payload.bonusMaxHpPerLevel}",
+                            fontFamily = Cinzel,
+                            fontSize = 15.sp,
+                            color = palette.ink,
+                        )
+                        Spacer(Modifier.height(2.dp))
                         Text(
                             "This level: +$total HP ($dieValue die + ${conMod.signed()} CON)",
                             fontFamily = ImFell,
@@ -480,7 +499,10 @@ internal fun LevelUpWizard(payload: DnD5ePayload, onApplyIntent: (CharacterInten
                             val dieValue = if (hpMode == HpMode.AVERAGE) LevelUpMath.averageGain(hitDie) else (rolledDie ?: 0)
                             val hpTotal = maxOf(1, dieValue + conMod)
                             val method = if (hpMode == HpMode.AVERAGE) "Average" else "Rolled $dieValue"
-                            ReviewLine("Hit points", "$method — +$hpTotal HP")
+                            ReviewLine(
+                                "Hit points",
+                                "$method — +$hpTotal HP (max ${payload.effectiveMaxHp} → ${payload.effectiveMaxHp + hpTotal + payload.bonusMaxHpPerLevel})",
+                            )
                             if (needsSubclass && !subclass.isNullOrEmpty()) {
                                 val subName = klass?.subclasses?.firstOrNull { it.id == subclass }?.name ?: subclass!!
                                 ReviewLine("Subclass", subName)

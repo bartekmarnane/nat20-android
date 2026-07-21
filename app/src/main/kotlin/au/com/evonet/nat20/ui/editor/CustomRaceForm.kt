@@ -31,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -60,6 +61,7 @@ import au.com.evonet.nat20.ui.theme.Cinzel
 import au.com.evonet.nat20.ui.theme.Cormorant
 import au.com.evonet.nat20.ui.theme.EbGaramond
 import au.com.evonet.nat20.ui.theme.natPalette
+import kotlinx.serialization.Serializable
 
 /**
  * The homebrew Custom Race form (parity #11, port of iOS `CustomRaceForm`): a
@@ -70,6 +72,7 @@ import au.com.evonet.nat20.ui.theme.natPalette
  */
 
 /** A trait row being edited; [key] keeps Compose identity while name/body change. */
+@Serializable
 private data class TraitDraft(val key: Int, val name: String = "", val body: String = "")
 
 private val SIZES = listOf("Tiny", "Small", "Medium", "Large")
@@ -83,22 +86,22 @@ fun CustomRaceFormDialog(
 ) {
     val palette = MaterialTheme.natPalette
 
-    var name by remember { mutableStateOf(editing?.name.orEmpty()) }
-    var description by remember { mutableStateOf(editing?.description.orEmpty()) }
-    var sizeIndex by remember {
+    var name by rememberSaveable { mutableStateOf(editing?.name.orEmpty()) }
+    var description by rememberSaveable { mutableStateOf(editing?.description.orEmpty()) }
+    var sizeIndex by rememberSaveable {
         // Medium when new (or the stored size isn't one of the four options).
         mutableIntStateOf(SIZES.indexOfFirst { it.equals(editing?.size, ignoreCase = true) }.let { if (it >= 0) it else 2 })
     }
-    var speed by remember { mutableIntStateOf(editing?.speed ?: 30) }
-    var darkvision by remember { mutableIntStateOf(editing?.darkvision ?: 0) }
-    var asi by remember { mutableStateOf(editing?.abilityBonuses().orEmpty()) }
-    var languages by remember { mutableStateOf(editing?.languages?.joinToString(", ").orEmpty()) }
-    var traits by remember {
+    var speed by rememberSaveable { mutableIntStateOf(editing?.speed ?: 30) }
+    var darkvision by rememberSaveable { mutableIntStateOf(editing?.darkvision ?: 0) }
+    var asi by rememberSaveable(stateSaver = jsonStateSaver<Map<Ability, Int>>()) { mutableStateOf(editing?.abilityBonuses().orEmpty()) }
+    var languages by rememberSaveable { mutableStateOf(editing?.languages?.joinToString(", ").orEmpty()) }
+    var traits by rememberSaveable(stateSaver = jsonStateSaver<List<TraitDraft>>()) {
         mutableStateOf(
             editing?.traits.orEmpty().mapIndexed { index, trait -> TraitDraft(index, trait.name, trait.body) },
         )
     }
-    var nextTraitKey by remember { mutableIntStateOf(traits.size) }
+    var nextTraitKey by rememberSaveable { mutableIntStateOf(traits.size) }
 
     fun buildRace(): Race = Race(
         id = editing?.id ?: CustomRaceLibrary.newId(),

@@ -81,6 +81,7 @@ import au.com.evonet.nat20.ui.theme.ImFell
 import au.com.evonet.nat20.ui.theme.natPalette
 import java.time.Instant
 import kotlin.math.max
+import kotlinx.serialization.Serializable
 
 /**
  * The multi-step D&D 5e creation/edit wizard (A8, restyled to the iOS parchment
@@ -102,6 +103,7 @@ private enum class WizStep(val title: String) {
 /** The shape of a single advancement-level choice for an above-level-1 build (A11). */
 private enum class AdvKind(val label: String) { ASI_ONE("+2 one"), ASI_TWO("+1 two"), FEAT("Feat") }
 
+@Serializable
 private data class AdvState(
     val kind: AdvKind = AdvKind.ASI_ONE,
     val abilities: List<Ability> = emptyList(),
@@ -144,13 +146,15 @@ fun DnD5eWizardScreen(
     var classId by rememberSaveable { mutableStateOf(source?.classes?.firstOrNull()?.classId) }
     var level by rememberSaveable { mutableIntStateOf(source?.classes?.firstOrNull()?.level ?: 1) }
     var backgroundId by rememberSaveable { mutableStateOf(source?.background?.ifEmpty { null }) }
-    var base by remember { mutableStateOf(initialBaseScores(source)) }
-    var chosenSkills by remember { mutableStateOf(classChosenSkills(source)) }
+    var base by rememberSaveable(stateSaver = jsonStateSaver<AbilityScores>()) { mutableStateOf(initialBaseScores(source)) }
+    var chosenSkills by rememberSaveable(stateSaver = jsonStateSaver<Set<String>>()) { mutableStateOf(classChosenSkills(source)) }
     var fightingStyle by rememberSaveable { mutableStateOf(source?.fightingStyles?.firstOrNull()) }
-    var chosenCantrips by remember { mutableStateOf(source?.cantripsKnown?.toSet().orEmpty()) }
-    var chosenSpells by remember { mutableStateOf((source?.spellsKnown.orEmpty().values.flatten() + source?.preparedSpells.orEmpty().values.flatten()).toSet()) }
+    var chosenCantrips by rememberSaveable(stateSaver = jsonStateSaver<Set<String>>()) { mutableStateOf(source?.cantripsKnown?.toSet().orEmpty()) }
+    var chosenSpells by rememberSaveable(stateSaver = jsonStateSaver<Set<String>>()) {
+        mutableStateOf((source?.spellsKnown.orEmpty().values.flatten() + source?.preparedSpells.orEmpty().values.flatten()).toSet())
+    }
     var subclass by rememberSaveable { mutableStateOf(source?.classes?.firstOrNull()?.subclass) }
-    var advs by remember { mutableStateOf<Map<Int, AdvState>>(emptyMap()) }
+    var advs by rememberSaveable(stateSaver = jsonStateSaver<Map<Int, AdvState>>()) { mutableStateOf(emptyMap()) }
     // Manner + Equipment state (iOS parity steps).
     var alignment by rememberSaveable { mutableStateOf(source?.alignment) }
     var personality by rememberSaveable { mutableStateOf(source?.personality.orEmpty()) }
@@ -158,7 +162,7 @@ fun DnD5eWizardScreen(
     var bonds by rememberSaveable { mutableStateOf(source?.bonds.orEmpty()) }
     var flaws by rememberSaveable { mutableStateOf(source?.flaws.orEmpty()) }
     var backstory by rememberSaveable { mutableStateOf(source?.backstory.orEmpty()) }
-    var inventory by remember { mutableStateOf(source?.inventory.orEmpty()) }
+    var inventory by rememberSaveable(stateSaver = jsonStateSaver<List<InventoryItem>>()) { mutableStateOf(source?.inventory.orEmpty()) }
     // Edit mode must not re-seed a kit the character already carries.
     var equipmentSeeded by rememberSaveable { mutableStateOf(source?.inventory?.isNotEmpty() == true) }
     // Pencil-jump from Review: the footer collapses to a single "Done" back to Review.
@@ -168,7 +172,7 @@ fun DnD5eWizardScreen(
     val customRaces by CustomRaceLibrary.races.collectAsState()
     val allRaces = remember(customRaces) { DnD5eCatalog.races }
     var showRaceForm by rememberSaveable { mutableStateOf(false) }
-    var editingCustomRace by remember { mutableStateOf<Race?>(null) }
+    var editingCustomRace by rememberSaveable(stateSaver = jsonStateSaver<Race?>()) { mutableStateOf(null) }
 
     val race = raceId?.let(DnD5eCatalog::race)
     val klass = classId?.let(DnD5eCatalog::characterClass)
@@ -977,7 +981,7 @@ private fun EquipmentStep(
     onReset: () -> Unit,
 ) {
     val palette = MaterialTheme.natPalette
-    var showAdd by remember { mutableStateOf(false) }
+    var showAdd by rememberSaveable { mutableStateOf(false) }
     StepColumn {
         WizardStepSection(
             "Starting Kit",
@@ -1104,8 +1108,8 @@ private fun WizardAddItemDialog(onAdd: (InventoryItem) -> Unit, onDismiss: () ->
             DnD5eCatalog.gear.forEach { g -> add(WizardCatalogueChoice(g.name, "Gear") { qty -> g.makeItem(quantity = qty) }) }
         }.sortedBy { it.name }
     }
-    var query by remember { mutableStateOf("") }
-    var quantity by remember { mutableIntStateOf(1) }
+    var query by rememberSaveable { mutableStateOf("") }
+    var quantity by rememberSaveable { mutableIntStateOf(1) }
     val filtered = remember(query) {
         if (query.isBlank()) choices else choices.filter { it.name.contains(query, ignoreCase = true) }
     }

@@ -111,6 +111,7 @@ object PfFeats {
 }
 
 /** One earned feat slot: the level it's earned at + its type — the key the creation wizard picks against. */
+@Serializable
 data class FeatSlotKey(val level: Int, val type: PfFeatType)
 
 /** How many feat slots of each type a character of a given level + class has earned. */

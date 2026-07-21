@@ -70,6 +70,7 @@ import au.com.evonet.nat20.ui.theme.EbGaramond
 import au.com.evonet.nat20.ui.theme.ImFell
 import au.com.evonet.nat20.ui.theme.natPalette
 import java.time.Instant
+import kotlinx.serialization.Serializable
 
 /**
  * The D&D 5e (2024) creation wizard (A21, restyled to iOS parity): Name →
@@ -93,6 +94,7 @@ private enum class Wiz2024(val title: String) {
 /** A single ASI-level choice in the above-level-1 creation step: +2 of bumps, or a General feat. */
 private enum class AdvKind2024(val label: String) { ASI("Ability Scores"), FEAT("Feat") }
 
+@Serializable
 private data class AdvState2024(
     val kind: AdvKind2024 = AdvKind2024.ASI,
     /** ASI mode: per-ability deltas that must total +2 (a +2/one or +1/two). */
@@ -131,16 +133,16 @@ fun DnD5e2024WizardScreen(
     var classId by rememberSaveable { mutableStateOf<String?>(null) }
     var level by rememberSaveable { mutableIntStateOf(1) }
     var backgroundId by rememberSaveable { mutableStateOf<String?>(null) }
-    var base by remember { mutableStateOf(AbilityScores()) }
+    var base by rememberSaveable(stateSaver = jsonStateSaver<AbilityScores>()) { mutableStateOf(AbilityScores()) }
     /** The background's +2/+1 (or +1/+1/+1) allocation across its three ability options. */
-    var increases by remember { mutableStateOf<Map<Ability, Int>>(emptyMap()) }
-    var chosenSkills by remember { mutableStateOf(emptySet<String>()) }
+    var increases by rememberSaveable(stateSaver = jsonStateSaver<Map<Ability, Int>>()) { mutableStateOf(emptyMap()) }
+    var chosenSkills by rememberSaveable(stateSaver = jsonStateSaver<Set<String>>()) { mutableStateOf(emptySet()) }
     var subclass by rememberSaveable { mutableStateOf<String?>(null) }
-    var advs by remember { mutableStateOf<Map<Int, AdvState2024>>(emptyMap()) }
-    var masteries by remember { mutableStateOf(emptySet<String>()) }
+    var advs by rememberSaveable(stateSaver = jsonStateSaver<Map<Int, AdvState2024>>()) { mutableStateOf(emptyMap()) }
+    var masteries by rememberSaveable(stateSaver = jsonStateSaver<Set<String>>()) { mutableStateOf(emptySet()) }
     var fightingStyle by rememberSaveable { mutableStateOf<String?>(null) }
-    var chosenCantrips by remember { mutableStateOf(emptySet<String>()) }
-    var chosenSpells by remember { mutableStateOf(emptySet<String>()) }
+    var chosenCantrips by rememberSaveable(stateSaver = jsonStateSaver<Set<String>>()) { mutableStateOf(emptySet()) }
+    var chosenSpells by rememberSaveable(stateSaver = jsonStateSaver<Set<String>>()) { mutableStateOf(emptySet()) }
     var armorId by rememberSaveable { mutableStateOf<String?>(null) }
     var hasShield by rememberSaveable { mutableStateOf(false) }
     // Pencil-jump from Review: the footer collapses to a single "Done" back to Review.

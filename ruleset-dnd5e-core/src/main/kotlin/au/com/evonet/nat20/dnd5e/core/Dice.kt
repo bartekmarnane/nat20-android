@@ -112,6 +112,22 @@ data class RollResult(
     val naturalD20: Int? get() = if (faces == 20) keptDice.firstOrNull() else null
     val isNatural20: Boolean get() = naturalD20 == 20
     val isNatural1: Boolean get() = naturalD20 == 1
+
+    companion object {
+        /**
+         * A bare single-die result the caller already knows the value of — no
+         * keep rules, no bonuses. Used to re-seed a roll readout from state
+         * that outlived the composable that produced it (a wizard's HP roll
+         * surviving a step change or process death).
+         */
+        fun single(value: Int, faces: Int): RollResult = RollResult(
+            dice = listOf(value),
+            keptIndices = setOf(0),
+            modifier = 0,
+            bonuses = emptyList(),
+            faces = faces,
+        )
+    }
 }
 
 /** Rolls [spec] (+ optional [bonuses]) using [random] (injectable for tests). */

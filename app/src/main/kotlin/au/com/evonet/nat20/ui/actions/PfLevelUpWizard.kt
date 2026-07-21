@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,6 +43,7 @@ import au.com.evonet.nat20.ui.editor.WizardPrimaryButton
 import au.com.evonet.nat20.ui.editor.WizardQuoteBlock
 import au.com.evonet.nat20.ui.editor.WizardSecondaryButton
 import au.com.evonet.nat20.ui.editor.WizardStepSection
+import au.com.evonet.nat20.ui.editor.jsonStateSaver
 import au.com.evonet.nat20.ui.theme.Cinzel
 import au.com.evonet.nat20.ui.theme.ImFell
 import au.com.evonet.nat20.ui.theme.natPalette
@@ -83,8 +85,8 @@ internal fun PfLevelUpWizard(payload: PathfinderPayload, onApplyIntent: (Charact
     val maxRank = AdvancementSchedule.maxSkillRank(newLevel)
     val jumps = ClassProgression.increasesAt(payload.className, newLevel)
 
-    var skill by remember { mutableStateOf<PfSkill?>(null) }
-    var boosts by remember { mutableStateOf<List<PfAbility>>(emptyList()) }
+    var skill by rememberSaveable(stateSaver = jsonStateSaver<PfSkill?>()) { mutableStateOf(null) }
+    var boosts by rememberSaveable(stateSaver = jsonStateSaver<List<PfAbility>>()) { mutableStateOf(emptyList()) }
 
     // Skills whose current rank can still be raised one step under this level's ceiling.
     val eligibleSkills = remember(newLevel) {
@@ -101,8 +103,8 @@ internal fun PfLevelUpWizard(payload: PathfinderPayload, onApplyIntent: (Charact
     val active = PfLuStep.entries.filter {
         (it != PfLuStep.BOOSTS || grantsBoosts) && (it != PfLuStep.SKILL || grantsSkill)
     }
-    var currentStep by remember { mutableStateOf(active.first()) }
-    var furthest by remember { mutableStateOf(active.first()) }
+    var currentStep by rememberSaveable { mutableStateOf(active.first()) }
+    var furthest by rememberSaveable { mutableStateOf(active.first()) }
     if (currentStep !in active) currentStep = active.first()
     val position = active.indexOf(currentStep).coerceAtLeast(0)
 
