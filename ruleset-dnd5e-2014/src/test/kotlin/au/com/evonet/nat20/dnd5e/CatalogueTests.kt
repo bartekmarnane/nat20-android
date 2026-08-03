@@ -50,8 +50,8 @@ class CatalogueTests {
     @Test
     fun `spell library merges SRD, PHB gap set, and supplements, sorted by level then name`() {
         val spells = DnD5eCatalog.spellLibrary
-        // SRD 5.1 (319) + licensed PHB gap set (41) + Xanathar's (8) + Tasha's (8).
-        assertEquals(376, spells.size)
+        // SRD 5.1 (319) + licensed PHB gap set (41) + Xanathar's (10) + Tasha's (8).
+        assertEquals(378, spells.size)
         // No duplicate ids across the merged files.
         assertEquals(spells.size, spells.map { it.index }.toSet().size)
         // Sorted: cantrips (level 0) first.
