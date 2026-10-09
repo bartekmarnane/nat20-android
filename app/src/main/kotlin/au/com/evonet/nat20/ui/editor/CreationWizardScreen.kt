@@ -14,6 +14,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,9 +32,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import au.com.evonet.nat20.dnd5e.DnD5eRuleset
+import au.com.evonet.nat20.dnd5e.SourceCatalog
 import au.com.evonet.nat20.dnd5e2024.DnD5e2024Ruleset
 import au.com.evonet.nat20.domain.Character
 import au.com.evonet.nat20.pf2e.PathfinderRuleset
+import au.com.evonet.nat20.ui.settings.SourceToggleRow
+import au.com.evonet.nat20.ui.theme.Cinzel
 import au.com.evonet.nat20.ui.theme.Cormorant
 import au.com.evonet.nat20.ui.theme.EbGaramond
 import au.com.evonet.nat20.ui.theme.natPalette
@@ -49,12 +56,21 @@ import au.com.evonet.nat20.ui.theme.natPalette
 fun CreationWizardScreen(onSave: (Character) -> Unit, onCancel: () -> Unit) {
     var edition by rememberSaveable { mutableStateOf<String?>(null) }
     var onRulesetStep by rememberSaveable { mutableStateOf(true) }
+    // Content sources are a 2014 concept; the set rides alongside the edition
+    // pick and lands on the payload the 2014 wizard builds.
+    var enabledSources by rememberSaveable(stateSaver = jsonStateSaver<Set<String>>()) {
+        mutableStateOf(SourceCatalog.defaultEnabled)
+    }
     val chosen = edition
 
     if (onRulesetStep || chosen == null) {
         RulesetStep(
             edition = chosen,
+            enabledSources = enabledSources,
             onPick = { edition = it },
+            onToggleSource = { id, on ->
+                enabledSources = if (on) enabledSources + id else enabledSources - id
+            },
             onContinue = { onRulesetStep = false },
             onCancel = onCancel,
         )
@@ -67,6 +83,7 @@ fun CreationWizardScreen(onSave: (Character) -> Unit, onCancel: () -> Unit) {
                 onCancel = onCancel,
                 stepOffset = 1,
                 onExitFirstStep = backToRuleset,
+                enabledSources = enabledSources,
             )
             DnD5e2024Ruleset.RULESET_ID -> DnD5e2024WizardScreen(
                 onSave = onSave,
@@ -82,7 +99,11 @@ fun CreationWizardScreen(onSave: (Character) -> Unit, onCancel: () -> Unit) {
             )
             else -> RulesetStep(
                 edition = null,
+                enabledSources = enabledSources,
                 onPick = { edition = it },
+                onToggleSource = { id, on ->
+                    enabledSources = if (on) enabledSources + id else enabledSources - id
+                },
                 onContinue = { onRulesetStep = false },
                 onCancel = onCancel,
             )
@@ -94,10 +115,13 @@ fun CreationWizardScreen(onSave: (Character) -> Unit, onCancel: () -> Unit) {
 @Composable
 private fun RulesetStep(
     edition: String?,
+    enabledSources: Set<String>,
     onPick: (String) -> Unit,
+    onToggleSource: (String, Boolean) -> Unit,
     onContinue: () -> Unit,
     onCancel: () -> Unit,
 ) {
+    var sourcesExpanded by rememberSaveable { mutableStateOf(false) }
     // All three edition wizards open with 7 steps (their conditional steps appear
     // as choices are made), so a chosen edition previews 1 + 7 total diamonds.
     val stepCount = if (edition == null) 1 else 8
@@ -121,6 +145,20 @@ private fun RulesetStep(
                 blurb = "The classic fifth-edition rules — the broadest catalogue of races, classes, and spells.",
                 selected = edition == DnD5eRuleset.RULESET_ID,
             ) { onPick(DnD5eRuleset.RULESET_ID) }
+            // Content sources are 2014-specific supplements (Tasha's,
+            // Xanathar's, …) — nested under their edition and revealed only
+            // once 2014 is the active choice. Changeable later from the
+            // character's settings page, so this is a starting point, not a
+            // one-shot decision.
+            if (edition == DnD5eRuleset.RULESET_ID) {
+                ContentSourcesDisclosure(
+                    expanded = sourcesExpanded,
+                    enabledSources = enabledSources,
+                    onToggleExpanded = { sourcesExpanded = !sourcesExpanded },
+                    onToggleSource = onToggleSource,
+                    modifier = Modifier.padding(start = 30.dp),
+                )
+            }
             EditionChoiceRow(
                 name = "5th Edition (2024)",
                 blurb = "The revised 2024 rules — species, backgrounds with ability boosts, and weapon masteries.",
@@ -132,7 +170,59 @@ private fun RulesetStep(
                 selected = edition == PathfinderRuleset.RULESET_ID,
             ) { onPick(PathfinderRuleset.RULESET_ID) }
         }
-        // iOS also shows a Content Sources disclosure under the selected 2014 row — deferred until the source-catalogue port.
+    }
+}
+
+/**
+ * The collapsed "Content Sources" list under the 2014 edition row — PHB is
+ * locked, every supplement is opt-in. Shares [SourceToggleRow] with the
+ * post-creation editor on the character's settings page.
+ */
+@Composable
+private fun ContentSourcesDisclosure(
+    expanded: Boolean,
+    enabledSources: Set<String>,
+    onToggleExpanded: () -> Unit,
+    onToggleSource: (String, Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val palette = MaterialTheme.natPalette
+    Column(modifier.fillMaxWidth()) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onToggleExpanded)
+                .padding(vertical = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                if (expanded) Icons.Filled.KeyboardArrowDown else Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = palette.accent,
+                modifier = Modifier.size(16.dp),
+            )
+            Text(
+                "CONTENT SOURCES",
+                fontFamily = Cinzel,
+                fontSize = 11.sp,
+                letterSpacing = 2.5.sp,
+                color = palette.accent,
+            )
+        }
+        if (expanded) {
+            Column(
+                Modifier.padding(top = 6.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                SourceCatalog.all.forEach { source ->
+                    SourceToggleRow(
+                        source = source,
+                        isOn = source.isLocked || source.id in enabledSources,
+                    ) { on -> onToggleSource(source.id, on) }
+                }
+            }
+        }
     }
 }
 

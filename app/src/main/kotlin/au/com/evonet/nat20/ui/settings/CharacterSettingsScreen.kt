@@ -1,5 +1,6 @@
 package au.com.evonet.nat20.ui.settings
 
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,6 +17,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
@@ -38,6 +40,9 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import au.com.evonet.nat20.dnd5e.DnD5ePayload
+import au.com.evonet.nat20.dnd5e.SourceCatalog
+import au.com.evonet.nat20.dnd5e.effectiveSources
 import au.com.evonet.nat20.domain.Character
 import au.com.evonet.nat20.ui.theme.Cinzel
 import au.com.evonet.nat20.ui.theme.Cormorant
@@ -45,22 +50,24 @@ import au.com.evonet.nat20.ui.theme.OrnamentalDivider
 import au.com.evonet.nat20.ui.theme.natPalette
 
 /**
- * Per-character admin (parity #40), reached from the codex gear: export the
- * sheet as a PDF and delete the character. Port of the iOS
- * `CharacterSettingsView`. Delete is delegated up so the owner can pop the whole
- * codex stack back to the roster.
+ * Per-character admin (parity #40), reached from the codex gear: edit the
+ * character's content sources (2014 only), export the sheet as a PDF, and
+ * delete the character. Port of the iOS `CharacterSettingsView`. Delete and the
+ * source edit are delegated up so the owner can pop the codex stack back to the
+ * roster / persist through the store.
  */
 @Composable
 fun CharacterSettingsScreen(
     character: Character,
     onBack: () -> Unit,
     onDelete: () -> Unit,
+    onEditSources: () -> Unit,
 ) {
     val palette = MaterialTheme.natPalette
     val context = LocalContext.current
     var confirming by remember { mutableStateOf(false) }
 
-    Column(Modifier.fillMaxSize().statusBarsPadding()) {
+    Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
         Box(Modifier.fillMaxWidth().padding(top = 8.dp, start = 22.dp, end = 22.dp)) {
             Box(
                 Modifier.align(Alignment.CenterStart).size(38.dp).clip(CircleShape).background(palette.tileStrong).border(1.dp, palette.accent, CircleShape).clickable(onClick = onBack),
@@ -76,6 +83,22 @@ fun CharacterSettingsScreen(
         OrnamentalDivider(Modifier.padding(horizontal = 22.dp, vertical = 18.dp), opacity = 0.4f)
 
         Column(Modifier.fillMaxWidth().padding(horizontal = 22.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            // 2014-only: the 2024 ruleset and PF2e ship core content with no
+            // supplement gating, so there'd be nothing to toggle.
+            (character.payload as? DnD5ePayload)?.let { payload ->
+                val extras = (payload.effectiveSources - SourceCatalog.lockedIds).size
+                ActionTile(
+                    icon = Icons.AutoMirrored.Filled.List,
+                    title = "Content Sources",
+                    subtitle = if (extras == 0) {
+                        "Core rules only — add supplements"
+                    } else {
+                        "Core rules + $extras supplement" + if (extras == 1) "" else "s"
+                    },
+                    tint = palette.ink,
+                    onClick = onEditSources,
+                )
+            }
             ActionTile(
                 icon = Icons.Filled.Share,
                 title = "Export as PDF",

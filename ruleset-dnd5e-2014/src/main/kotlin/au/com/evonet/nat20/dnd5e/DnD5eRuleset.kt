@@ -145,6 +145,19 @@ class DnD5eRuleset : Ruleset {
         else -> throw CharacterCodecError.UnknownEventType(typeId)
     }
 
+    /** Sheds in-play state at campaign end (inspiration, exhaustion and the inventory are kept). */
+    override fun payloadAfterCampaignEnd(payload: CharacterPayload): CharacterPayload {
+        val p = payload as? DnD5ePayload ?: return payload
+        return p.copy(
+            activeEffects = emptyList(),
+            concentratingOn = null,
+            activeConditions = emptyList(),
+            temporaryHp = 0,
+            deathSaves = au.com.evonet.nat20.dnd5e.core.DeathSaves.cleared,
+            initiative = null,
+        )
+    }
+
     override fun makeProseEvent(text: String, kind: JournalProseKind): CharacterEvent {
         val noteKind = when (kind) {
             JournalProseKind.CAMPAIGN_OPENING -> NoteKind.QUEST

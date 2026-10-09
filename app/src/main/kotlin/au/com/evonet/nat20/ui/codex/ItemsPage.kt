@@ -36,6 +36,7 @@ import au.com.evonet.nat20.dnd5e.AcquireItem
 import au.com.evonet.nat20.dnd5e.AdjustCoin
 import au.com.evonet.nat20.dnd5e.DnD5eCatalog
 import au.com.evonet.nat20.dnd5e.DnD5ePayload
+import au.com.evonet.nat20.dnd5e.effectiveSources
 import au.com.evonet.nat20.dnd5e.DropItem
 import au.com.evonet.nat20.dnd5e.InventoryItem
 import au.com.evonet.nat20.dnd5e.ItemKind
@@ -122,6 +123,7 @@ internal fun ItemsPage(
 
     if (showAdd) {
         AddItemSheet(
+            sources = payload.effectiveSources,
             onAdd = { onApplyIntent(AcquireItem(it)); showAdd = false },
             onDismiss = { showAdd = false },
         )
@@ -135,6 +137,7 @@ internal fun ItemsPage(
     detail?.let { item ->
         EditItemSheet(
             item = item,
+            sources = payload.effectiveSources,
             // Edit / Delete are direct, unjournaled payload edits (iOS parity).
             onSave = { updated -> onSave(character.copy(payload = payload.withItemReplaced(updated))); detail = null },
             onDelete = { onSave(character.copy(payload = payload.withItemRemoved(item.id))); detail = null },

@@ -1,5 +1,6 @@
 package au.com.evonet.nat20.data
 
+import android.util.Log
 import au.com.evonet.nat20.domain.Campaign
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -13,7 +14,13 @@ class RoomCampaignRepository(
 
     override fun campaignsForCharacter(characterId: UUID): Flow<List<Campaign>> =
         dao.observeForCharacter(characterId.toString())
-            .map { rows -> rows.map(codec::toDomain) }
+            .map { rows ->
+                rows.mapNotNull { row ->
+                    runCatching { codec.toDomain(row) }
+                        .onFailure { Log.w("Nat20", "Skipping undecodable campaign ${row.id}", it) }
+                        .getOrNull()
+                }
+            }
 
     override fun activeCampaignNames(): Flow<Map<UUID, String>> =
         dao.observeActiveCampaignNames()
@@ -28,5 +35,9 @@ class RoomCampaignRepository(
 
     override suspend fun delete(id: UUID) {
         dao.delete(id.toString())
+    }
+
+    override suspend fun deleteForCharacter(characterId: UUID) {
+        dao.deleteForCharacter(characterId.toString())
     }
 }

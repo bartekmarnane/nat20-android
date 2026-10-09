@@ -2,6 +2,7 @@ package au.com.evonet.nat20.dnd5e
 
 import au.com.evonet.nat20.dnd5e.core.Ability
 import au.com.evonet.nat20.dnd5e.core.AbilityScores
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
@@ -42,7 +43,8 @@ data class Feat(
      * all six.
      */
     val halfFeatAbilities: List<Ability> = emptyList(),
-) {
+    @SerialName("sourceID") override val sourceId: String = SOURCE_PHB,
+) : SourceTagged {
     /** True when this feat grants a +1 ability increase the player allocates on pick. */
     val grantsAbilityIncrease: Boolean get() = halfFeatAbilities.isNotEmpty()
 
@@ -55,6 +57,17 @@ data class Feat(
 object Feats {
     private val ALL_ABILITIES = Ability.entries
     private val MENTAL = listOf(Ability.INTELLIGENCE, Ability.WISDOM, Ability.CHARISMA)
+
+    /**
+     * The eight feats Nat20 carries from Tasha's Cauldron of Everything —
+     * everything else in the catalogue is PHB. Tagged here rather than in the
+     * data because Android builds this list in Kotlin (iOS loads the same set
+     * from `Feats.json`, where the tag rides on each entry).
+     */
+    private val TASHAS_FEATS = setOf(
+        "skill-expert", "telekinetic", "telepathic", "fey-touched",
+        "shadow-touched", "gunner", "eldritch-adept", "metamagic-adept",
+    )
 
     val all: List<Feat> = listOf(
         feat("great-weapon-master", "Great Weapon Master", "On a crit or a kill, make a bonus-action melee attack; you can take −5 to hit for +10 damage with a heavy weapon."),
@@ -91,11 +104,23 @@ object Feats {
     private val byId = all.associateBy { it.id }
     fun feat(id: String): Feat? = byId[id]
 
+    /** [all] narrowed to a character's enabled sources. */
+    fun all(enabled: Set<String>): List<Feat> = all.filteredBySources(enabled)
+
     /** The feats a character may take given their scores + whether they cast spells. */
-    fun available(scores: AbilityScores, isSpellcaster: Boolean): List<Feat> = all.filter { it.isAvailable(scores, isSpellcaster) }
+    /**
+     * Feats the character qualifies for, narrowed to their enabled sources.
+     * [enabled] defaults to every source so callers that genuinely want the
+     * whole catalogue (tests, the reference codex) don't have to opt out.
+     */
+    fun available(
+        scores: AbilityScores,
+        isSpellcaster: Boolean,
+        enabled: Set<String> = SourceCatalog.all.map { it.id }.toSet(),
+    ): List<Feat> = all.filteredBySources(enabled).filter { it.isAvailable(scores, isSpellcaster) }
 
     private fun feat(id: String, name: String, description: String, pre: FeatPrerequisite? = null, half: List<Ability> = emptyList()) =
-        Feat(id, name, description, pre, half)
+        Feat(id, name, description, pre, half, if (id in TASHAS_FEATS) SourceCatalog.tashas.id else SOURCE_PHB)
     private fun spellcaster() = FeatPrerequisite(requiresSpellcasting = true)
     private fun ability(vararg pairs: Pair<Ability, Int>) = FeatPrerequisite(minimumAbilityScores = pairs.toMap())
 }

@@ -1,5 +1,6 @@
 package au.com.evonet.nat20.ui.editor
 
+import au.com.evonet.nat20.ui.theme.FullScreenDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -50,7 +51,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import au.com.evonet.nat20.dnd5e.AbilityBonus
 import au.com.evonet.nat20.dnd5e.AbilityScoreIncreases
 import au.com.evonet.nat20.dnd5e.CustomRaceLibrary
@@ -120,10 +120,7 @@ fun CustomRaceFormDialog(
         traits = traits.filter { it.name.isNotBlank() }.map { RaceTraitEntry(it.name.trim(), it.body.trim()) },
     )
 
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false),
-    ) {
+    FullScreenDialog(onDismissRequest = onDismiss) {
         Column(Modifier.fillMaxSize().background(palette.parchment).statusBarsPadding()) {
             // ── Header: CANCEL · two-line centred title · balancing spacer ──
             Box(

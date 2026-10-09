@@ -1,5 +1,6 @@
 package au.com.evonet.nat20.ui.settings
 
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -72,7 +73,7 @@ fun SettingsScreen(
     val diceInput by appSettings.diceInput.collectAsState()
     val palette = MaterialTheme.natPalette
 
-    Column(Modifier.fillMaxSize().statusBarsPadding()) {
+    Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
         TopNav(onDone = onBack)
         OrnamentalDivider(Modifier.padding(start = 22.dp, end = 22.dp, top = 10.dp, bottom = 4.dp), opacity = 0.4f)
 

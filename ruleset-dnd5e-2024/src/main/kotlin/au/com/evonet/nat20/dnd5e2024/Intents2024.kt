@@ -116,7 +116,8 @@ class LongRest2024 : CharacterIntent {
         val maxSlots = p.maxSpellSlots
         val slotsRestored = maxSlots.values.sum() - p.currentSpellSlots.values.sum()
         val exhaustionAfter = Exhaustion2024.clamp(p.exhaustionLevel - 1)
-        val hitDiceRegained = if (p.hitDiceSpent == 0) 0 else maxOf(1, p.hitDiceSpent / 2)
+        // PHB: regain spent hit dice up to half the total (min 1), not half the spent.
+        val hitDiceRegained = minOf(p.hitDiceSpent, maxOf(1, p.maxHitDice / 2))
         val updated = p.copy(
             currentHp = p.effectiveMaxHp, temporaryHp = 0,
             currentSpellSlots = maxSlots,

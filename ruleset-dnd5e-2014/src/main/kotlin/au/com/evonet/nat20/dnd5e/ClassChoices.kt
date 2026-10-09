@@ -1,5 +1,6 @@
 package au.com.evonet.nat20.dnd5e
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
@@ -14,10 +15,20 @@ import kotlinx.serialization.json.Json
  */
 
 @Serializable
-data class Metamagic(val id: String, val name: String, val description: String)
+data class Metamagic(
+    val id: String,
+    val name: String,
+    val description: String,
+    @SerialName("sourceID") override val sourceId: String = SOURCE_PHB,
+) : SourceTagged
 
 @Serializable
-data class PactBoon(val id: String, val name: String, val description: String)
+data class PactBoon(
+    val id: String,
+    val name: String,
+    val description: String,
+    @SerialName("sourceID") override val sourceId: String = SOURCE_PHB,
+) : SourceTagged
 
 @Serializable
 data class Invocation(
@@ -25,7 +36,8 @@ data class Invocation(
     val name: String,
     val description: String,
     val prerequisite: InvocationPrerequisite? = null,
-) {
+    @SerialName("sourceID") override val sourceId: String = SOURCE_PHB,
+) : SourceTagged {
     /** Whether a warlock of [warlockLevel] holding [pactBoon] and [knownSpells] may take this. */
     fun isAvailable(warlockLevel: Int, pactBoon: String?, knownSpells: Set<String>): Boolean {
         val pre = prerequisite ?: return true
@@ -50,6 +62,9 @@ object Metamagics {
     private val byId by lazy { all.associateBy { it.id } }
     fun option(id: String): Metamagic? = byId[id]
 
+    /** [all] narrowed to a character's enabled sources. */
+    fun all(enabled: Set<String>): List<Metamagic> = all.filteredBySources(enabled)
+
     private fun <T> load(path: String, serializer: kotlinx.serialization.KSerializer<T>): List<T> {
         val text = javaClass.getResourceAsStream(path)?.bufferedReader()?.use { it.readText() }
             ?: error("Missing bundled catalogue: $path")
@@ -67,6 +82,9 @@ object PactBoons {
     }
     private val byId by lazy { all.associateBy { it.id } }
     fun boon(id: String): PactBoon? = byId[id]
+
+    /** [all] narrowed to a character's enabled sources. */
+    fun all(enabled: Set<String>): List<PactBoon> = all.filteredBySources(enabled)
 }
 
 /** The 32 SRD Eldritch Invocations (Warlock). */
@@ -79,6 +97,9 @@ object Invocations {
     }
     private val byId by lazy { all.associateBy { it.id } }
     fun invocation(id: String): Invocation? = byId[id]
+
+    /** [all] narrowed to a character's enabled sources. */
+    fun all(enabled: Set<String>): List<Invocation> = all.filteredBySources(enabled)
 }
 
 /**

@@ -110,15 +110,52 @@ val DnD5ePayload.effectiveAbilityScores: AbilityScores
 /**
  * A complete saving-throw modifier for [ability]: effective ability mod +
  * proficiency (only the primary/first class grants save proficiencies in 5e) +
- * any effect bonuses. Used by the Stats tab and the concentration check.
+ * any effect bonuses + any worn-item bonuses (Ring / Cloak of Protection).
+ * Used by the Stats tab and the concentration check.
  */
 fun DnD5ePayload.savingThrowBonus(ability: Ability): Int {
     val proficient = ability in (
         DnD5eCatalog.characterClass(classes.firstOrNull()?.classId ?: "")?.savingThrowAbilities().orEmpty()
         )
     val prof = if (proficient) au.com.evonet.nat20.dnd5e.core.Proficiency.bonus(level) else 0
-    return effectiveAbilityScores.modifier(ability) + prof + temporarySaveBonus(ability)
+    return effectiveAbilityScores.modifier(ability) + prof + temporarySaveBonus(ability) +
+        equippedItemSaveBonus(ability)
 }
+
+// ── Worn-item riders ─────────────────────────────────────────────────────────
+// Magic items only grant their bonuses while actually worn, so every accessor
+// below gates on `equipped`. Mirrors the iOS `DnD5ePayload` inventory helpers.
+
+/**
+ * Save bonus from every equipped item for [ability] — the flat [InventoryItem.saveBonus]
+ * that applies to all saves (Cloak / Ring of Protection) plus any per-ability entry.
+ */
+fun DnD5ePayload.equippedItemSaveBonus(ability: Ability): Int =
+    inventory.filter { it.equipped }.sumOf { item ->
+        (item.saveBonus ?: 0) + (item.saveBonusByAbility[ability] ?: 0)
+    }
+
+/** Which equipped items contribute to a save, for the breakdown chips. */
+fun DnD5ePayload.equippedSaveBonusSources(ability: Ability): List<Pair<String, Int>> =
+    inventory.filter { it.equipped }.mapNotNull { item ->
+        val total = (item.saveBonus ?: 0) + (item.saveBonusByAbility[ability] ?: 0)
+        if (total == 0) null else item.name to total
+    }
+
+/** Skill bonus from equipped items (Cloak of Elvenkind +5 Stealth, Gloves of Thievery). */
+fun DnD5ePayload.equippedItemSkillBonus(skillId: String): Int =
+    inventory.filter { it.equipped }.sumOf { it.skillBonus[skillId] ?: 0 }
+
+/** Spell save DC bonus from equipped items — Robe of the Archmagi +2. */
+val DnD5ePayload.equippedItemSpellDcBonus: Int
+    get() = inventory.filter { it.equipped }.sumOf { it.spellDcBonus ?: 0 }
+
+/**
+ * Spell attack bonus from equipped items. Weapon-scoped [InventoryItem.attackBonus]
+ * deliberately doesn't contribute — a +2 robe helps Fire Bolt, not a dagger.
+ */
+val DnD5ePayload.equippedItemSpellAttackBonus: Int
+    get() = inventory.filter { it.equipped }.sumOf { it.spellAttackBonus ?: 0 }
 
 /** Net save bonus from effects for [ability] — both ability-scoped and all-saves (null) modifiers contribute. */
 fun DnD5ePayload.temporarySaveBonus(ability: Ability): Int =
@@ -144,13 +181,25 @@ val DnD5ePayload.effectAttackBonus: Int
 val DnD5ePayload.effectDamageBonus: Int
     get() = activeEffects.sumOf { e -> e.modifiers.sumOf { if (it is EffectModifier.DamageBonus) it.value else 0 } }
 
-/** Damage types the character resists, lower-cased — from active effects **and** innate race traits (A19). */
+/** Damage types the character resists, lower-cased — from active effects, innate race traits (A19), and equipped items. */
 val DnD5ePayload.effectiveDamageResistances: Set<String>
-    get() = allEffects.flatMap { e -> e.modifiers.mapNotNull { (it as? EffectModifier.DamageResistance)?.type?.trim()?.lowercase()?.takeIf { t -> t.isNotEmpty() } } }.toSet()
+    get() = (
+        allEffects.flatMap { e -> e.modifiers.mapNotNull { (it as? EffectModifier.DamageResistance)?.type } } +
+            // Equipped items (Ring of Fire Resistance, a resistant robe) contribute
+            // the same way race traits and effects do — one union drives both the
+            // TakeDamage halving and the Stats-tab chip.
+            inventory.filter { it.equipped }.flatMap { it.damageResistances }
+        )
+        .mapNotNull { it.trim().lowercase().takeIf { t -> t.isNotEmpty() } }
+        .toSet()
 
 /** Free-text advantage descriptors from effects, for display (Rage: "STR checks and saves"). */
 val DnD5ePayload.advantageDescriptors: List<String>
-    get() = activeEffects.flatMap { e -> e.modifiers.mapNotNull { (it as? EffectModifier.AdvantageOn)?.descriptor } }
+    get() = activeEffects.flatMap { e -> e.modifiers.mapNotNull { (it as? EffectModifier.AdvantageOn)?.descriptor } } +
+        // Worn items carry their own free-text advantage tags ("saves vs spells and
+        // magical effects" on the Robe of the Archmagi). Display-only either way —
+        // the player still flips the adv/dis selector at roll time.
+        inventory.filter { it.equipped }.flatMap { it.advantageOn }
 
 /** Conditions an effect imposes (Greater Invisibility → Invisible), for the condition fold. */
 val DnD5ePayload.effectImposedConditions: List<String>

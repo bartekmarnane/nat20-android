@@ -16,6 +16,9 @@ interface CharacterDao {
     @Upsert
     suspend fun upsert(character: PersistentCharacter)
 
+    @Query("SELECT * FROM characters WHERE id = :id")
+    suspend fun byId(id: String): PersistentCharacter?
+
     @Query("DELETE FROM characters WHERE id = :id")
     suspend fun delete(id: String)
 

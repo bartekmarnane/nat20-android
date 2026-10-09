@@ -38,6 +38,8 @@ import au.com.evonet.nat20.dnd5e.DnD5ePayload
 import au.com.evonet.nat20.dnd5e.RaceTraits
 import au.com.evonet.nat20.dnd5e.RollCheck
 import au.com.evonet.nat20.dnd5e.Skill
+import au.com.evonet.nat20.dnd5e.equippedItemSaveBonus
+import au.com.evonet.nat20.dnd5e.equippedItemSkillBonus
 import au.com.evonet.nat20.dnd5e.core.Ability
 import au.com.evonet.nat20.dnd5e.core.DeathSaveOutcome
 import au.com.evonet.nat20.dnd5e.core.DeathSaves
@@ -80,9 +82,11 @@ private fun skillCheckBonuses(payload: DnD5ePayload, skill: Skill): List<RollBon
     val abilityMod = payload.effectiveAbilityScores.modifier(skill.ability)
     val expertise = payload.hasExpertise(skill.id) && profMult > 0
     val effectBonus = payload.temporarySkillBonus(skill.id) + payload.temporarySkillBonus("__any__")
+    val itemBonus = payload.equippedItemSkillBonus(skill.id)
     return buildList {
         add(RollBonus(skill.ability.abbreviation, abilityMod))
         if (profMult > 0) add(RollBonus(if (expertise) "Expertise" else "Proficiency", prof * profMult))
+        if (itemBonus != 0) add(RollBonus("Magic", itemBonus))
         if (effectBonus != 0) add(RollBonus("Effects", effectBonus))
     }
 }
@@ -97,9 +101,11 @@ private fun isSaveProficient(payload: DnD5ePayload, ability: Ability): Boolean =
 private fun savingThrowBonuses(payload: DnD5ePayload, ability: Ability): List<RollBonus> {
     val abilityMod = payload.effectiveAbilityScores.modifier(ability)
     val effectBonus = payload.temporarySaveBonus(ability)
+    val itemBonus = payload.equippedItemSaveBonus(ability)
     return buildList {
         add(RollBonus(ability.abbreviation, abilityMod))
         if (isSaveProficient(payload, ability)) add(RollBonus("Proficiency", Proficiency.bonus(payload.level)))
+        if (itemBonus != 0) add(RollBonus("Magic", itemBonus))
         if (effectBonus != 0) add(RollBonus("Effects", effectBonus))
     }
 }

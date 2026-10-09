@@ -17,6 +17,9 @@ interface CharacterRepository {
     /** Live stream of the full roster. */
     val characters: Flow<List<Character>>
 
+    /** One character by id, read fresh from the store (not the cached roster), or null. */
+    suspend fun character(id: UUID): Character?
+
     /** Insert or update a character. */
     suspend fun upsert(character: Character)
 

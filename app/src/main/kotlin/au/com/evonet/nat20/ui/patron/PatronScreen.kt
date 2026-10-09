@@ -1,5 +1,6 @@
 package au.com.evonet.nat20.ui.patron
 
+import androidx.compose.foundation.layout.navigationBarsPadding
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
@@ -71,7 +72,7 @@ fun PatronScreen(patron: PatronStore, onBack: () -> Unit) {
         if (isPatron) onBack()
     }
 
-    Column(Modifier.fillMaxSize().statusBarsPadding()) {
+    Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
         TopNav(onClose = onBack)
         OrnamentalDivider(Modifier.padding(start = 22.dp, end = 22.dp, top = 10.dp, bottom = 4.dp), opacity = 0.4f)
 

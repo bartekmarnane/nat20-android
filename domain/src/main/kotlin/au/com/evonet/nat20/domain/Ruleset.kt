@@ -45,6 +45,14 @@ interface Ruleset {
      * categories into the domain.
      */
     fun makeProseEvent(text: String, kind: JournalProseKind): CharacterEvent
+
+    /**
+     * The payload with its in-play state stripped — active effects, concentration,
+     * conditions, temporary HP, death saves and the like — for a character whose
+     * campaign has just ended, so nothing rides into the next one. The campaign's
+     * final snapshot is taken first and keeps the fuller picture. Default: unchanged.
+     */
+    fun payloadAfterCampaignEnd(payload: CharacterPayload): CharacterPayload = payload
 }
 
 /** Reasons the persistence layer asks a ruleset to mint a prose journal entry. */

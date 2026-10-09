@@ -1,5 +1,6 @@
 package au.com.evonet.nat20.ui.journal
 
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -85,7 +86,7 @@ fun JournalScreen(
     var editing by remember { mutableStateOf(false) }
     val unlocked = chronicleAvailable && (campaign?.log?.size ?: 0) >= 5
 
-    Column(Modifier.fillMaxSize().statusBarsPadding()) {
+    Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
         // Top nav: back / kicker+title / cog.
         Box(Modifier.fillMaxWidth().padding(top = 8.dp, start = 22.dp, end = 22.dp)) {
             BackCircle(onBack, Modifier.align(Alignment.CenterStart))

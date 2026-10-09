@@ -1,5 +1,6 @@
 package au.com.evonet.nat20.dnd5e
 
+import au.com.evonet.nat20.dnd5e.core.ACOverrideFormula
 import au.com.evonet.nat20.dnd5e.core.Ability
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -21,6 +22,63 @@ enum class ItemKind {
 
     /** Whether this kind can be worn/wielded (shows an equip toggle). */
     val isEquippable: Boolean get() = this == WEAPON || this == ARMOR || this == SHIELD || this == WONDROUS
+
+    companion object {
+        /**
+         * Best-guess kind for a homebrew item the player is typing by name, used to
+         * pre-select the Add sheet's kind chip; null when nothing in the name is
+         * recognisable (the caller falls back to [GEAR]).
+         *
+         * Deliberately noun-driven rather than clever: "Robe of the Archmagi" is
+         * wondrous because *robe* is a worn thing, and that's the whole rule.
+         * Anything the bundled SRD catalogue already matches never reaches here.
+         * Mirrors iOS `ItemKind.inferred(fromName:)`.
+         */
+        fun inferred(fromName: String): ItemKind? {
+            val tokens = fromName.lowercase().split(Regex("[^a-z]+")).filter { it.isNotEmpty() }
+            if (tokens.isEmpty()) return null
+
+            // Cheap plural fold so "robes" and "gauntlets" land too.
+            fun mentions(vocabulary: Set<String>) = tokens.any { token ->
+                token in vocabulary || (token.endsWith("s") && token.dropLast(1) in vocabulary)
+            }
+
+            // Order matters where vocabularies brush against each other: a Potion of
+            // Giant Strength is a potion first, and Staff of Power is wondrous while a
+            // quarterstaff is a weapon (so "staff" sits in the wondrous list).
+            return when {
+                mentions(CONSUMABLE_NOUNS) -> POTION
+                mentions(setOf("scroll")) -> SCROLL
+                mentions(setOf("shield")) -> SHIELD
+                mentions(ARMOR_NOUNS) -> ARMOR
+                mentions(WEAPON_NOUNS) -> WEAPON
+                mentions(WONDROUS_NOUNS) -> WONDROUS
+                else -> null
+            }
+        }
+
+        private val CONSUMABLE_NOUNS = setOf("potion", "oil", "elixir", "philter", "draught", "dust", "salve")
+
+        private val ARMOR_NOUNS = setOf("armor", "armour", "mail", "plate", "breastplate", "cuirass", "brigandine", "chainmail")
+
+        private val WEAPON_NOUNS = setOf(
+            "sword", "longsword", "shortsword", "greatsword", "scimitar", "rapier", "dagger",
+            "axe", "greataxe", "handaxe", "mace", "maul", "hammer", "warhammer", "club",
+            "greatclub", "quarterstaff", "spear", "javelin", "pike", "lance", "halberd",
+            "glaive", "trident", "flail", "morningstar", "sickle", "whip", "bow", "longbow",
+            "shortbow", "crossbow", "sling", "dart", "blade", "arrow", "bolt",
+        )
+
+        private val WONDROUS_NOUNS = setOf(
+            "ring", "robe", "cloak", "mantle", "cape", "amulet", "necklace", "periapt",
+            "brooch", "medallion", "talisman", "circlet", "crown", "helm", "headband", "hat",
+            "mask", "goggles", "lenses", "eyes", "gauntlet", "glove", "bracer", "boot",
+            "slipper", "sandal", "belt", "girdle", "wand", "rod", "staff", "orb", "tome",
+            "manual", "horn", "figurine", "stone", "pearl", "ioun", "instrument", "decanter",
+            "censer", "deck", "carpet", "broom", "bag", "quiver", "gem", "crystal", "idol",
+            "sphere", "chime", "candle", "lantern",
+        )
+    }
 
     /** Singular label for chip pickers and preview headers ("Weapon", "Wondrous"). */
     val displayName: String
@@ -136,10 +194,12 @@ data class WondrousProperties(
  * gear, potions, and treasure leave them null. [equipped] only matters for
  * equippable kinds. [catalogueID] links back to the bundled SRD entry it came from.
  *
- * The magic-item rider fields ([scroll]/[wondrous]/[saveBonus]/[attackBonus] and the
- * advanced-effects maps/lists) are stored here so the Add/Edit sheets can capture
- * them; **whether they fold into AC / saves / skills follows the active-effects
- * system (A17)** — this slice is data-storage only.
+ * The magic-item rider fields fold into live stats while the item is [equipped]:
+ * [acBonus] / [acOverride] through [ArmorClassCalculator], [saveBonus] /
+ * [saveBonusByAbility] through `savingThrowBonus`, [skillBonus] through the skills
+ * tab, and [spellDcBonus] / [spellAttackBonus] through the casting stats. The
+ * free-text lists ([damageResistances], [advantageOn], …) stay display-only —
+ * the player decides when a situational rider applies.
  */
 @Serializable
 data class InventoryItem(
@@ -175,6 +235,17 @@ data class InventoryItem(
     val conditionImmunities: List<String> = emptyList(),
     /** Free-text descriptors this item grants advantage on ("Perception checks"). */
     val advantageOn: List<String> = emptyList(),
+    /**
+     * Replaces the unarmored AC base while equipped — Robe of the Archmagi (15 + DEX),
+     * Bracers of Defense (13 + DEX). Competes with spell / class overrides (Mage Armor,
+     * Unarmored Defense) highest-wins and, per RAW, drops out entirely once armor is
+     * worn. Distinct from [acBonus], which stacks on top of whichever base won.
+     */
+    val acOverride: ACOverrideFormula? = null,
+    /** Spell save DC bonus while equipped — Robe of the Archmagi +2, Rod of the Pact Keeper +1. */
+    val spellDcBonus: Int? = null,
+    /** Spell attack bonus while equipped. Separate from [attackBonus], which is weapon-scoped. */
+    val spellAttackBonus: Int? = null,
 ) {
     companion object {
         /** Fresh random id for a newly-created item (catalogue `makeItem`, UI add). */

@@ -1,5 +1,6 @@
 package au.com.evonet.nat20.ui.sheet
 
+import au.com.evonet.nat20.ui.theme.FullScreenDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -30,8 +31,6 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import au.com.evonet.nat20.dnd5e.core.Ability
 import au.com.evonet.nat20.dnd5e.core.AbilityScores
 import au.com.evonet.nat20.dnd5e.core.DnD5eClasses
@@ -197,7 +196,7 @@ internal fun LevelUp2024Wizard(payload: DnD5e2024Payload, onApplyIntent: (Charac
     }
 
     val palette = MaterialTheme.natPalette
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+    FullScreenDialog(onDismissRequest = onDismiss) {
         Box(Modifier.fillMaxSize().background(palette.parchment)) {
             EditorShell(
                 kicker = "Level up · 2024 · Step ${position + 1} of ${active.size}",

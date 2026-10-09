@@ -1,5 +1,6 @@
 package au.com.evonet.nat20.ui.actions
 
+import au.com.evonet.nat20.ui.theme.FullScreenDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -38,8 +39,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import au.com.evonet.nat20.ui.theme.Cinzel
 import au.com.evonet.nat20.ui.theme.Cormorant
 import au.com.evonet.nat20.ui.theme.DiamondShape
@@ -64,10 +63,7 @@ internal fun ActionPickerShell(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val palette = MaterialTheme.natPalette
-    Dialog(
-        onDismissRequest = onCancel,
-        properties = DialogProperties(usePlatformDefaultWidth = false),
-    ) {
+    FullScreenDialog(onDismissRequest = onCancel) {
         Column(
             Modifier
                 .fillMaxSize()

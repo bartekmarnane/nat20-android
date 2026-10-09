@@ -42,6 +42,7 @@ import au.com.evonet.nat20.dnd5e.AttackMath
 import au.com.evonet.nat20.dnd5e.CancelEffect
 import au.com.evonet.nat20.dnd5e.DnD5eCatalog
 import au.com.evonet.nat20.dnd5e.DnD5ePayload
+import au.com.evonet.nat20.dnd5e.effectiveSources
 import au.com.evonet.nat20.dnd5e.Feats
 import au.com.evonet.nat20.dnd5e.FightingStyles
 import au.com.evonet.nat20.dnd5e.Invocations
@@ -68,6 +69,8 @@ import au.com.evonet.nat20.dnd5e.effectiveDamageResistances
 import au.com.evonet.nat20.dnd5e.effectiveMaxHp
 import au.com.evonet.nat20.dnd5e.effectiveSkillProficiencies
 import au.com.evonet.nat20.dnd5e.effectiveSpeed
+import au.com.evonet.nat20.dnd5e.equippedItemSaveBonus
+import au.com.evonet.nat20.dnd5e.equippedItemSkillBonus
 import au.com.evonet.nat20.dnd5e.equippedWeapons
 import au.com.evonet.nat20.dnd5e.expertiseEligibleSkills
 import au.com.evonet.nat20.dnd5e.expertiseSlots
@@ -152,7 +155,8 @@ internal fun StatsPage(character: Character, payload: DnD5ePayload, onApplyInten
                 val proficient = ability in proficientSaves
                 val abilityMod = effectiveScores.modifier(ability)
                 val effectBonus = payload.temporarySaveBonus(ability)
-                val mod = abilityMod + (if (proficient) prof else 0) + effectBonus
+                val itemBonus = payload.equippedItemSaveBonus(ability)
+                val mod = abilityMod + (if (proficient) prof else 0) + effectBonus + itemBonus
                 SaveCell(
                     abbrev = ability.abbreviation,
                     bonus = mod,
@@ -160,7 +164,8 @@ internal fun StatsPage(character: Character, payload: DnD5ePayload, onApplyInten
                     modifier = Modifier.weight(1f),
                     onClick = {
                         val bonuses = checkBonuses(ability.abbreviation, abilityMod, proficient, prof) +
-                            (if (effectBonus != 0) listOf(RollBonus("Effects", effectBonus)) else emptyList())
+                            (if (effectBonus != 0) listOf(RollBonus("Effects", effectBonus)) else emptyList()) +
+                            (if (itemBonus != 0) listOf(RollBonus("Magic", itemBonus)) else emptyList())
                         check = CheckRoll("${ability.abbreviation} save", bonuses, lucky = isHalfling)
                     },
                 )
@@ -331,20 +336,20 @@ private fun ClassChoicesSection(character: Character, payload: DnD5ePayload, onS
     SectionHead("Class Choices", top = 24.dp, bottom = 12.dp)
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         if (metamagicSlots > 0) {
-            ChoiceGroup("Metamagic (${payload.metamagicKnown.size}/$metamagicSlots)", Metamagics.all, { it.id }, { it.name },
+            ChoiceGroup("Metamagic (${payload.metamagicKnown.size}/$metamagicSlots)", Metamagics.all(payload.effectiveSources), { it.id }, { it.name },
                 selected = payload.metamagicKnown.toSet(),
                 canAddMore = payload.metamagicKnown.size < metamagicSlots,
             ) { id, on -> save(payload.copy(metamagicKnown = toggle(payload.metamagicKnown, id, on))) }
         }
         if (pactBoon) {
-            ChoiceGroup("Pact Boon", PactBoons.all, { it.id }, { it.name },
+            ChoiceGroup("Pact Boon", PactBoons.all(payload.effectiveSources), { it.id }, { it.name },
                 selected = setOfNotNull(payload.pactBoon),
                 canAddMore = true,
                 single = true,
             ) { id, on -> save(payload.copy(pactBoon = if (on) id else null)) }
         }
         if (invocationSlots > 0) {
-            val available = Invocations.all.filter {
+            val available = Invocations.all(payload.effectiveSources).filter {
                 it.isAvailable(
                     payload.warlockLevel,
                     payload.pactBoon,
@@ -421,7 +426,8 @@ internal fun SkillsPage(payload: DnD5ePayload, onApplyIntent: (CharacterIntent) 
         // Passive perception callout.
         val perceptionMult = payload.skillProficiencyMultiplier("perception")
         val passive = 10 + effectiveScores.modifier(Ability.WISDOM) + prof * perceptionMult +
-            payload.temporarySkillBonus("perception") + anySkillBonus
+            payload.temporarySkillBonus("perception") + anySkillBonus +
+            payload.equippedItemSkillBonus("perception")
         val shape = RoundedCornerShape(3.dp)
         Row(
             Modifier
@@ -457,7 +463,8 @@ internal fun SkillsPage(payload: DnD5ePayload, onApplyIntent: (CharacterIntent) 
             val profMult = payload.skillProficiencyMultiplier(skill.id)
             val abilityMod = effectiveScores.modifier(skill.ability)
             val effectBonus = payload.temporarySkillBonus(skill.id) + anySkillBonus
-            val mod = abilityMod + prof * profMult + effectBonus
+            val itemBonus = payload.equippedItemSkillBonus(skill.id)
+            val mod = abilityMod + prof * profMult + effectBonus + itemBonus
             Row(
                 Modifier
                     .fillMaxWidth()
@@ -466,6 +473,7 @@ internal fun SkillsPage(payload: DnD5ePayload, onApplyIntent: (CharacterIntent) 
                             add(RollBonus(skill.ability.abbreviation, abilityMod))
                             if (profMult > 0) add(RollBonus(if (expertise) "Expertise" else "Proficiency", prof * profMult))
                             if (effectBonus != 0) add(RollBonus("Effects", effectBonus))
+                            if (itemBonus != 0) add(RollBonus("Magic", itemBonus))
                         }
                         check = CheckRoll("${skill.name} check", bonuses, lucky = isHalfling)
                     }

@@ -29,7 +29,9 @@ data class Race(
     /** Typical adulthood age in years; null when the JSON omits it. */
     val typicalAge: Int? = null,
     val maxAge: Int? = null,
-) {
+    /** Publishing source — see [SourceCatalog]; defaults to PHB for untagged SRD entries. */
+    @SerialName("sourceID") override val sourceId: String = SOURCE_PHB,
+) : SourceTagged {
     /** Fixed ability bonuses as an [Ability]-keyed map (unknown keys dropped). */
     fun abilityBonuses(): Map<Ability, Int> =
         abilityScoreIncreases.fixed.mapNotNull { bump ->
@@ -68,7 +70,9 @@ data class CharacterClass(
     val starterEquipment: List<StarterEquipmentEntry> = emptyList(),
     /** Class features by level (name + body), shown on the class detail card. */
     val features: List<ClassFeatureEntry> = emptyList(),
-) {
+    /** Publishing source — see [SourceCatalog]; defaults to PHB for untagged SRD entries. */
+    @SerialName("sourceID") override val sourceId: String = SOURCE_PHB,
+) : SourceTagged {
     /** Saving-throw-proficient abilities as [Ability] values. */
     fun savingThrowAbilities(): List<Ability> = savingThrows.mapNotNull(Ability::fromKey)
 
@@ -89,7 +93,9 @@ data class Subclass(
     val id: String,
     val name: String,
     val description: String = "",
-)
+    /** Publishing source — see [SourceCatalog]; defaults to PHB for untagged SRD entries. */
+    @SerialName("sourceID") override val sourceId: String = SOURCE_PHB,
+) : SourceTagged
 
 @Serializable
 data class Caster(
@@ -111,7 +117,9 @@ data class Background(
     val equipment: List<String> = emptyList(),
     /** The background's flavour feature (name + body). */
     val feature: BackgroundFeature? = null,
-)
+    /** Publishing source — see [SourceCatalog]; defaults to PHB for untagged SRD entries. */
+    @SerialName("sourceID") override val sourceId: String = SOURCE_PHB,
+) : SourceTagged
 
 /** A background's flavour feature (JSON `feature`). */
 @Serializable
@@ -146,7 +154,9 @@ data class Spell(
     val dc: SpellDc? = null,
     /** SRD damage block — dice tables by slot level (leveled) or character level (cantrips). */
     val damage: SpellDamage? = null,
-) {
+    /** Publishing source — see [SourceCatalog]; defaults to PHB for untagged SRD entries. */
+    @SerialName("sourceID") override val sourceId: String = SOURCE_PHB,
+) : SourceTagged {
     val schoolName: String get() = school.name
     val description: String get() = desc.joinToString("\n\n")
     val higherLevelText: String get() = higherLevel.joinToString("\n\n")

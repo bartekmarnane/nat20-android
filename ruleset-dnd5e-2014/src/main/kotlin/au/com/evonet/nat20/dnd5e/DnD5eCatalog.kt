@@ -62,9 +62,21 @@ object DnD5eCatalog {
         load("Inventory/5e-SRD-Gear.json", GearCatalogueEntry.serializer()).sortedBy { it.name }
     }
 
+    /**
+     * Source-filtered views for the pickers. Everything a player can *choose*
+     * narrows to the character's enabled sources ([DnD5ePayload.effectiveSources]);
+     * lookups by id stay unfiltered so a character keeps rendering content from
+     * a book they've since switched off.
+     */
+    fun races(enabled: Set<String>): List<Race> = races.filteredBySources(enabled)
+    fun classes(enabled: Set<String>): List<CharacterClass> = classes.filteredBySources(enabled)
+    fun backgrounds(enabled: Set<String>): List<Background> = backgrounds.filteredBySources(enabled)
+    fun spellLibrary(enabled: Set<String>): List<Spell> = spellLibrary.filteredBySources(enabled)
+
     fun race(id: String): Race? = races.firstOrNull { it.id == id }
     fun characterClass(id: String): CharacterClass? = classes.firstOrNull { it.id == id }
     fun background(id: String): Background? = backgrounds.firstOrNull { it.id == id }
+    fun spell(index: String): Spell? = spellLibrary.firstOrNull { it.index == index }
     fun skill(id: String): Skill? = SkillCatalog.byId(id)
     fun weapon(id: String): WeaponCatalogueEntry? = weapons.firstOrNull { it.id == id }
     fun armorPiece(id: String): ArmorCatalogueEntry? = armor.firstOrNull { it.id == id }

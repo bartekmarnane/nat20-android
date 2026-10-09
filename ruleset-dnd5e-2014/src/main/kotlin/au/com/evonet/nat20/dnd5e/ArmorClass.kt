@@ -12,8 +12,9 @@ import au.com.evonet.nat20.dnd5e.core.EffectModifier
  *
  * Rules modelled here:
  * - At most one equipped [ItemKind.ARMOR] sets the base + DEX-cap rule.
- * - Unarmored: the highest of 10 + DEX and any `.acOverride` (Mage Armor 13+DEX,
- *   Barbarian 10+DEX+CON, Monk 10+DEX+WIS gated on no shield). Overrides only
+ * - Unarmored: the highest of 10 + DEX, any effect `.acOverride` (Mage Armor 13+DEX,
+ *   Barbarian 10+DEX+CON, Monk 10+DEX+WIS gated on no shield), and any equipped
+ *   item's [InventoryItem.acOverride] (Robe of the Archmagi 15+DEX). Overrides only
  *   apply while no armor is worn (RAW).
  * - Every equipped item's [InventoryItem.acBonus] (shields, cloaks) and every
  *   effect `.acBonus` (Shield spell +5, Shield of Faith +2) stack on top.
@@ -61,6 +62,20 @@ object ArmorClassCalculator {
                         bestBase = candidate
                         baseLabel = effect.name
                     }
+                }
+            }
+            // Worn items that set the base themselves — Robe of the Archmagi (15 + DEX),
+            // Bracers of Defense (13 + DEX). Same highest-wins contest as the effect
+            // overrides, so a robed caster who also has Mage Armor up keeps the robe's
+            // 15 rather than stacking the two.
+            for (item in payload.inventory) {
+                if (!item.equipped) continue
+                val formula = item.acOverride ?: continue
+                if (formula.requirement == ACOverrideRequirement.NO_SHIELD && shieldEquipped) continue
+                val candidate = overrideBase(formula, payload)
+                if (candidate > bestBase) {
+                    bestBase = candidate
+                    baseLabel = item.name
                 }
             }
             rows += Row(baseLabel, bestBase)

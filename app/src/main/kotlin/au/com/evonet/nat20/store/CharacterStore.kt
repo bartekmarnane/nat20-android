@@ -23,13 +23,17 @@ import au.com.evonet.nat20.domain.apply
 import au.com.evonet.nat20.domain.end
 import au.com.evonet.nat20.ui.slugToTitle
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.time.Instant
 import java.util.UUID
 
@@ -65,6 +69,16 @@ class CharacterStore(
     /** Whether on-device chronicle generation is available (single AI flag). */
     val isChronicleAvailable: Boolean get() = chronicleService.isAvailable
 
+    /**
+     * Serialises every write that reads-then-writes a character or campaign, so
+     * two quick taps can't both compute from the same pre-tap state.
+     */
+    private val mutations = Mutex()
+
+    private val _errors = MutableSharedFlow<String>(extraBufferCapacity = 8)
+    /** One-shot user-facing failures (a rejected intent, a campaign that won't start). */
+    val errors: SharedFlow<String> = _errors
+
     /** Look a character up by id (the sheet/journal routes carry the id). */
     fun character(id: UUID): Character? = roster.value.firstOrNull { it.id == id }
 
@@ -77,9 +91,14 @@ class CharacterStore(
         viewModelScope.launch { characters.upsert(character) }
     }
 
-    /** Delete a character by id (swipe-to-delete on the roster). */
+    /** Delete a character and every campaign tied to them (as the confirm dialog promises). */
     fun delete(id: UUID) {
-        viewModelScope.launch { characters.delete(id) }
+        viewModelScope.launch {
+            mutations.withLock {
+                campaigns.deleteForCharacter(id)
+                characters.delete(id)
+            }
+        }
     }
 
     /**
@@ -89,17 +108,24 @@ class CharacterStore(
      */
     fun startCampaign(character: Character, name: String, party: List<PartyMember> = emptyList()) {
         viewModelScope.launch {
-            val now = Instant.now()
-            val started = Campaign.start(character, name = name, startedAt = now).copy(party = party)
-            // Seed an opening journal line so the journal isn't empty on day one (A7f).
-            val campaign = registry.ruleset(character.rulesetId)?.let { ruleset ->
-                val opening = ruleset.makeProseEvent(openingLine(character, name), JournalProseKind.CAMPAIGN_OPENING)
-                started.copy(log = started.log + LoggedEvent(timestamp = now, event = opening))
-            } ?: started
-            campaigns.upsert(campaign)
-            characters.upsert(
-                character.copy(phase = CharacterPhase.InCampaign(campaign.id), updatedAt = now),
-            )
+            mutations.withLock {
+                val latest = characters.character(character.id) ?: character
+                if (latest.phase is CharacterPhase.InCampaign) {
+                    _errors.tryEmit("${latest.name} is already in a campaign.")
+                    return@withLock
+                }
+                val now = Instant.now()
+                val started = Campaign.start(latest, name = name, startedAt = now).copy(party = party)
+                // Seed an opening journal line so the journal isn't empty on day one (A7f).
+                val campaign = registry.ruleset(latest.rulesetId)?.let { ruleset ->
+                    val opening = ruleset.makeProseEvent(openingLine(latest, name), JournalProseKind.CAMPAIGN_OPENING)
+                    started.copy(log = started.log + LoggedEvent(timestamp = now, event = opening))
+                } ?: started
+                campaigns.upsert(campaign)
+                characters.upsert(
+                    latest.copy(phase = CharacterPhase.InCampaign(campaign.id), updatedAt = now),
+                )
+            }
         }
     }
 
@@ -140,12 +166,31 @@ class CharacterStore(
         return "$who sets out on a new adventure: \"$campaignName.\""
     }
 
-    /** End a campaign: capture the final snapshot and return the character to building. */
+    /**
+     * End a campaign: capture the final snapshot, then return the character to
+     * building with its in-play state shed (per ruleset) and summons dismissed,
+     * so effects, concentration, conditions, temp HP and familiars don't ride
+     * into the next campaign. The snapshot keeps all of it for the chronicle.
+     */
     fun endCampaign(character: Character, campaign: Campaign) {
         viewModelScope.launch {
-            val now = Instant.now()
-            campaigns.upsert(campaign.end(now, finalSnapshot = character))
-            characters.upsert(character.copy(phase = CharacterPhase.Building, updatedAt = now))
+            mutations.withLock {
+                val latestCharacter = characters.character(character.id) ?: character
+                val latestCampaign = campaigns.campaign(campaign.id) ?: campaign
+                if (!latestCampaign.isActive) return@withLock
+                val now = Instant.now()
+                campaigns.upsert(latestCampaign.end(now, finalSnapshot = latestCharacter))
+                val ruleset = registry.ruleset(latestCharacter.rulesetId)
+                val cleared = ruleset?.payloadAfterCampaignEnd(latestCharacter.payload) ?: latestCharacter.payload
+                characters.upsert(
+                    latestCharacter.copy(
+                        payload = cleared,
+                        summons = emptyList(),
+                        phase = CharacterPhase.Building,
+                        updatedAt = now,
+                    ),
+                )
+            }
         }
     }
 
@@ -153,26 +198,34 @@ class CharacterStore(
      * Apply [intent] to [character], **phase-aware**: inside an active [campaign]
      * it runs through [Campaign.apply] so the action is journaled (the A7f play
      * loop); in the building phase ([campaign] null) it's a direct, unlogged edit
-     * that just persists the mutated character. Invalid intents (e.g. casting
-     * with no slots left, overspending a pool) and campaign-gating failures are
-     * swallowed — the UI gates most of these, this is the backstop.
+     * that just persists the mutated character.
+     *
+     * The caller's [character] / [campaign] are the composition's snapshot; both
+     * are re-read from the store under the mutation lock so two taps landing
+     * before Room re-emits don't both compute from the same state (and the
+     * second overwrite the first's journal entry). Invalid intents and
+     * campaign-gating failures are surfaced on [errors] rather than swallowed.
      */
     fun applyIntent(intent: CharacterIntent, character: Character, campaign: Campaign?) {
         val ruleset = registry.ruleset(character.rulesetId) ?: return
         viewModelScope.launch {
-            try {
-                if (campaign != null) {
-                    val result = campaign.apply(intent, character, ruleset, Instant.now())
-                    campaigns.upsert(result.campaign)
-                    characters.upsert(result.character)
-                } else {
-                    val result = intent.applyTo(character, ruleset)
-                    characters.upsert(result.character.copy(updatedAt = Instant.now()))
+            mutations.withLock {
+                val latestCharacter = characters.character(character.id) ?: character
+                val latestCampaign = campaign?.let { campaigns.campaign(it.id) ?: it }
+                try {
+                    if (latestCampaign != null) {
+                        val result = latestCampaign.apply(intent, latestCharacter, ruleset, Instant.now())
+                        campaigns.upsert(result.campaign)
+                        characters.upsert(result.character)
+                    } else {
+                        val result = intent.applyTo(latestCharacter, ruleset)
+                        characters.upsert(result.character.copy(updatedAt = Instant.now()))
+                    }
+                } catch (e: CharacterIntentError) {
+                    _errors.tryEmit(e.message ?: "That action isn't possible right now.")
+                } catch (e: CampaignError) {
+                    _errors.tryEmit(e.message ?: "The campaign didn't accept that action.")
                 }
-            } catch (_: CharacterIntentError) {
-                // Invalid edit — ignore (buttons are gated, this is a backstop).
-            } catch (_: CampaignError) {
-                // Campaign gating failed (ended / phase mismatch) — ignore.
             }
         }
     }

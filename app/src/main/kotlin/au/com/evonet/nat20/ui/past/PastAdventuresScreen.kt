@@ -1,5 +1,6 @@
 package au.com.evonet.nat20.ui.past
 
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -59,7 +60,7 @@ fun PastAdventuresScreen(
     onBack: () -> Unit,
 ) {
     val palette = MaterialTheme.natPalette
-    Column(Modifier.fillMaxSize().statusBarsPadding()) {
+    Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
         Box(Modifier.fillMaxWidth().padding(top = 8.dp, start = 22.dp, end = 22.dp)) {
             BackCircle(onBack, Modifier.align(Alignment.CenterStart))
             Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {

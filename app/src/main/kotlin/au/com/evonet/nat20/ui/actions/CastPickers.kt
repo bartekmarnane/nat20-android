@@ -43,6 +43,8 @@ import au.com.evonet.nat20.dnd5e.core.RollSpec
 import au.com.evonet.nat20.dnd5e.core.SaveOutcome
 import au.com.evonet.nat20.dnd5e.effectAttackBonus
 import au.com.evonet.nat20.dnd5e.effectiveAbilityScores
+import au.com.evonet.nat20.dnd5e.equippedItemSpellAttackBonus
+import au.com.evonet.nat20.dnd5e.castingStats
 import au.com.evonet.nat20.dnd5e.spellcastingClasses
 import au.com.evonet.nat20.dnd5e.totalCurrentSlots
 import au.com.evonet.nat20.ui.editor.WizardTextField
@@ -153,12 +155,17 @@ internal fun CastTargetPicker(
     val castingEntry = payload.spellcastingClasses.firstOrNull()
     val castingAbility = castingEntry?.let { Spellcasting.spellcastingAbility(it) }
     val castingMod = castingAbility?.let { payload.effectiveAbilityScores.modifier(it) } ?: 0
-    val spellSaveDC = 8 + prof + castingMod
+    // Worn magic items (Robe of the Archmagi) raise both halves of the caster's
+    // profile — castingStats() folds them so the picker and the Spells tab agree.
+    val stat = payload.castingStats().firstOrNull()
+    val itemAttack = payload.equippedItemSpellAttackBonus
+    val spellSaveDC = stat?.saveDC ?: (8 + prof + castingMod)
     val effectAttack = payload.effectAttackBonus
     val attackBonuses = buildList {
         if (castingAbility != null) add(RollBonus(castingAbility.abbreviation, castingMod))
         add(RollBonus("Proficiency", prof))
         if (effectAttack != 0) add(RollBonus("Effects", effectAttack))
+        if (itemAttack != 0) add(RollBonus("Magic", itemAttack))
     }
 
     val template = SpellEffectCatalog.template(spell.index)

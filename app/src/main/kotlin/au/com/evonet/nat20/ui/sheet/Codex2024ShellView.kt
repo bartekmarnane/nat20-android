@@ -20,6 +20,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.rememberPagerState
+import au.com.evonet.nat20.BuildConfig
+import au.com.evonet.nat20.ui.ScreenshotRoute
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
@@ -171,7 +173,8 @@ fun Codex2024ShellView(
     val payload = character.payload as? DnD5e2024Payload ?: return
     val inCampaign = character.phase is CharacterPhase.InCampaign
     val tabs = Tab2024.entries
-    val pagerState = rememberPagerState(pageCount = { tabs.size })
+    val shotTab = if (BuildConfig.DEBUG) ScreenshotRoute.initialTab else 0
+    val pagerState = rememberPagerState(initialPage = shotTab, pageCount = { tabs.size })
     var levelingUp by remember { mutableStateOf(false) }
     var editingIdentity by remember { mutableStateOf(false) }
     // Act pill (in-campaign) opens the grouped 2024 actions layer (parity #31).
@@ -190,7 +193,10 @@ fun Codex2024ShellView(
         campaignName = activeCampaign?.name,
         hasPastAdventures = hasPastAdventures,
         onBack = onBack,
-        onEdit = onEdit,
+        // No 2024 post-creation editor yet: the shared edit route opens the 2014
+        // wizard, which saved a 2014 payload under this ruleset id and crashed
+        // the codec. Hidden until DnD5e2024WizardScreen can reopen a character.
+        onEdit = null,
         onAct = { showActions = true },
         onStartCampaign = onStartCampaign,
         onEndCampaign = onEndCampaign,

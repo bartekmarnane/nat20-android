@@ -23,4 +23,7 @@ interface CampaignRepository {
 
     /** Remove a campaign by id. */
     suspend fun delete(id: UUID)
+
+    /** Remove every campaign (active or past) belonging to a character — the delete-character cascade. */
+    suspend fun deleteForCharacter(characterId: UUID)
 }

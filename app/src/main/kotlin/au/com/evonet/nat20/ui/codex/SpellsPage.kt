@@ -41,6 +41,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import au.com.evonet.nat20.dnd5e.DnD5eCatalog
+import au.com.evonet.nat20.dnd5e.effectiveSources
 import au.com.evonet.nat20.dnd5e.DnD5ePayload
 import au.com.evonet.nat20.dnd5e.ExpendSpellSlot
 import au.com.evonet.nat20.dnd5e.PrepareSpell
@@ -51,6 +52,7 @@ import au.com.evonet.nat20.dnd5e.castableSpellIDs
 import au.com.evonet.nat20.dnd5e.core.CastingProgression
 import au.com.evonet.nat20.dnd5e.core.Proficiency
 import au.com.evonet.nat20.dnd5e.effectiveAbilityScores
+import au.com.evonet.nat20.dnd5e.castingStats
 import au.com.evonet.nat20.dnd5e.isSpellcaster
 import au.com.evonet.nat20.dnd5e.maxPactSlots
 import au.com.evonet.nat20.dnd5e.pactSlotLevel
@@ -114,6 +116,7 @@ internal fun SpellsPage(
 
     CodexPage {
         // Casting triplet: Ability / Save DC / Spell Atk (per class if multiclass).
+        val castingStats = payload.castingStats()
         val prof = Proficiency.bonus(payload.level)
         val scores = payload.effectiveAbilityScores
         casters.forEach { entry ->
@@ -130,9 +133,11 @@ internal fun SpellsPage(
                 )
             }
             Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                // Worn magic items (Robe of the Archmagi +2) fold in via castingStats().
+                val stat = castingStats.firstOrNull { it.classId == entry.classId }
                 StatChip("Ability", ability.abbreviation, Modifier.weight(1f))
-                StatChip("Save DC", (8 + prof + mod).toString(), Modifier.weight(1f))
-                StatChip("Spell Atk", (prof + mod).signed(), Modifier.weight(1f))
+                StatChip("Save DC", (stat?.saveDC ?: (8 + prof + mod)).toString(), Modifier.weight(1f))
+                StatChip("Spell Atk", (stat?.attackBonus ?: (prof + mod)).signed(), Modifier.weight(1f))
             }
         }
 
@@ -173,6 +178,7 @@ internal fun SpellsPage(
         AddSpellDialog(
             cantrips = lvl == 0,
             alreadyHave = if (lvl == 0) payload.cantripsKnown.toSet() else castable,
+            sources = payload.effectiveSources,
             onPick = { picked ->
                 if (lvl == 0) {
                     editPayload { it.copy(cantripsKnown = (it.cantripsKnown + picked.index).distinct()) }
@@ -415,11 +421,12 @@ private fun NoSpellsEmptyState(subtitle: String, onBrowseSpells: () -> Unit) {
 private fun AddSpellDialog(
     cantrips: Boolean,
     alreadyHave: Set<String>,
+    sources: Set<String>,
     onPick: (Spell) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val pool = remember(cantrips) {
-        DnD5eCatalog.spellLibrary.filter { if (cantrips) it.level == 0 else it.level >= 1 }
+    val pool = remember(cantrips, sources) {
+        DnD5eCatalog.spellLibrary(sources).filter { if (cantrips) it.level == 0 else it.level >= 1 }
     }
     var query by remember { mutableStateOf("") }
     val filtered = remember(query) {

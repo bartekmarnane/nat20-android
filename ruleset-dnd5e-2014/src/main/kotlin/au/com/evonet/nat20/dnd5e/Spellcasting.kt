@@ -43,11 +43,23 @@ object Spellcasting {
         }
     }
 
-    /** Regular (non-pact) max slots, read off the full-caster table at the combined level. */
+    /**
+     * Regular (non-pact) max slots. A single caster line reads its own class
+     * table — a Paladin 5 has 4 L1 + 2 L2, not the 3 L1 the multiclass rounding
+     * (5 / 2 → full-caster L2) would give. The PHB's combined-level rule applies
+     * only once two slot-granting classes are in play.
+     */
     fun combinedSpellSlots(classes: List<ClassEntry>): Map<Int, Int> {
+        val casters = classes.filter { progression(it) in SLOT_PROGRESSIONS }
+        if (casters.size == 1) {
+            val only = casters.single()
+            return SpellSlotTable.slots(progression(only), only.level)
+        }
         val casterLevel = combinedCasterLevel(classes)
         return if (casterLevel > 0) SpellSlotTable.slots(CastingProgression.FULL, casterLevel) else emptyMap()
     }
+
+    private val SLOT_PROGRESSIONS = setOf(CastingProgression.FULL, CastingProgression.HALF, CastingProgression.THIRD)
 
     /** Total warlock levels across the class list. */
     fun warlockClassLevel(classes: List<ClassEntry>): Int =
@@ -72,6 +84,42 @@ val DnD5ePayload.spellcastingClasses: List<ClassEntry>
 
 /** True if any class line is a spellcaster. */
 val DnD5ePayload.isSpellcaster: Boolean get() = spellcastingClasses.isNotEmpty()
+
+/**
+ * One caster class's spell profile. A Wizard 3 / Cleric 3 yields two entries —
+ * each list has its own ability, DC, and attack bonus. Mirrors iOS `CastingStat`.
+ */
+data class CastingStat(
+    val classId: String,
+    val ability: Ability,
+    val saveDC: Int,
+    val attackBonus: Int,
+)
+
+/**
+ * Per-class casting profile: `8 + proficiency + ability mod` for the DC and
+ * `proficiency + ability mod` for the attack, with worn-item riders (Robe of the
+ * Archmagi's +2, Rod of the Pact Keeper's +1) folded into both. Single source of
+ * truth for the Spells tab chips and the cast picker — non-casters yield `[]`.
+ */
+fun DnD5ePayload.castingStats(): List<CastingStat> {
+    val prof = au.com.evonet.nat20.dnd5e.core.Proficiency.bonus(level)
+    val scores = effectiveAbilityScores
+    // Worn items ride on every caster class — the robe doesn't care which spell
+    // list the spell came from.
+    val itemDc = equippedItemSpellDcBonus
+    val itemAttack = equippedItemSpellAttackBonus
+    return spellcastingClasses.mapNotNull { entry ->
+        val ability = Spellcasting.spellcastingAbility(entry) ?: return@mapNotNull null
+        val mod = scores.modifier(ability)
+        CastingStat(
+            classId = entry.classId,
+            ability = ability,
+            saveDC = 8 + prof + mod + itemDc,
+            attackBonus = prof + mod + itemAttack,
+        )
+    }
+}
 
 /** Maximum regular (non-pact) spell slots by level. */
 val DnD5ePayload.maxSpellSlots: Map<Int, Int> get() = Spellcasting.combinedSpellSlots(classes)

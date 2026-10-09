@@ -1,5 +1,6 @@
 package au.com.evonet.nat20.ui.codex
 
+import au.com.evonet.nat20.ui.theme.FullScreenDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -28,8 +29,6 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import au.com.evonet.nat20.dnd5e.DnD5eCatalog
 import au.com.evonet.nat20.dnd5e.DnD5ePayload
 import au.com.evonet.nat20.dnd5e.Feats
@@ -38,6 +37,8 @@ import au.com.evonet.nat20.dnd5e.LevelUp
 import au.com.evonet.nat20.dnd5e.bonusMaxHpPerLevel
 import au.com.evonet.nat20.dnd5e.castableSpellIDs
 import au.com.evonet.nat20.dnd5e.effectiveMaxHp
+import au.com.evonet.nat20.dnd5e.effectiveSources
+import au.com.evonet.nat20.dnd5e.filteredBySources
 import au.com.evonet.nat20.dnd5e.isSpellcaster
 import au.com.evonet.nat20.dnd5e.maxSpellSlots
 import au.com.evonet.nat20.dnd5e.core.Ability
@@ -149,16 +150,18 @@ internal fun LevelUpWizard(payload: DnD5ePayload, onApplyIntent: (CharacterInten
 
     val className = klass?.name
     val maxLvl = payload.maxSpellSlots.keys.maxOrNull() ?: 1
-    val cantripPool = remember(classId, payload.cantripsKnown) {
+    // Every pick below narrows to the character's content sources.
+    val sources = payload.effectiveSources
+    val cantripPool = remember(classId, payload.cantripsKnown, sources) {
         if (classCasts && className != null) {
-            DnD5eCatalog.spellLibrary
+            DnD5eCatalog.spellLibrary(sources)
                 .filter { it.level == 0 && it.classNames.any { c -> c.equals(className, true) } && it.index !in payload.cantripsKnown }
                 .sortedBy { it.name }
         } else emptyList()
     }
-    val spellPool = remember(classId, payload.castableSpellIDs, maxLvl) {
+    val spellPool = remember(classId, payload.castableSpellIDs, maxLvl, sources) {
         if (classCasts && className != null) {
-            DnD5eCatalog.spellLibrary
+            DnD5eCatalog.spellLibrary(sources)
                 .filter { it.level in 1..maxLvl && it.classNames.any { c -> c.equals(className, true) } && it.index !in payload.castableSpellIDs }
                 .sortedWith(compareBy({ it.level }, { it.name }))
         } else emptyList()
@@ -172,8 +175,8 @@ internal fun LevelUpWizard(payload: DnD5ePayload, onApplyIntent: (CharacterInten
     var featId by rememberSaveable(classId, advMode) { mutableStateOf<String?>(null) }
     var halfFeatPick by rememberSaveable(featId, stateSaver = jsonStateSaver<Ability?>()) { mutableStateOf(null) }
 
-    val availableFeats = remember(payload.abilityScores, payload.isSpellcaster) {
-        Feats.available(payload.abilityScores, payload.isSpellcaster)
+    val availableFeats = remember(payload.abilityScores, payload.isSpellcaster, sources) {
+        Feats.available(payload.abilityScores, payload.isSpellcaster, sources)
     }
     val pickedFeat = featId?.let { Feats.feat(it) }
     val asi: Map<Ability, Int> = when (advMode) {
@@ -244,7 +247,7 @@ internal fun LevelUpWizard(payload: DnD5ePayload, onApplyIntent: (CharacterInten
     }
 
     val palette = MaterialTheme.natPalette
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+    FullScreenDialog(onDismissRequest = onDismiss) {
         Box(Modifier.fillMaxSize().background(palette.parchment)) {
             EditorShell(
                 kicker = "Level up · Step ${position + 1} of ${active.size}",
@@ -283,7 +286,7 @@ internal fun LevelUpWizard(payload: DnD5ePayload, onApplyIntent: (CharacterInten
                                 ) { classId = entry.classId }
                             }
                         }
-                        val multiclassOptions = DnD5eCatalog.classes.filter { it.id !in existing }
+                        val multiclassOptions = DnD5eCatalog.classes(sources).filter { it.id !in existing }
                         if (multiclassOptions.isNotEmpty()) {
                             WizardStepSection(
                                 "Multiclass into a new class",
@@ -377,7 +380,7 @@ internal fun LevelUpWizard(payload: DnD5ePayload, onApplyIntent: (CharacterInten
                             "Pick your ${klass?.name ?: "class"} subclass",
                             subtitle = "Required at this level — your choice carries through the rest of the campaign.",
                         )
-                        val subs = klass?.subclasses.orEmpty()
+                        val subs = klass?.subclasses.orEmpty().filteredBySources(sources)
                         if (subs.isEmpty()) {
                             Text(
                                 "No subclass options bundled for this class — type one in to record it.",
@@ -448,7 +451,7 @@ internal fun LevelUpWizard(payload: DnD5ePayload, onApplyIntent: (CharacterInten
                             if (needsStyle) {
                                 WizardSubSectionCard("Fighting Style", counter = if (style != null) "1/1 picked" else "0/1 picked") {
                                     Spacer(Modifier.height(8.dp))
-                                    WizardChipsPicker(FightingStyles.all, { it.id == style }, { it.name }) { picked ->
+                                    WizardChipsPicker(FightingStyles.all(sources), { it.id == style }, { it.name }) { picked ->
                                         style = if (style == picked.id) null else picked.id
                                     }
                                     style?.let { id ->

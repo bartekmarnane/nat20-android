@@ -42,14 +42,19 @@ object AttackMath {
         val twoHanded = weapon.properties.any { it.contains("two-handed", ignoreCase = true) }
         val archery = ranged && "archery" in payload.fightingStyles
         val dueling = !ranged && !twoHanded && "dueling" in payload.fightingStyles
+        // A +N weapon adds N to both attack and damage (the item sheet lets the
+        // player set it; it used to be ignored everywhere).
+        val magic = item.attackBonus ?: 0
         val attackBonuses = buildList {
             add(RollBonus(label, mod))
             add(RollBonus("Proficiency", prof))
+            if (magic != 0) add(RollBonus("Magic", magic))
             if (effectAttack != 0) add(RollBonus("Effects", effectAttack))
             if (archery) add(RollBonus("Archery", 2))
         }
         val damageBonuses = buildList {
             if (mod != 0) add(RollBonus(label, mod))
+            if (magic != 0) add(RollBonus("Magic", magic))
             if (effectDamage != 0) add(RollBonus("Effects", effectDamage))
             if (dueling) add(RollBonus("Dueling", 2))
         }

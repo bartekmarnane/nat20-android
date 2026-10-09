@@ -1,5 +1,6 @@
 package au.com.evonet.nat20.ui.actions
 
+import au.com.evonet.nat20.ui.theme.FullScreenDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
@@ -24,8 +25,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import au.com.evonet.nat20.domain.CharacterIntent
 import au.com.evonet.nat20.pf2e.ClassProgression
 import au.com.evonet.nat20.pf2e.PathfinderPayload
@@ -136,7 +135,7 @@ internal fun PfLevelUpWizard(payload: PathfinderPayload, onApplyIntent: (Charact
     }
 
     val palette = MaterialTheme.natPalette
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+    FullScreenDialog(onDismissRequest = onDismiss) {
         Box(Modifier.fillMaxSize().background(palette.parchment)) {
             EditorShell(
                 kicker = "Level up · Pathfinder · Step ${position + 1} of ${active.size}",

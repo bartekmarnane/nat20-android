@@ -1,5 +1,6 @@
 package au.com.evonet.nat20.ui.codex
 
+import au.com.evonet.nat20.ui.theme.FullScreenDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -48,8 +49,6 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import au.com.evonet.nat20.dnd5e.ArmorProperties
 import au.com.evonet.nat20.dnd5e.DnD5eCatalog
 import au.com.evonet.nat20.dnd5e.InventoryItem
@@ -58,6 +57,7 @@ import au.com.evonet.nat20.dnd5e.ScrollProperties
 import au.com.evonet.nat20.dnd5e.Spell
 import au.com.evonet.nat20.dnd5e.WeaponProperties
 import au.com.evonet.nat20.dnd5e.WondrousProperties
+import au.com.evonet.nat20.dnd5e.core.ACOverrideFormula
 import au.com.evonet.nat20.dnd5e.core.Ability
 import au.com.evonet.nat20.ui.editor.WizardChip
 import au.com.evonet.nat20.ui.editor.WizardFieldLabel
@@ -78,9 +78,8 @@ import au.com.evonet.nat20.ui.theme.natPalette
  * Both sheets are full-screen [Dialog]s on the parchment chrome (the `CustomRaceForm`
  * pattern) reusing the Wizard atoms + codex tokens.
  *
- * Divergence from iOS: the ScrollSpellPicker uses the **full** [DnD5eCatalog.spellLibrary]
- * — there is no `spells(in: sources)` accessor on the Android catalogue yet (payload
- * `enabledSources` is data-only), so the enabled-sources gate is deferred (PARITY #22).
+ * The ScrollSpellPicker is gated by the character's `enabledSources`, matching
+ * the iOS `ScrollSpellPicker`.
  */
 
 // ── Shared chrome ──────────────────────────────────────────────────────────────
@@ -290,7 +289,7 @@ private sealed interface AddSelection {
  * mints an [InventoryItem] and hands it to [onAdd] (the caller dispatches AcquireItem).
  */
 @Composable
-internal fun AddItemSheet(onAdd: (InventoryItem) -> Unit, onDismiss: () -> Unit) {
+internal fun AddItemSheet(sources: Set<String>, onAdd: (InventoryItem) -> Unit, onDismiss: () -> Unit) {
     val palette = MaterialTheme.natPalette
 
     var searchText by remember { mutableStateOf("") }
@@ -302,6 +301,13 @@ internal fun AddItemSheet(onAdd: (InventoryItem) -> Unit, onDismiss: () -> Unit)
     var acBonusText by remember { mutableStateOf("") }
     var saveBonusText by remember { mutableStateOf("") }
     var attackBonusText by remember { mutableStateOf("") }
+    var acOverrideText by remember { mutableStateOf("") }
+    var spellDcBonusText by remember { mutableStateOf("") }
+    var spellAttackBonusText by remember { mutableStateOf("") }
+    // Set the moment the player taps a kind chip. Until then the kind tracks what
+    // they're typing, so "Robe of the Archmagi" arrives already marked Wondrous —
+    // the fields carrying a robe's riders only exist for equippable kinds.
+    var kindTouched by remember { mutableStateOf(false) }
 
     // Weapon custom fields
     var weaponKindIndex by remember { mutableIntStateOf(0) } // 0 melee, 1 ranged
@@ -335,20 +341,31 @@ internal fun AddItemSheet(onAdd: (InventoryItem) -> Unit, onDismiss: () -> Unit)
     val showsAcBonus = customKind == ItemKind.SHIELD || customKind == ItemKind.WONDROUS || customKind == ItemKind.ARMOR
     val showsSaveBonus = customKind == ItemKind.WONDROUS || customKind == ItemKind.ARMOR || customKind == ItemKind.SHIELD
     val showsAttackBonus = customKind == ItemKind.WEAPON
+    // Robe-of-the-Archmagi territory: an unarmored AC base plus spell DC / spell
+    // attack riders. Wondrous only — armor sets its base through `armor.baseAC`
+    // and no shield grants a spell DC.
+    val showsSpellRiders = customKind == ItemKind.WONDROUS
+
+    fun applyKind(kind: ItemKind) {
+        customKind = kind
+        if (kind != ItemKind.SCROLL) scrollSelection = null
+        if (kind != ItemKind.WONDROUS) {
+            wondrousCurrent = ""; wondrousMax = ""; wondrousRecharge = "1d6+1"
+        }
+    }
 
     fun onSearchChange(newValue: String) {
         searchText = newValue
         if (newValue.isNotEmpty() && selection != null) selection = null
         customName = newValue
         quantity = 1
+        if (newValue.isEmpty()) kindTouched = false
+        if (!kindTouched) applyKind(ItemKind.inferred(newValue) ?: ItemKind.GEAR)
     }
 
     fun selectKind(kind: ItemKind) {
-        customKind = kind
-        if (kind != ItemKind.SCROLL) scrollSelection = null
-        if (kind != ItemKind.WONDROUS) {
-            wondrousCurrent = ""; wondrousMax = ""; wondrousRecharge = "1d6+1"
-        }
+        applyKind(kind)
+        kindTouched = true
     }
 
     fun commitCustom() {
@@ -410,11 +427,14 @@ internal fun AddItemSheet(onAdd: (InventoryItem) -> Unit, onDismiss: () -> Unit)
                 acBonus = if (showsAcBonus) acBonusText.parsedBonus() else null,
                 saveBonus = if (showsSaveBonus) saveBonusText.parsedBonus() else null,
                 attackBonus = if (showsAttackBonus) attackBonusText.parsedBonus() else null,
+                acOverride = if (showsSpellRiders) acOverrideText.parsedUnarmoredBase() else null,
+                spellDcBonus = if (showsSpellRiders) spellDcBonusText.parsedBonus() else null,
+                spellAttackBonus = if (showsSpellRiders) spellAttackBonusText.parsedBonus() else null,
             ),
         )
     }
 
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+    FullScreenDialog(onDismissRequest = onDismiss) {
         Column(Modifier.fillMaxSize().background(palette.parchment).statusBarsPadding()) {
             SheetHeader("Add to Inventory", "What seeks the pack?", onDismiss)
             Column(
@@ -481,6 +501,12 @@ internal fun AddItemSheet(onAdd: (InventoryItem) -> Unit, onDismiss: () -> Unit)
                             acBonusText, { acBonusText = it }, showsAcBonus,
                             saveBonusText, { saveBonusText = it }, showsSaveBonus,
                             attackBonusText, { attackBonusText = it }, showsAttackBonus,
+                            SpellRiderFields(
+                                acOverrideText, { acOverrideText = it },
+                                spellDcBonusText, { spellDcBonusText = it },
+                                spellAttackBonusText, { spellAttackBonusText = it },
+                                showsSpellRiders,
+                            ),
                             notes, { notes = it },
                             quantity, { quantity = it },
                         ) { commitCustom() }
@@ -510,6 +536,12 @@ internal fun AddItemSheet(onAdd: (InventoryItem) -> Unit, onDismiss: () -> Unit)
                             acBonusText, { acBonusText = it }, showsAcBonus,
                             saveBonusText, { saveBonusText = it }, showsSaveBonus,
                             attackBonusText, { attackBonusText = it }, showsAttackBonus,
+                            SpellRiderFields(
+                                acOverrideText, { acOverrideText = it },
+                                spellDcBonusText, { spellDcBonusText = it },
+                                spellAttackBonusText, { spellAttackBonusText = it },
+                                showsSpellRiders,
+                            ),
                             notes, { notes = it },
                             quantity, { quantity = it },
                         ) { commitCustom() }
@@ -534,7 +566,9 @@ internal fun AddItemSheet(onAdd: (InventoryItem) -> Unit, onDismiss: () -> Unit)
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    selectKind(ItemKind.GEAR)
+                                    // Keeps whatever kind the player picked, and otherwise
+                                    // infers from the name rather than dumping it in Gear.
+                                    if (!kindTouched) applyKind(ItemKind.inferred(searchText) ?: ItemKind.GEAR)
                                     customName = searchText
                                     selection = AddSelection.Custom
                                 }
@@ -550,6 +584,7 @@ internal fun AddItemSheet(onAdd: (InventoryItem) -> Unit, onDismiss: () -> Unit)
 
     if (showScrollPicker) {
         ScrollSpellPicker(
+            sources = sources,
             onPick = { spell -> scrollSelection = ScrollProperties(spell.index, spell.name, spell.level); showScrollPicker = false },
             onDismiss = { showScrollPicker = false },
         )
@@ -662,6 +697,25 @@ private fun armorSummary(baseAC: Int, dexCap: Int?, stealth: Boolean, strReq: In
 }
 
 // The custom-item card carries a lot of state; it's threaded explicitly rather than
+/**
+ * The worn-item riders only wondrous items carry — an unarmored AC base (Robe of
+ * the Archmagi: 15 + DEX) and the spell DC / spell attack bonuses. Bundled rather
+ * than threaded through as seven more positional parameters.
+ */
+internal data class SpellRiderFields(
+    val acOverride: String,
+    val onAcOverride: (String) -> Unit,
+    val spellDc: String,
+    val onSpellDc: (String) -> Unit,
+    val spellAttack: String,
+    val onSpellAttack: (String) -> Unit,
+    val visible: Boolean,
+)
+
+/** Blank / zero / unparseable ⇒ no override. The DEX half of the formula is implicit. */
+private fun String.parsedUnarmoredBase(): ACOverrideFormula? =
+    trim().toIntOrNull()?.takeIf { it > 0 }?.let { ACOverrideFormula.BaseDex(it) }
+
 // bundled so the parent's `remember`s stay the single source of truth across the flow.
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -687,6 +741,7 @@ private fun CustomCard(
     acBonusText: String, onAcBonus: (String) -> Unit, showsAcBonus: Boolean,
     saveBonusText: String, onSaveBonus: (String) -> Unit, showsSaveBonus: Boolean,
     attackBonusText: String, onAttackBonus: (String) -> Unit, showsAttackBonus: Boolean,
+    spellRiders: SpellRiderFields,
     notes: String, onNotes: (String) -> Unit,
     quantity: Int, onQuantity: (Int) -> Unit,
     onCommit: () -> Unit,
@@ -747,6 +802,22 @@ private fun CustomCard(
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 WizardFieldLabel("Attack bonus", hint = "e.g. +1 magic weapon")
                 WizardTextField("0", attackBonusText, onAttackBonus)
+            }
+        }
+        if (spellRiders.visible) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                WizardFieldLabel("Unarmored AC", hint = "sets the base — 15 for Robe of the Archmagi")
+                WizardTextField("blank for none", spellRiders.acOverride, spellRiders.onAcOverride)
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    WizardFieldLabel("Spell DC", hint = "e.g. +2")
+                    WizardTextField("0", spellRiders.spellDc, spellRiders.onSpellDc)
+                }
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    WizardFieldLabel("Spell attack", hint = "e.g. +2")
+                    WizardTextField("0", spellRiders.spellAttack, spellRiders.onSpellAttack)
+                }
             }
         }
 
@@ -1016,6 +1087,7 @@ private fun WondrousCustomFields(
 @Composable
 internal fun EditItemSheet(
     item: InventoryItem,
+    sources: Set<String>,
     onSave: (InventoryItem) -> Unit,
     onDelete: () -> Unit,
     onUse: (() -> Unit)?,
@@ -1028,17 +1100,18 @@ internal fun EditItemSheet(
         mutableStateOf(
             item.saveBonusByAbility.isNotEmpty() || item.skillBonus.isNotEmpty() ||
                 item.damageResistances.isNotEmpty() || item.damageImmunities.isNotEmpty() ||
-                item.conditionImmunities.isNotEmpty() || item.advantageOn.isNotEmpty(),
+                item.conditionImmunities.isNotEmpty() || item.advantageOn.isNotEmpty() ||
+                item.acOverride != null || (item.spellDcBonus ?: 0) != 0 || (item.spellAttackBonus ?: 0) != 0,
         )
     }
     var showScrollPicker by remember { mutableStateOf(false) }
 
-    val supportsEquipped = draft.kind == ItemKind.WEAPON || draft.kind == ItemKind.ARMOR || draft.kind == ItemKind.SHIELD
+    val supportsEquipped = draft.kind.isEquippable
     val supportsAcBonus = draft.kind == ItemKind.SHIELD || draft.kind == ItemKind.WONDROUS || draft.kind == ItemKind.ARMOR
     val supportsSaveBonus = draft.kind == ItemKind.WONDROUS || draft.kind == ItemKind.ARMOR || draft.kind == ItemKind.SHIELD
     val supportsAttackBonus = draft.kind == ItemKind.WEAPON
 
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+    FullScreenDialog(onDismissRequest = onDismiss) {
         Column(Modifier.fillMaxSize().background(palette.parchment).statusBarsPadding()) {
             SheetHeader("Edit Item", item.name, onDismiss)
 
@@ -1207,6 +1280,7 @@ internal fun EditItemSheet(
 
     if (showScrollPicker) {
         ScrollSpellPicker(
+            sources = sources,
             onPick = { spell -> draft = draft.copy(scroll = ScrollProperties(spell.index, spell.name, spell.level)); showScrollPicker = false },
             onDismiss = { showScrollPicker = false },
         )
@@ -1316,6 +1390,34 @@ private fun AdvancedEffectsSection(
             Text(if (expanded) "▲" else "▼", fontSize = 10.sp, color = palette.accent)
         }
         if (expanded) {
+            // Unarmored AC base an item confers — Robe of the Archmagi (15 + DEX),
+            // Bracers of Defense (13 + DEX). 0 clears it; the DEX half is implicit,
+            // matching how Mage Armor and Unarmored Defense are modelled. Suppressed
+            // by worn armor at calculation time, per RAW.
+            val overrideBase = (draft.acOverride as? ACOverrideFormula.BaseDex)?.base ?: 0
+            BonusStepper(
+                label = "Unarmored AC",
+                hint = if (overrideBase == 0) {
+                    "0 = none — e.g. 15 for Robe of the Archmagi"
+                } else {
+                    "AC $overrideBase + DEX while wearing no armor"
+                },
+                value = overrideBase,
+                min = 0,
+                max = 20,
+                signed = false,
+            ) { next ->
+                // First tap off "none" lands on the unarmored floor rather than 1.
+                val base = if (next in 1..9 && overrideBase == 0) 10 else next
+                onDraft(draft.copy(acOverride = if (base == 0) null else ACOverrideFormula.BaseDex(base)))
+            }
+            BonusStepper("Spell save DC", "Robe of the Archmagi grants +2", draft.spellDcBonus ?: 0, min = -5, max = 10) {
+                onDraft(draft.copy(spellDcBonus = it.takeIf { v -> v != 0 }))
+            }
+            BonusStepper("Spell attack", "added to spell attack rolls only", draft.spellAttackBonus ?: 0, min = -5, max = 10) {
+                onDraft(draft.copy(spellAttackBonus = it.takeIf { v -> v != 0 }))
+            }
+
             // Per-ability save grid.
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text("SAVE BONUSES (PER ABILITY)", fontFamily = Cinzel, fontSize = 11.sp, letterSpacing = 2.sp, color = palette.inkMute)
@@ -1453,22 +1555,22 @@ private fun ResistanceField(label: String, values: List<String>, placeholder: St
 // ── Scroll Spell picker ────────────────────────────────────────────────────────
 
 /**
- * A minimal spell picker for scroll items — search over the full SRD
- * [DnD5eCatalog.spellLibrary], grouped by level. No cast/prepare affordances.
- * Divergence: not gated by `enabledSources` (no such catalogue accessor yet).
+ * A minimal spell picker for scroll items — search over the character's enabled
+ * slice of [DnD5eCatalog.spellLibrary], grouped by level. No cast/prepare
+ * affordances.
  */
 @Composable
-private fun ScrollSpellPicker(onPick: (Spell) -> Unit, onDismiss: () -> Unit) {
+private fun ScrollSpellPicker(sources: Set<String>, onPick: (Spell) -> Unit, onDismiss: () -> Unit) {
     val palette = MaterialTheme.natPalette
     var searchText by remember { mutableStateOf("") }
     val query = searchText.trim().lowercase()
-    val filtered = remember(query) {
-        val pool = DnD5eCatalog.spellLibrary
+    val filtered = remember(query, sources) {
+        val pool = DnD5eCatalog.spellLibrary(sources)
         if (query.isEmpty()) pool else pool.filter { it.name.lowercase().contains(query) }
     }
     val grouped = filtered.groupBy { it.level }.toSortedMap()
 
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+    FullScreenDialog(onDismissRequest = onDismiss) {
         Column(Modifier.fillMaxSize().background(palette.parchment).statusBarsPadding()) {
             SheetHeader("Scroll Spell", "Which spell does it cast?", onDismiss)
             Box(Modifier.padding(horizontal = 22.dp, vertical = 6.dp)) {

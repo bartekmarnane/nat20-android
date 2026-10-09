@@ -20,9 +20,14 @@ import androidx.compose.runtime.setValue
 import au.com.evonet.nat20.app.Nat20Application
 import au.com.evonet.nat20.settings.AppearanceMode
 import au.com.evonet.nat20.ui.NatApp
+import au.com.evonet.nat20.ui.ScreenshotRoute
 import au.com.evonet.nat20.ui.onboarding.OnboardingScreen
 import au.com.evonet.nat20.ui.theme.Nat20Theme
+import au.com.evonet.nat20.ui.theme.LocalHostInsets
 import au.com.evonet.nat20.ui.theme.ParchmentSurface
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.runtime.CompositionLocalProvider
 import au.com.evonet.nat20.ui.theme.SplashView
 import kotlinx.coroutines.delay
 
@@ -30,6 +35,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        // DEBUG screenshot harness: `--es shot <name>` routes straight to a screen.
+        ScreenshotRoute.shot = if (BuildConfig.DEBUG) intent.getStringExtra("shot") else null
         val container = (application as Nat20Application).container
         val appSettings = container.appSettings
         setContent {
@@ -40,6 +47,8 @@ class MainActivity : ComponentActivity() {
                 AppearanceMode.DARK -> true
             }
             val onboardingComplete by appSettings.onboardingComplete.collectAsState()
+            // Full-screen dialogs pad from the activity's insets (see FullScreenDialog).
+            CompositionLocalProvider(LocalHostInsets provides WindowInsets.systemBars) {
             Nat20Theme(darkTheme = dark) {
                 // The parchment ground (texture in light, candle-glow in dark) sits behind
                 // everything; screens that paint a transparent Scaffold let it show through.
@@ -50,8 +59,12 @@ class MainActivity : ComponentActivity() {
                     // or skipping still dismisses it for the rest of this launch.
                     val alwaysShowOnboarding by appSettings.alwaysShowOnboarding.collectAsState()
                     var onboardingDismissed by remember { mutableStateOf(false) }
-                    val showOnboarding = !onboardingDismissed &&
-                        ((BuildConfig.DEBUG && alwaysShowOnboarding) || !onboardingComplete)
+                    val showOnboarding = if (ScreenshotRoute.isActive) {
+                        ScreenshotRoute.showsOnboarding
+                    } else {
+                        !onboardingDismissed &&
+                            ((BuildConfig.DEBUG && alwaysShowOnboarding) || !onboardingComplete)
+                    }
                     Crossfade(targetState = showOnboarding, label = "onboardingGate") { show ->
                         if (!show) {
                             NatApp()
@@ -68,7 +81,7 @@ class MainActivity : ComponentActivity() {
 
                     // Brand splash over everything for ~1.2s (iOS `Nat20SplashView`),
                     // with the roster/onboarding ready behind the fade.
-                    var splashVisible by remember { mutableStateOf(true) }
+                    var splashVisible by remember { mutableStateOf(!ScreenshotRoute.isActive) }
                     LaunchedEffect(Unit) {
                         delay(1200)
                         splashVisible = false
@@ -81,6 +94,7 @@ class MainActivity : ComponentActivity() {
                         SplashView(darkTheme = dark)
                     }
                 }
+            }
             }
         }
     }

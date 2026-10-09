@@ -101,9 +101,21 @@ data class DnD5e2024Payload(
     val effectiveAbilityScores: AbilityScores
         get() = Ability.entries.fold(abilityScores) { scores, ability -> scores.with(ability, effectiveScore(ability)) }
 
-    /** Maximum regular spell slots, combining caster classes against the full-caster table (warlock excluded). */
+    /**
+     * Maximum regular spell slots (warlock excluded). A single caster line reads
+     * its own class table (a Paladin 5 has 4 L1 + 2 L2); only a multiclass
+     * character combines levels against the full-caster table.
+     */
     val maxSpellSlots: Map<Int, Int>
         get() {
+            val casters = classes.filter {
+                CastingProgression.forClass(it.classId) in
+                    setOf(CastingProgression.FULL, CastingProgression.HALF, CastingProgression.THIRD)
+            }
+            if (casters.size == 1) {
+                val only = casters.single()
+                return SpellSlotTable.slots(CastingProgression.forClass(only.classId), only.level)
+            }
             val casterLevel = classes.sumOf { entry ->
                 when (CastingProgression.forClass(entry.classId)) {
                     CastingProgression.FULL -> entry.level

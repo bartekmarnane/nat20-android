@@ -65,8 +65,11 @@ import au.com.evonet.nat20.dnd5e.InventoryItem
 import au.com.evonet.nat20.dnd5e.ItemKind
 import au.com.evonet.nat20.dnd5e.Race
 import au.com.evonet.nat20.dnd5e.Spell
+import au.com.evonet.nat20.dnd5e.SourceCatalog
 import au.com.evonet.nat20.dnd5e.StartingEquipment
 import au.com.evonet.nat20.dnd5e.effectiveMaxHp
+import au.com.evonet.nat20.dnd5e.effectiveSources
+import au.com.evonet.nat20.dnd5e.filteredBySources
 import au.com.evonet.nat20.dnd5e.withFullSpellSlots
 import au.com.evonet.nat20.dnd5e.core.Ability
 import au.com.evonet.nat20.dnd5e.core.AbilityScores
@@ -137,8 +140,15 @@ fun DnD5eWizardScreen(
     onCancel: () -> Unit,
     stepOffset: Int = 0,
     onExitFirstStep: (() -> Unit)? = null,
+    /**
+     * Content sources picked on the ruleset step. Every picker below narrows
+     * to this set; an edit re-reads the character's own set instead, so
+     * re-opening the wizard never silently widens or narrows what they had.
+     */
+    enabledSources: Set<String> = SourceCatalog.defaultEnabled,
 ) {
     val source = existing?.payload as? DnD5ePayload
+    val sources = source?.effectiveSources ?: (enabledSources + SourceCatalog.lockedIds)
 
     var stepIndex by rememberSaveable { mutableIntStateOf(0) }
     var name by rememberSaveable { mutableStateOf(existing?.name.orEmpty()) }
@@ -170,7 +180,7 @@ fun DnD5eWizardScreen(
     // Homebrew races (parity #11): collecting the library re-renders the Race
     // step (picker + detail card) whenever a homebrew is saved or deleted.
     val customRaces by CustomRaceLibrary.races.collectAsState()
-    val allRaces = remember(customRaces) { DnD5eCatalog.races }
+    val allRaces = remember(customRaces, sources) { DnD5eCatalog.races(sources) }
     var showRaceForm by rememberSaveable { mutableStateOf(false) }
     var editingCustomRace by rememberSaveable(stateSaver = jsonStateSaver<Race?>()) { mutableStateOf(null) }
 
@@ -258,6 +268,7 @@ fun DnD5eWizardScreen(
             cantripsKnown = cantrips,
             spellsKnown = if (spellList.isNotEmpty() && !prepares) mapOf(k.id to spellList) else emptyMap(),
             preparedSpells = if (spellList.isNotEmpty() && prepares) mapOf(k.id to spellList) else emptyMap(),
+            enabledSources = sources.toList(),
         ).withFullSpellSlots() // casters start the day with all slots
             .let { it.copy(currentHp = it.effectiveMaxHp) } // start at full incl. Tough / feat riders
         return if (existing == null) {
@@ -344,7 +355,7 @@ fun DnD5eWizardScreen(
                     Spacer(Modifier.height(18.dp))
                     CharacterLevelBanner(level)
                     WizardStepSection("Pick Class")
-                    WizardChipsPicker(DnD5eCatalog.classes, { it.id == classId }, { it.name }, large = true) { picked ->
+                    WizardChipsPicker(DnD5eCatalog.classes(sources), { it.id == classId }, { it.name }, large = true) { picked ->
                         if (picked.id != classId) {
                             classId = picked.id
                             chosenSkills = emptySet()
@@ -365,17 +376,17 @@ fun DnD5eWizardScreen(
                 }
                 WizStep.BACKGROUND -> StepColumn {
                     WizardStepSection("Choose a Background", "Backgrounds grant a pair of skill proficiencies, gear, and a flavour feature.")
-                    WizardChipsPicker(DnD5eCatalog.backgrounds, { it.id == backgroundId }, { it.name }, large = true) { backgroundId = it.id }
+                    WizardChipsPicker(DnD5eCatalog.backgrounds(sources), { it.id == backgroundId }, { it.name }, large = true) { backgroundId = it.id }
                     background?.let { BackgroundDetailCard(it) }
                 }
                 WizStep.ABILITIES -> AbilitiesStep(base, raceBonus, finalScores) { base = it }
                 WizStep.ADVANCEMENTS -> AdvancementsStep(
-                    klass, level, needsSubclass, advLevels, finalScores, isSpellcaster, subclass, advs,
+                    klass, level, needsSubclass, advLevels, finalScores, isSpellcaster, subclass, advs, sources,
                     onSubclass = { subclass = it },
                     onAdv = { lvl, st -> advs = advs + (lvl to st) },
                 )
                 WizStep.SKILLS -> SkillsStep(klass, background, backgroundSkills, chosenSkills) { chosenSkills = it }
-                WizStep.FIGHTING_STYLE -> FightingStyleStep(fightingStyle) { fightingStyle = it }
+                WizStep.FIGHTING_STYLE -> FightingStyleStep(fightingStyle, sources) { fightingStyle = it }
                 WizStep.EQUIPMENT -> EquipmentStep(
                     klass = klass,
                     inventory = inventory,
@@ -383,7 +394,7 @@ fun DnD5eWizardScreen(
                     onChange = { inventory = it },
                     onReset = { inventory = StartingEquipment.seed(classId ?: "", backgroundId) },
                 )
-                WizStep.SPELLS -> SpellsStep(klass, chosenCantrips, chosenSpells, { chosenCantrips = it }, { chosenSpells = it })
+                WizStep.SPELLS -> SpellsStep(klass, chosenCantrips, chosenSpells, sources, { chosenCantrips = it }, { chosenSpells = it })
                 WizStep.MANNER -> MannerStep(
                     alignment, personality, ideals, bonds, flaws, backstory,
                     onAlignment = { alignment = it },
@@ -836,6 +847,7 @@ private fun AdvancementsStep(
     isSpellcaster: Boolean,
     subclass: String?,
     advs: Map<Int, AdvState>,
+    sources: Set<String>,
     onSubclass: (String) -> Unit,
     onAdv: (Int, AdvState) -> Unit,
 ) {
@@ -850,7 +862,7 @@ private fun AdvancementsStep(
             if (needsSubclass && klass.subclasses.isNotEmpty()) {
                 WizardSubSectionCard("Subclass", "level ${klass.subclassLevel}") {
                     Spacer(Modifier.height(8.dp))
-                    WizardChipsPicker(klass.subclasses, { it.id == subclass }, { it.name }) { onSubclass(it.id) }
+                    WizardChipsPicker(klass.subclasses.filteredBySources(sources), { it.id == subclass }, { it.name }) { onSubclass(it.id) }
                 }
             }
             advLevels.forEach { lvl ->
@@ -876,7 +888,7 @@ private fun AdvancementsStep(
                             }
                         }
                         AdvKind.FEAT -> {
-                            val available = Feats.available(scores, isSpellcaster)
+                            val available = Feats.available(scores, isSpellcaster, sources)
                             WizardChipsPicker(available, { it.id == state.featId }, { it.name }) {
                                 onAdv(lvl, state.copy(featId = it.id, half = null))
                             }
@@ -950,11 +962,11 @@ private fun SkillsStep(
 // ── Fighting Style (Android-only step; iOS folds this elsewhere — see PARITY) ─
 
 @Composable
-private fun FightingStyleStep(selected: String?, onPick: (String) -> Unit) {
+private fun FightingStyleStep(selected: String?, sources: Set<String>, onPick: (String) -> Unit) {
     StepColumn {
         WizardStepSection("Fighting Style", "Choose the style your class grants.")
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            FightingStyles.all.forEach { style ->
+            FightingStyles.all(sources).forEach { style ->
                 SelectableRow(selected = selected == style.id, onClick = { onPick(style.id) }) {
                     NameWithMeta(style.name, style.description)
                 }
@@ -1050,7 +1062,7 @@ private fun EquipmentStep(
 @Composable
 private fun InventoryRow(item: InventoryItem, onToggleEquip: () -> Unit) {
     val palette = MaterialTheme.natPalette
-    val equipToggle = item.kind == ItemKind.WEAPON || item.kind == ItemKind.ARMOR || item.kind == ItemKind.SHIELD
+    val equipToggle = item.kind.isEquippable
     Row(
         Modifier
             .fillMaxWidth()
@@ -1163,14 +1175,15 @@ private fun SpellsStep(
     klass: CharacterClass?,
     cantrips: Set<String>,
     spells: Set<String>,
+    sources: Set<String>,
     onCantrips: (Set<String>) -> Unit,
     onSpells: (Set<String>) -> Unit,
 ) {
     val palette = MaterialTheme.natPalette
     val className = klass?.name ?: return
     // Filter the SRD library to this class's cantrips and 1st-level spells.
-    val cantripPool = remember(className) { DnD5eCatalog.spellLibrary.filter { it.level == 0 && it.classNames.any { c -> c.equals(className, ignoreCase = true) } }.sortedBy { it.name } }
-    val spellPool = remember(className) { DnD5eCatalog.spellLibrary.filter { it.level == 1 && it.classNames.any { c -> c.equals(className, ignoreCase = true) } }.sortedBy { it.name } }
+    val cantripPool = remember(className, sources) { DnD5eCatalog.spellLibrary(sources).filter { it.level == 0 && it.classNames.any { c -> c.equals(className, ignoreCase = true) } }.sortedBy { it.name } }
+    val spellPool = remember(className, sources) { DnD5eCatalog.spellLibrary(sources).filter { it.level == 1 && it.classNames.any { c -> c.equals(className, ignoreCase = true) } }.sortedBy { it.name } }
     StepColumn {
         WizardStepSection("Cantrips", "${cantrips.size} chosen")
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {

@@ -319,13 +319,21 @@ class HitDiceTests {
     }
 
     @Test
-    fun `long rest regains half the spent hit dice, minimum one`() {
-        // Level 10, 5 spent → regain max(1, 5/2)=2 → 3 spent left.
+    fun `long rest regains spent hit dice up to half the total, minimum one`() {
+        // Level 10, 5 spent → cap is 10/2 = 5 → all five come back.
         val result = LongRest().applyTo(fighter(level = 10, maxHp = 80, currentHp = 40, spent = 5), ruleset)
         val p = result.character.payload()
-        assertEquals(3, p.hitDiceSpent)
-        assertEquals(7, p.currentHitDice)
-        assertEquals(2, (result.event as LongRestEvent).hitDiceRegained)
+        assertEquals(0, p.hitDiceSpent)
+        assertEquals(10, p.currentHitDice)
+        assertEquals(5, (result.event as LongRestEvent).hitDiceRegained)
+
+        // Level 10, all ten spent → only five come back.
+        val drained = LongRest().applyTo(fighter(level = 10, maxHp = 80, currentHp = 40, spent = 10), ruleset)
+        assertEquals(5, drained.character.payload().hitDiceSpent)
+
+        // Level 1 with its one die spent → minimum one.
+        val novice = LongRest().applyTo(fighter(level = 1, maxHp = 12, currentHp = 4, spent = 1), ruleset)
+        assertEquals(0, novice.character.payload().hitDiceSpent)
     }
 
     @Test

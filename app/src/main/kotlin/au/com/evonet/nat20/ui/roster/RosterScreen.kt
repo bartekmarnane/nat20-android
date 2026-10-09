@@ -1,5 +1,6 @@
 package au.com.evonet.nat20.ui.roster
 
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -112,6 +113,7 @@ fun RosterScreen(
                         .drawBehind {
                             drawRect(color = hairline, size = Size(size.width, 1.dp.toPx()))
                         }
+                        .navigationBarsPadding()
                         .padding(start = 22.dp, end = 22.dp, top = 12.dp, bottom = 10.dp),
                 ) {
                     BottomCta(canCreate, onNew, onUpgrade)

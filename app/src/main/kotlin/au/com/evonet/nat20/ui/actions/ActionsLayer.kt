@@ -625,7 +625,7 @@ private fun longRestBullets(payload: DnD5ePayload): List<String> = buildList {
     add("Restore all hit points")
     if (payload.temporaryHp > 0) add("Clear temporary HP")
     if (payload.totalMaxSlots.isNotEmpty()) add("Restore all spell slots")
-    if (payload.hitDiceSpent > 0) add("Regain ${maxOf(1, payload.hitDiceSpent / 2)} hit dice")
+    if (payload.hitDiceSpent > 0) add("Regain ${minOf(payload.hitDiceSpent, maxOf(1, payload.maxHitDice / 2))} hit dice")
     if (payload.availableClassFeatures().isNotEmpty() || payload.availableResourcePools().isNotEmpty()) {
         add("Refresh class features and pools")
     }

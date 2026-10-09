@@ -38,8 +38,14 @@ class PatronStore(
     private val scope: CoroutineScope,
 ) : PurchasesUpdatedListener {
 
+    /**
+     * Last-known entitlement, so a Patron isn't shown "Upgrade" while Play is
+     * unreachable at launch. Overwritten only by a successful purchases query.
+     */
+    private val prefs = context.getSharedPreferences("nat20.patron", Context.MODE_PRIVATE)
+
     /** Whether the Patron unlock is currently owned. Drives every gate. */
-    private val _isPatron = MutableStateFlow(false)
+    private val _isPatron = MutableStateFlow(prefs.getBoolean(KEY_IS_PATRON, false))
     val isPatron: StateFlow<Boolean> = _isPatron.asStateFlow()
 
     /** The loaded product, used for live price display. `null` until the async
@@ -136,11 +142,15 @@ class PatronStore(
         if (!ensureConnected()) return
         val params = QueryPurchasesParams.newBuilder().setProductType(ProductType.INAPP).build()
         val result = billingClient.queryPurchasesAsync(params)
+        // An error result carries an empty list: treating that as "not owned"
+        // revoked paying users on a flaky connection.
+        if (result.billingResult.responseCode != BillingClient.BillingResponseCode.OK) return
         val owned = result.purchasesList.any { purchase ->
             PRODUCT_ID in purchase.products && purchase.purchaseState == Purchase.PurchaseState.PURCHASED
         }
         result.purchasesList.forEach { acknowledgeIfNeeded(it) }
         _isPatron.value = owned
+        prefs.edit().putBoolean(KEY_IS_PATRON, owned).apply()
     }
 
     // MARK: - Purchase & restore
@@ -212,6 +222,7 @@ class PatronStore(
     }
 
     companion object {
+        private const val KEY_IS_PATRON = "isPatron"
         /** Non-consumable product ID. Must match the in-app product configured
          *  in the Play Console. Mirrors the iOS StoreKit product id. */
         const val PRODUCT_ID = "au.com.evonet.Nat20.patron"

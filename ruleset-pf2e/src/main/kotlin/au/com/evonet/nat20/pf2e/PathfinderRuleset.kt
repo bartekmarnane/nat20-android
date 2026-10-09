@@ -81,6 +81,12 @@ class PathfinderRuleset : Ruleset {
         else -> throw CharacterCodecError.UnknownEventType(typeId)
     }
 
+    /** Sheds in-play state at campaign end (Hero Points and focus are left as the table set them). */
+    override fun payloadAfterCampaignEnd(payload: CharacterPayload): CharacterPayload {
+        val p = payload as? PathfinderPayload ?: return payload
+        return p.copy(conditions = emptyList(), dying = 0, wounded = 0, temporaryHp = 0, shieldRaised = false)
+    }
+
     override fun makeProseEvent(text: String, kind: JournalProseKind): CharacterEvent {
         val noteKind = when (kind) {
             JournalProseKind.CAMPAIGN_OPENING -> NoteKind.QUEST

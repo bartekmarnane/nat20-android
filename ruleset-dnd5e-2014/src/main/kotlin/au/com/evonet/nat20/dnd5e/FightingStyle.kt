@@ -1,5 +1,6 @@
 package au.com.evonet.nat20.dnd5e
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
@@ -12,7 +13,12 @@ import kotlinx.serialization.Serializable
  * and surfaced as reminders. Port of the iOS `FightingStyleCatalog`.
  */
 @Serializable
-data class FightingStyle(val id: String, val name: String, val description: String)
+data class FightingStyle(
+    val id: String,
+    val name: String,
+    val description: String,
+    @SerialName("sourceID") override val sourceId: String = SOURCE_PHB,
+) : SourceTagged
 
 object FightingStyles {
     val all: List<FightingStyle> = listOf(
@@ -26,6 +32,9 @@ object FightingStyles {
 
     private val byId = all.associateBy { it.id }
     fun style(id: String): FightingStyle? = byId[id]
+
+    /** [all] narrowed to a character's enabled sources. */
+    fun all(enabled: Set<String>): List<FightingStyle> = all.filteredBySources(enabled)
 
     /** The class level at which a class grants its Fighting Style (null if it never does). */
     fun grantLevel(classId: String): Int? = when (classId.lowercase()) {

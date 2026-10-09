@@ -1,5 +1,6 @@
 package au.com.evonet.nat20.ui.settings
 
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -45,7 +46,7 @@ import au.com.evonet.nat20.ui.theme.natPalette
 @Composable
 fun CreditsScreen(onBack: () -> Unit) {
     val palette = MaterialTheme.natPalette
-    Column(Modifier.fillMaxSize().statusBarsPadding()) {
+    Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
         // Header: back circle on the left, centred eyebrow + title.
         Box(Modifier.fillMaxWidth().padding(top = 8.dp, start = 22.dp, end = 22.dp)) {
             Box(

@@ -959,8 +959,9 @@ class LongRest : CharacterIntent {
         val maxPact = payload.maxPactSlots
         val regularRestored = maxSlots.values.sum() - payload.currentSpellSlots.values.sum()
         val pactRestored = maxOf(0, maxPact - payload.currentPactSlots)
-        // 5e: regain up to half your total hit dice (min 1) on a long rest.
-        val hitDiceRegained = if (payload.hitDiceSpent == 0) 0 else maxOf(1, payload.hitDiceSpent / 2)
+        // PHB: regain spent hit dice up to half the character's *total* (min 1) —
+        // not half of what was spent.
+        val hitDiceRegained = minOf(payload.hitDiceSpent, maxOf(1, payload.maxHitDice / 2))
         val deathSavesCleared = !payload.deathSaves.isCleared
         val exhaustionAfter = Exhaustion.clamp(payload.exhaustionLevel - 1)
         val updated = payload.copy(

@@ -1,5 +1,7 @@
 package au.com.evonet.nat20.ui.onboarding
 
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -75,7 +77,7 @@ fun OnboardingScreen(aiAvailable: Boolean, onComplete: () -> Unit) {
         if (isLast) onComplete() else scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) }
     }
 
-    Column(Modifier.fillMaxSize()) {
+    Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
         // Top bar — SKIP, available on every page.
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(top = 8.dp),

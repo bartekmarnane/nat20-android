@@ -121,7 +121,9 @@ fun PathfinderSheetView(
         campaignName = activeCampaign?.name,
         hasPastAdventures = hasPastAdventures,
         onBack = onBack,
-        onEdit = onEdit,
+        // No PF2e post-creation editor yet (see Codex2024ShellView) — Manage
+        // actions carry the build-time mutations instead.
+        onEdit = null,
         onAct = { showActions = true },
         onStartCampaign = onStartCampaign,
         onEndCampaign = onEndCampaign,

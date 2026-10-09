@@ -1,6 +1,8 @@
 package au.com.evonet.nat20.ui.codex
 
 import androidx.compose.foundation.pager.rememberPagerState
+import au.com.evonet.nat20.BuildConfig
+import au.com.evonet.nat20.ui.ScreenshotRoute
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -53,15 +55,17 @@ fun CodexShellView(
     val payload = character.payload as? DnD5ePayload ?: return
     val inCampaign = character.phase is CharacterPhase.InCampaign
     val tabs = CodexTab.entries
-    val pagerState = rememberPagerState(pageCount = { tabs.size })
+    // DEBUG screenshot harness may ask for a specific tab / the Act sheet / level-up.
+    val shotTab = if (BuildConfig.DEBUG) ScreenshotRoute.initialTab else 0
+    val pagerState = rememberPagerState(initialPage = shotTab, pageCount = { tabs.size })
     val scope = rememberCoroutineScope()
-    var levelingUp by remember { mutableStateOf(false) }
+    var levelingUp by remember { mutableStateOf(BuildConfig.DEBUG && ScreenshotRoute.opensLevelUp) }
     // In-campaign only: tapping the hero opens the name/portrait identity sheet.
     var editingIdentity by remember { mutableStateOf(false) }
     // Actions layer (parity #19): the Act pill opens the grouped sheet; most
     // tiles mount their own full-screen pickers inside the layer (slice B),
     // the few remaining tab-hosted mechanics route back into the shell here.
-    var showActions by remember { mutableStateOf(false) }
+    var showActions by remember { mutableStateOf(BuildConfig.DEBUG && ScreenshotRoute.opensActions) }
 
     CodexScaffold(
         pagerState = pagerState,

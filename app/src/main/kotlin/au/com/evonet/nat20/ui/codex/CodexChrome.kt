@@ -79,7 +79,8 @@ fun CodexScaffold(
     campaignName: String?,
     hasPastAdventures: Boolean,
     onBack: () -> Unit,
-    onEdit: () -> Unit,
+    /** Build-phase Edit pill target; null ⇒ no pill (edition without a post-creation editor). */
+    onEdit: (() -> Unit)?,
     onStartCampaign: () -> Unit,
     onEndCampaign: () -> Unit,
     onOpenJournal: () -> Unit,
@@ -152,7 +153,7 @@ private fun TopNavRow(
     inCampaign: Boolean,
     onAct: (() -> Unit)?,
     onBack: () -> Unit,
-    onEdit: () -> Unit,
+    onEdit: (() -> Unit)?,
     onOpenSettings: (() -> Unit)?,
 ) {
     val palette = MaterialTheme.natPalette
@@ -212,7 +213,7 @@ private fun TopNavRow(
             }
             when {
                 inCampaign && onAct != null -> ActPill(palette, onAct)
-                !inCampaign -> EditPill(palette, onEdit)
+                !inCampaign && onEdit != null -> EditPill(palette, onEdit)
                 else -> Spacer(Modifier.size(0.dp))
             }
         }

@@ -1,5 +1,6 @@
 package au.com.evonet.nat20.ui.reference
 
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -65,7 +66,7 @@ fun CustomCreaturesScreen(onBack: () -> Unit) {
     var editing by remember { mutableStateOf<CustomCreature?>(null) }
     var adding by remember { mutableStateOf(false) }
 
-    Column(Modifier.fillMaxSize().statusBarsPadding()) {
+    Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
         Box(Modifier.fillMaxWidth().padding(top = 8.dp, start = 22.dp, end = 22.dp)) {
             Box(
                 Modifier.align(Alignment.CenterStart).size(38.dp).clip(CircleShape).background(palette.tileStrong).border(1.dp, palette.accent, CircleShape).clickable(onClick = onBack),

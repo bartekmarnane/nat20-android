@@ -1,23 +1,31 @@
 package au.com.evonet.nat20.ui
 
+import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import au.com.evonet.nat20.BuildConfig
 import au.com.evonet.nat20.app.Nat20Application
+import au.com.evonet.nat20.dnd5e.DnD5ePayload
+import au.com.evonet.nat20.dnd5e.SourceCatalog
 import au.com.evonet.nat20.domain.Campaign
 import au.com.evonet.nat20.domain.Character
 import au.com.evonet.nat20.domain.CharacterPhase
+import au.com.evonet.nat20.domain.PartyMember
 import au.com.evonet.nat20.store.CharacterStore
 import au.com.evonet.nat20.ui.editor.CreationWizardScreen
 import au.com.evonet.nat20.ui.editor.DnD5eWizardScreen
@@ -31,9 +39,11 @@ import au.com.evonet.nat20.ui.reference.SpellLibraryShell
 import au.com.evonet.nat20.ui.roster.RosterScreen
 import au.com.evonet.nat20.ui.roll.LocalDiceInput
 import au.com.evonet.nat20.ui.settings.CharacterSettingsScreen
+import au.com.evonet.nat20.ui.settings.ContentSourcesScreen
 import au.com.evonet.nat20.ui.settings.CreditsScreen
 import au.com.evonet.nat20.ui.settings.SettingsScreen
 import au.com.evonet.nat20.ui.sheet.CharacterSheetScreen
+import kotlinx.coroutines.flow.first
 import java.util.UUID
 
 /**
@@ -51,6 +61,7 @@ private object Routes {
     const val JOURNAL = "journal/{id}/{campaignId}"
     const val PAST = "past/{id}"
     const val CHARACTER_SETTINGS = "character-settings/{id}"
+    const val CONTENT_SOURCES = "content-sources/{id}"
     const val SETTINGS = "settings"
     const val CREDITS = "credits"
     const val SPELL_LIBRARY = "spell-library"
@@ -65,6 +76,7 @@ private object Routes {
     fun journal(characterId: UUID, campaignId: UUID) = "journal/$characterId/$campaignId"
     fun past(id: UUID) = "past/$id"
     fun characterSettings(id: UUID) = "character-settings/$id"
+    fun contentSources(id: UUID) = "content-sources/$id"
 }
 
 @Composable
@@ -81,6 +93,12 @@ fun NatApp() {
     )
     val nav = rememberNavController()
     val characters by store.roster.collectAsState()
+    // Rejected intents / campaign gating used to vanish silently while the
+    // picker had already closed as if it worked.
+    val context = LocalContext.current
+    LaunchedEffect(store) {
+        store.errors.collect { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
+    }
     val patron = container.patronStore
     val isPatron by patron.isPatron.collectAsState()
 
@@ -150,7 +168,7 @@ fun NatApp() {
         ) { entry ->
             val character = find(entry.uuidArg(Routes.ARG_ID))
             if (character == null) {
-                nav.popBackStack()
+                MissingEntry(nav)
             } else {
                 val campaigns by remember(character.id) { store.campaignsForCharacter(character.id) }
                     .collectAsState(initial = emptyList())
@@ -186,7 +204,7 @@ fun NatApp() {
             val character = find(entry.uuidArg(Routes.ARG_ID))
             val campaignId = entry.uuidArg(Routes.ARG_CAMPAIGN_ID)
             if (character == null || campaignId == null) {
-                nav.popBackStack()
+                MissingEntry(nav)
             } else {
                 val campaigns by remember(character.id) { store.campaignsForCharacter(character.id) }
                     .collectAsState(initial = emptyList())
@@ -215,7 +233,7 @@ fun NatApp() {
         ) { entry ->
             val character = find(entry.uuidArg(Routes.ARG_ID))
             if (character == null) {
-                nav.popBackStack()
+                MissingEntry(nav)
             } else {
                 val campaigns by remember(character.id) { store.campaignsForCharacter(character.id) }
                     .collectAsState(initial = emptyList())
@@ -233,7 +251,7 @@ fun NatApp() {
         ) { entry ->
             val character = find(entry.uuidArg(Routes.ARG_ID))
             if (character == null) {
-                nav.popBackStack()
+                MissingEntry(nav)
             } else {
                 CharacterSettingsScreen(
                     character = character,
@@ -242,6 +260,36 @@ fun NatApp() {
                     onDelete = {
                         store.delete(character.id)
                         nav.popBackStack(Routes.ROSTER, inclusive = false)
+                    },
+                    onEditSources = { nav.navigate(Routes.contentSources(character.id)) },
+                )
+            }
+        }
+
+        composable(
+            Routes.CONTENT_SOURCES,
+            arguments = listOf(navArgument(Routes.ARG_ID) { type = NavType.StringType }),
+        ) { entry ->
+            val character = find(entry.uuidArg(Routes.ARG_ID))
+            val payload = character?.payload as? DnD5ePayload
+            if (character == null || payload == null) {
+                MissingEntry(nav)
+            } else {
+                ContentSourcesScreen(
+                    characterName = character.name,
+                    payload = payload,
+                    onBack = { nav.popBackStack() },
+                    // Bookkeeping rather than an in-play event — saved straight
+                    // through the store with no journal entry, matching the way
+                    // identity and inventory edits are persisted.
+                    onCommit = { sources ->
+                        store.save(
+                            character.copy(
+                                payload = payload.copy(
+                                    enabledSources = (sources + SourceCatalog.lockedIds).toList(),
+                                ),
+                            ),
+                        )
                     },
                 )
             }
@@ -262,7 +310,7 @@ fun NatApp() {
         ) { entry ->
             val character = find(entry.uuidArg(Routes.ARG_ID))
             if (character == null) {
-                nav.popBackStack()
+                MissingEntry(nav)
             } else {
                 DnD5eWizardScreen(
                     existing = character,
@@ -272,6 +320,116 @@ fun NatApp() {
             }
         }
     }
+    if (BuildConfig.DEBUG) ScreenshotRouter(nav, store, characters)
+    }
+}
+
+/**
+ * DEBUG screenshot harness: once the seeded roster has landed, navigate to the
+ * screen named by [ScreenshotRoute.shot], starting (or ending) a campaign for
+ * the demo character first where the shot needs one. Runs once per launch.
+ */
+@Composable
+private fun ScreenshotRouter(nav: NavHostController, store: CharacterStore, characters: List<Character>) {
+    val shot = ScreenshotRoute.shot ?: return
+    var routed by remember { mutableStateOf(false) }
+    LaunchedEffect(characters.isNotEmpty()) {
+        if (routed) return@LaunchedEffect
+        if (characters.isEmpty()) return@LaunchedEffect // seed still landing
+        routed = true
+        if (shot == "emptyRoster") {
+            // Wait for the seed first, then clear it: the blank-page state.
+            characters.forEach { store.delete(it.id) }
+            return@LaunchedEffect
+        }
+
+        fun named(prefix: String): Character = characters.first { it.name.startsWith(prefix) }
+
+        /** The character committed to an active campaign (started here if needed). */
+        suspend fun inCampaign(character: Character): Pair<Character, Campaign> {
+            val existing = store.campaignsForCharacter(character.id).first().firstOrNull { it.isActive }
+            if (existing != null) return character to existing
+            store.startCampaign(
+                character,
+                "The Lantern Company",
+                listOf(
+                    PartyMember(name = "Bram Holloway", characterClass = "Fighter", race = "Human", level = 6),
+                    PartyMember(name = "Sister Ives", characterClass = "Cleric", race = "Hill Dwarf", level = 6),
+                ),
+            )
+            val campaign = store.campaignsForCharacter(character.id)
+                .first { list -> list.any { it.isActive } }
+                .first { it.isActive }
+            val updated = store.roster
+                .first { roster -> roster.firstOrNull { it.id == character.id }?.phase is CharacterPhase.InCampaign }
+                .first { it.id == character.id }
+            return updated to campaign
+        }
+
+        val lyra = named("Lyra")
+        val thorgar = named("Thorgar")
+        val nyx = named("Nyx")
+        val seoni = named("Seoni")
+        when (shot) {
+            "roster", "onboarding" -> Unit
+            "stats", "skills", "combat", "spells", "items", "lore", "actions", "levelUp" -> {
+                val (c, _) = inCampaign(lyra)
+                nav.navigate(Routes.sheet(c.id))
+            }
+            "journal" -> {
+                val (c, campaign) = inCampaign(lyra)
+                nav.navigate(Routes.sheet(c.id))
+                nav.navigate(Routes.journal(c.id, campaign.id))
+            }
+            "journal2024" -> {
+                val (c, campaign) = inCampaign(nyx)
+                nav.navigate(Routes.sheet(c.id))
+                nav.navigate(Routes.journal(c.id, campaign.id))
+            }
+            "past" -> {
+                val (c, campaign) = inCampaign(thorgar)
+                store.endCampaign(c, campaign)
+                store.campaignsForCharacter(c.id).first { list -> list.none { it.isActive } }
+                nav.navigate(Routes.sheet(c.id))
+                nav.navigate(Routes.past(c.id))
+            }
+            "building" -> nav.navigate(Routes.sheet(thorgar.id))
+            "editor" -> nav.navigate(Routes.edit(thorgar.id))
+            "characterSettings" -> {
+                nav.navigate(Routes.sheet(lyra.id))
+                nav.navigate(Routes.characterSettings(lyra.id))
+            }
+            "contentSources" -> {
+                nav.navigate(Routes.sheet(lyra.id))
+                nav.navigate(Routes.characterSettings(lyra.id))
+                nav.navigate(Routes.contentSources(lyra.id))
+            }
+            "create" -> nav.navigate(Routes.CREATE)
+            "settings" -> nav.navigate(Routes.SETTINGS)
+            "credits" -> { nav.navigate(Routes.SETTINGS); nav.navigate(Routes.CREDITS) }
+            "patron" -> nav.navigate(Routes.PATRON)
+            "spellLibrary" -> { nav.navigate(Routes.SETTINGS); nav.navigate(Routes.SPELL_LIBRARY) }
+            "itemCatalog" -> { nav.navigate(Routes.SETTINGS); nav.navigate(Routes.ITEM_CATALOG) }
+            "monsterCodex" -> { nav.navigate(Routes.SETTINGS); nav.navigate(Routes.MONSTER_CODEX) }
+            "customCreatures" -> { nav.navigate(Routes.SETTINGS); nav.navigate(Routes.CUSTOM_CREATURES) }
+            "sheet2024", "combat2024", "spells2024", "items2024" -> nav.navigate(Routes.sheet(nyx.id))
+            "sheetPF2e" -> nav.navigate(Routes.sheet(seoni.id))
+            else -> Unit
+        }
+    }
+}
+
+/**
+ * Rendered in place of a route whose character has gone (deleted, or not yet
+ * loaded after process death). Pops once, as an effect — calling
+ * `popBackStack()` from the composition body re-ran on every recomposition
+ * during the exit transition and could pop the roster itself, leaving an
+ * empty NavHost.
+ */
+@Composable
+private fun MissingEntry(nav: NavHostController) {
+    LaunchedEffect(Unit) {
+        if (nav.previousBackStackEntry != null) nav.popBackStack()
     }
 }
 
